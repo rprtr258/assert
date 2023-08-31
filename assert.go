@@ -14,11 +14,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/k0kubun/pp"
+	// "github.com/k0kubun/pp"
 	"github.com/pmezard/go-difflib/difflib"
-	a "github.com/stretchr/testify/assert"
-
-	"github.com/rprtr258/assert/q"
+	// "github.com/rprtr258/assert/q"
 )
 
 // Stolen from the `go test` tool.
@@ -251,23 +249,46 @@ func Or[T comparable](xs ...T) T {
 	return zero
 }
 
-func Equal[T any](t testing.TB, expected, actual T) {
-	t.Helper()
-
-	if a.ObjectsAreEqual(expected, actual) {
-		return
+// objectsAreEqual determines if two objects are considered equal.
+//
+// This function does no assertion of any kind.
+func objectsAreEqual(expected, actual interface{}) bool {
+	if expected == nil || actual == nil {
+		return expected == actual
 	}
 
-	diff := diff(expected, actual)
-	expectedName := Or(q.Q(1, "assert.Equal"), "expected")
-	actualName := Or(q.Q(2, "assert.Equal"), "actual")
-	a.Fail(t, fmt.Sprintf("Not equal: \n"+
-		"%s: %s\n"+
-		"%s: %s\n"+
-		"%s", expectedName, pp.Sprint(expected),
-		actualName, pp.Sprint(actual),
-		diff))
+	exp, ok := expected.([]byte)
+	if !ok {
+		return reflect.DeepEqual(expected, actual)
+	}
+
+	act, ok := actual.([]byte)
+	if !ok {
+		return false
+	}
+	if exp == nil || act == nil {
+		return exp == nil && act == nil
+	}
+	return bytes.Equal(exp, act)
 }
+
+// func Equal[T any](t testing.TB, expected, actual T) {
+// 	t.Helper()
+
+// 	if ObjectsAreEqual(expected, actual) {
+// 		return
+// 	}
+
+// 	diff := diff(expected, actual)
+// 	expectedName := Or(q.Q(1, "assert.Equal"), "expected")
+// 	actualName := Or(q.Q(2, "assert.Equal"), "actual")
+// 	Fail(t, fmt.Sprintf("Not equal: \n"+
+// 		"%s: %s\n"+
+// 		"%s: %s\n"+
+// 		"%s", expectedName, pp.Sprint(expected),
+// 		actualName, pp.Sprint(actual),
+// 		diff))
+// }
 
 // func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any) {
 // 	if a.ObjectsAreEqual(expected, actual) {
@@ -275,7 +296,7 @@ func Equal[T any](t testing.TB, expected, actual T) {
 // 	}
 
 // 	diff := diff(expected, actual)
-// 	a.Fail(t, fmt.Sprintf("Not equal:\n"+
+// 	Fail(t, fmt.Sprintf("Not equal:\n"+
 // 		"expected: %q\n"+
 // 		"actual  : %q%q", q.Q(expected), q.Q(actual), diff), append([]any{format}, args...))
 // }
@@ -288,7 +309,7 @@ func Equal[T any](t testing.TB, expected, actual T) {
 // 	}
 
 // 	diff := diff(expected, actual)
-// 	a.Fail(t, fmt.Sprintf("Equal: \n"+
+// 	Fail(t, fmt.Sprintf("Equal: \n"+
 // 		"expected: %s\n"+
 // 		"actual  : %s%s", q.Q(expected), q.Q(actual), diff))
 // }
@@ -330,7 +351,7 @@ func Equal[T any](t testing.TB, expected, actual T) {
 // 		}
 // 	}
 
-// 	a.Fail(t, fmt.Sprintf("Slice does not contain %s", spew.Sdump(item)))
+// 	Fail(t, fmt.Sprintf("Slice does not contain %s", spew.Sdump(item)))
 // }
 
 // func Substring(t *testing.T, text, needle string) {
@@ -338,7 +359,7 @@ func Equal[T any](t testing.TB, expected, actual T) {
 // 		return
 // 	}
 
-// 	a.Fail(t, fmt.Sprintf("%s does not contain %s", spew.Sdump(text), spew.Sdump(needle)))
+// 	Fail(t, fmt.Sprintf("%s does not contain %s", spew.Sdump(text), spew.Sdump(needle)))
 // }
 
 // func Substringf(t *testing.T, text, needle string, format string, args ...any) {
@@ -346,5 +367,5 @@ func Equal[T any](t testing.TB, expected, actual T) {
 // 		return
 // 	}
 
-// 	a.Fail(t, fmt.Sprintf("%s does not contain %s", spew.Sdump(text), spew.Sdump(needle)), append([]any{format}, args...))
+// 	Fail(t, fmt.Sprintf("%s does not contain %s", spew.Sdump(text), spew.Sdump(needle)), append([]any{format}, args...))
 // }

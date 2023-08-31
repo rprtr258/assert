@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/rprtr258/assert/q"
 )
@@ -15,16 +16,16 @@ func dump(
 	f []byte,
 	g []int,
 ) string {
-	return fmt.Sprint(
-		q.Q(0, "main.dump"),
-		q.Q(1, "main.dump"),
-		q.Q(2, "main.dump"),
-		q.Q(3, "main.dump"),
-		q.Q(4, "main.dump"),
-		q.Q(5, "main.dump"),
-		q.Q(6, "main.dump"),
-		q.Q(7, "main.dump"),
-	)
+	return strings.Join([]string{
+		fmt.Sprintf(q.Q(0, "main", "dump")),
+		fmt.Sprintf(q.Q(1, "main", "dump")),
+		fmt.Sprintf(q.Q(2, "main", "dump")),
+		fmt.Sprintf(q.Q(3, "main", "dump")),
+		fmt.Sprintf(q.Q(4, "main", "dump")),
+		fmt.Sprintf(q.Q(5, "main", "dump")),
+		fmt.Sprintf(q.Q(6, "main", "dump")),
+		fmt.Sprintf(q.Q(7, "main", "dump")),
+	}, "\n")
 }
 
 func main() {

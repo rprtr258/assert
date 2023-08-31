@@ -91,11 +91,11 @@ func argName(arg ast.Expr) string {
 // argNames will return an empty string at the index position of that argument.
 // For example, q.Q(ip, port, 5432) would return []string{"ip", "port", ""}.
 // argNames returns an error if the source text cannot be parsed.
-func argNames(filename string, line int) (string, bool) {
+func argNames(filename string, line int, pkgName, funcName string) ([]string, bool) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filename, nil, 0)
 	if err != nil {
-		return "", false
+		return nil, false
 	}
 
 	var names []string
@@ -111,7 +111,7 @@ func argNames(filename string, line int) (string, bool) {
 			return true
 		}
 
-		if !isQCall(call) {
+		if !isQCall(call, pkgName, funcName) {
 			// The node is a function call on correct line, but it's not a Q()
 			// function.
 			return true
@@ -124,8 +124,7 @@ func argNames(filename string, line int) (string, bool) {
 		return true
 	})
 
-	// TODO: wtf
-	return names[0], true
+	return names, true
 }
 
 // argWidth returns the number of characters that will be seen when the given
@@ -172,21 +171,17 @@ func getCallerInfo(skip int) (file string, line int, ok bool) {
 }
 
 // isQCall returns true if the given function call expression is Q() or q.Q().
-func isQCall(n *ast.CallExpr) bool {
-	return isQFunction(n) ||
-		isPackage(n, "q") ||
-		isPackage(n, "fmt") ||
-		isPackage(n, "a")
+func isQCall(n *ast.CallExpr, pkgName, funcName string) bool {
+	return isQFunction(n, funcName) || isPackage(n, pkgName)
 }
 
 // isQFunction returns true if the given function call expression is Q().
-func isQFunction(n *ast.CallExpr) bool {
-	ident, is := n.Fun.(*ast.Ident)
-	if !is {
-		return false
+func isQFunction(n *ast.CallExpr, funcName string) bool {
+	switch ident := n.Fun.(type) {
+	case *ast.Ident:
+		return ident.Name == funcName
 	}
-
-	return ident.Name == "Q"
+	return false
 }
 
 // isPackage returns true if the given function call expression is in the q package.
@@ -206,17 +201,17 @@ func isPackage(n *ast.CallExpr, packageName string) bool {
 // Q -> getCallerInfo
 const CallDepth = 2
 
-func Q(i int, funcName string) string {
+func Q(i int, pkgName, funcName string) string {
 	file, line, ok := getCallerInfo(CallDepth)
 	if !ok {
-		return ""
+		return "<<<1"
 	}
 
-	// q.Q(foo, bar, baz) -> []string{"foo", "bar", "baz"}
-	names, ok := argNames(file, line)
+	// <pkgName>.<funcName>(foo, bar, baz) -> []string{"foo", "bar", "baz"}
+	names, ok := argNames(file, line, pkgName, funcName)
 	if !ok {
-		return ""
+		return "2>>>"
 	}
 
-	return names
+	return names[min(i, len(names)-1)]
 }
