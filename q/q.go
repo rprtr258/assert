@@ -19,10 +19,9 @@ type color string
 
 const (
 	// ANSI color escape codes.
-	_csiBold   color = "\033[1m"
-	_csiYellow color = "\033[33m"
-	_csiCyan   color = "\033[36m"
-	_csiReset  color = "\033[0m" // "reset everything"
+	_csiBold  color = "\033[1m"
+	_csiCyan  color = "\033[36m"
+	_csiReset color = "\033[0m" // "reset everything"
 
 	_maxLineWidth = 80
 )
@@ -142,7 +141,6 @@ func argWidth(arg string) int {
 		"\f", "",
 		"\v", "",
 		string(_csiBold), "",
-		string(_csiYellow), "",
 		string(_csiCyan), "",
 		string(_csiReset), "",
 	)
