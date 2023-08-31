@@ -225,13 +225,13 @@ func isQFunction(n *ast.CallExpr) bool {
 // package. Since Q() is the only exported function from the q package, this is
 // sufficient for determining that we've found Q() in the source text.
 func isPackage(n *ast.CallExpr, packageName string) bool {
-	sel, is := n.Fun.(*ast.SelectorExpr) // SelectorExpr example: a.B()
-	if !is {
+	sel, ok := n.Fun.(*ast.SelectorExpr) // SelectorExpr example: a.B()
+	if !ok {
 		return false
 	}
 
-	ident, is := sel.X.(*ast.Ident) // sel.X is the part that precedes the .
-	if !is {
+	ident, ok := sel.X.(*ast.Ident) // sel.X is the part that precedes the .
+	if !ok {
 		return false
 	}
 
