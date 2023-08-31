@@ -1,7 +1,3 @@
-// Copyright 2016 Ryan Boehning. All rights reserved.
-// Use of this source code is governed by the MIT
-// license that can be found in the LICENSE file.
-
 package q
 
 import (
@@ -9,41 +5,56 @@ import (
 	"go/ast"
 	"testing"
 
-	"github.com/kr/pretty"
+	a "github.com/stretchr/testify/assert"
 )
 
+func TestOutput(t *testing.T) {
+	for _, testcase := range []struct {
+		args string
+		want string
+	}{
+		{
+			args: fmt.Sprintf(
+				"%s=%s",
+				colorize("a", bold),
+				colorize("int(1)", cyan),
+			),
+			want: fmt.Sprintf(
+				"%s=%s",
+				colorize("a", bold),
+				colorize("int(1)", cyan),
+			),
+		},
+	} {
+		a.Equal(t, testcase.want, output(testcase.args))
+	}
+}
+
 // TestExtractingArgsFromSourceText verifies that exprToString() and argName()
-// arg able to extract the text of the arguments passed to q.Q(). For example,
-// q.Q(myVar) should return "myVar".
-// nolint: funlen,maintidx
+// arg able to extract the text of the arguments passed to q.Q().
+// For example, q.Q(myVar) should return "myVar".
 func TestExtractingArgsFromSourceText(t *testing.T) {
-	testCases := []struct {
-		id   int
+	for _, test := range []struct {
 		arg  ast.Expr
 		want string
 	}{
 		{
-			id:   1,
 			arg:  &ast.Ident{NamePos: 123, Obj: ast.NewObj(ast.Var, "myVar")},
 			want: "myVar",
 		},
 		{
-			id:   2,
 			arg:  &ast.Ident{NamePos: 234, Obj: ast.NewObj(ast.Var, "awesomeVar")},
 			want: "awesomeVar",
 		},
 		{
-			id:   3,
 			arg:  &ast.Ident{NamePos: 456, Obj: ast.NewObj(ast.Bad, "myVar")},
 			want: "",
 		},
 		{
-			id:   4,
 			arg:  &ast.Ident{NamePos: 789, Obj: ast.NewObj(ast.Con, "myVar")},
 			want: "myVar",
 		},
 		{
-			id: 5,
 			arg: &ast.BinaryExpr{
 				X:     &ast.BasicLit{ValuePos: 49, Kind: 5, Value: "1"},
 				OpPos: 51,
@@ -53,7 +64,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: "1 + 2",
 		},
 		{
-			id: 6,
 			arg: &ast.BinaryExpr{
 				X:     &ast.BasicLit{ValuePos: 89, Kind: 6, Value: "3.14"},
 				OpPos: 94,
@@ -63,7 +73,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: "3.14 / 1.59",
 		},
 		{
-			id: 7,
 			arg: &ast.BinaryExpr{
 				X:     &ast.BasicLit{ValuePos: 73, Kind: 5, Value: "123"},
 				OpPos: 77,
@@ -73,7 +82,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: "123 * 234",
 		},
 		{
-			id: 8,
 			arg: &ast.CallExpr{
 				Fun: &ast.Ident{
 					NamePos: 30,
@@ -139,7 +147,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: "foo()",
 		},
 		{
-			id: 9,
 			arg: &ast.IndexExpr{
 				X: &ast.Ident{
 					NamePos: 51,
@@ -189,7 +196,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: "a[1]",
 		},
 		{
-			id: 10,
 			arg: &ast.KeyValueExpr{
 				Key: &ast.Ident{
 					NamePos: 72,
@@ -202,7 +208,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: `Greeting: "Hello"`,
 		},
 		{
-			id: 11,
 			arg: &ast.ParenExpr{
 				Lparen: 35,
 				X: &ast.BinaryExpr{
@@ -216,7 +221,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: "(2 * 3)",
 		},
 		{
-			id: 12,
 			arg: &ast.SelectorExpr{
 				X: &ast.Ident{
 					NamePos: 44,
@@ -232,7 +236,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: "fmt.Print",
 		},
 		{
-			id: 13,
 			arg: &ast.SliceExpr{
 				X: &ast.Ident{
 					NamePos: 51,
@@ -285,7 +288,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: "a[0:2]",
 		},
 		{
-			id: 14,
 			arg: &ast.TypeAssertExpr{
 				X: &ast.Ident{
 					NamePos: 62,
@@ -329,7 +331,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: "a.(string)",
 		},
 		{
-			id: 15,
 			arg: &ast.UnaryExpr{
 				OpPos: 35,
 				Op:    13,
@@ -338,7 +339,6 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			want: "-1",
 		},
 		{
-			id: 16,
 			arg: &ast.Ident{
 				NamePos: 65,
 				Name:    "string",
@@ -346,30 +346,17 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 			},
 			want: "string",
 		},
-	}
-
-	// We can test both exprToString() and argName() with the test cases above.
-	for _, tc := range testCases {
-		// test exprToString()
-		testName := fmt.Sprintf("exprToString(%T)", tc.arg)
-		// nolint: thelper
-		t.Run(testName, func(t *testing.T) {
-			if _, ok := tc.arg.(*ast.Ident); ok {
+	} {
+		t.Run(fmt.Sprintf("exprToString(%T)", test.arg), func(t *testing.T) {
+			if _, ok := test.arg.(*ast.Ident); ok {
 				return
 			}
 
-			if got := exprToString(tc.arg); got != tc.want {
-				t.Fatalf("\ngot:  %s\nwant: %s", got, tc.want)
-			}
+			a.Equal(t, test.want, exprToString(test.arg))
 		})
 
-		// test argName()
-		testName = fmt.Sprintf("argName(%T)", tc.arg)
-		// nolint: thelper
-		t.Run(testName, func(t *testing.T) {
-			if got := argName(tc.arg); got != tc.want {
-				t.Fatalf("\ngot:  %s\nwant: %s", got, tc.want)
-			}
+		t.Run(fmt.Sprintf("argName(%T)", test.arg), func(t *testing.T) {
+			a.Equal(t, test.want, argName(test.arg))
 		})
 	}
 }
@@ -378,38 +365,22 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 // sample text and extract the argument names. For example, if q.q(a, b, c) is
 // in the sample text, argNames() should return []string{"a", "b", "c"}.
 func TestArgNames(t *testing.T) {
-	const filename = "testdata/sample1.go"
+	const filename = "../cmd/main.go"
 	want := []string{"a", "b", "c", "d", "e", "f", "g"}
 	got, err := argNames(filename, 14)
-	if err != nil {
-		t.Fatalf("argNames: failed to parse %q: %v", filename, err)
-	}
-
-	if len(got) != len(want) {
-		t.Fatalf("\ngot:  %#v\nwant: %#v", got, want)
-	}
-
-	for i := 0; i < len(got); i++ {
-		if got[i] != want[i] {
-			t.Fatalf("\ngot:  %#v\nwant: %#v", got, want)
-		}
-	}
+	a.NoError(t, err)
+	a.Equal(t, want, got)
 }
 
-// TestArgNamesBadFilename verifies that argNames() returns an error if given an
-// invalid filename.
 func TestArgNamesBadFilename(t *testing.T) {
-	const badFilename = "BAD FILENAME"
-	_, err := argNames(badFilename, 666)
-	if err == nil {
-		t.Fatalf("\nargNames(%s)\ngot:  err == nil\nwant: err != nil", badFilename)
-	}
+	_, err := argNames("BAD FILENAME", 666)
+	a.Error(t, err)
 }
 
 // TestArgWidth verifies that argWidth() returns the correct number of printable
 // characters in a string.
 func TestArgWidth(t *testing.T) {
-	testCases := []struct {
+	for _, test := range []struct {
 		arg       string
 		wantWidth int
 	}{
@@ -419,30 +390,22 @@ func TestArgWidth(t *testing.T) {
 		{colorize("myVar", bold), 5},
 		{colorize("3.14", cyan), 4},
 		{colorize("你好", cyan), 2},
-	}
-
-	for _, tc := range testCases {
-		gotWidth := argWidth(tc.arg)
-		if gotWidth != tc.wantWidth {
-			t.Fatalf("\nargWidth(%s)\ngot:  %d\nwant: %d", tc.arg, gotWidth, tc.wantWidth)
-		}
+	} {
+		a.Equal(t, test.wantWidth, argWidth(test.arg))
 	}
 }
 
 // TestFormatArgs verifies that formatArgs() produces the expected string.
 func TestFormatArgs(t *testing.T) {
-	testCases := []struct {
-		id   int
+	for id, test := range map[int]struct {
 		args []interface{}
 		want []string
 	}{
-		{
-			id:   1,
+		1: {
 			args: []interface{}{123},
 			want: []string{colorize("int(123)", cyan)},
 		},
-		{
-			id:   2,
+		2: {
 			args: []interface{}{123, 3.14, "hello world"},
 			want: []string{
 				colorize("int(123)", cyan),
@@ -450,15 +413,13 @@ func TestFormatArgs(t *testing.T) {
 				colorize("hello world", cyan),
 			},
 		},
-		{
-			id:   3,
+		3: {
 			args: []interface{}{[]string{"goodbye", "world"}},
 			want: []string{
 				colorize(`[]string{"goodbye", "world"}`, cyan),
 			},
 		},
-		{
-			id: 4,
+		4: {
 			args: []interface{}{
 				[]struct{ a, b int }{
 					{1, 2}, {2, 3}, {3, 4},
@@ -472,27 +433,17 @@ func TestFormatArgs(t *testing.T) {
 }`, cyan),
 			},
 		},
-	}
-
-	for _, tc := range testCases {
-		got := formatArgs(tc.args...)
-
-		if len(got) != len(tc.want) {
-			t.Fatalf("\nTEST %d\ngot:  %s\nwant: %s", tc.id, got, tc.want)
-		}
-
-		for i := 0; i < len(got); i++ {
-			if got[i] != tc.want[i] {
-				t.Fatalf("\nTEST %d\ngot:  %s\nwant: %s", tc.id, got, tc.want)
-			}
-		}
+	} {
+		t.Run(fmt.Sprintf("TEST %d", id), func(t *testing.T) {
+			a.Equal(t, test.want, formatArgs(test.args...))
+		})
 	}
 }
 
 // TestPrependArgName verifies that prependArgName() correctly merges a slice of
 // variable names and a slice of variabe values into name=value strings.
 func TestPrependArgName(t *testing.T) {
-	testCases := []struct {
+	for _, test := range []struct {
 		names  []string
 		values []string
 		want   []string
@@ -523,47 +474,29 @@ func TestPrependArgName(t *testing.T) {
 				fmt.Sprintf("%s=%s", colorize("myFunc", bold), colorize("func (n int) bool { return n > 0 }", cyan)),
 			},
 		},
-	}
-
-	for _, tc := range testCases {
-		got := prependArgName(tc.names, tc.values)
-		if len(got) != len(tc.want) {
-			t.Fatalf("\nprependArgName(%v, %v)\ngot:  %v\nwant: %v", tc.names, tc.values, got, tc.want)
-		}
-
-		for i := 0; i < len(got); i++ {
-			if got[i] != tc.want[i] {
-				t.Fatalf("\nprependArgName(%v, %v)\ngot:  %v\nwant: %v", tc.names, tc.values, got, tc.want)
-			}
-		}
+	} {
+		a.Equal(t, test.want, prependArgName(test.names, test.values))
 	}
 }
 
-// TestIsQCall verifies that isQCall() returns true if the given call expression
-// is q.Q().
-// nolint: funlen
 func TestIsQCall(t *testing.T) {
-	testCases := []struct {
-		id   int
+	for id, test := range map[int]struct {
 		expr *ast.CallExpr
 		want bool
 	}{
-		{
-			id: 1,
+		1: {
 			expr: &ast.CallExpr{
 				Fun: &ast.Ident{Name: "Q"},
 			},
 			want: true,
 		},
-		{
-			id: 2,
+		2: {
 			expr: &ast.CallExpr{
 				Fun: &ast.Ident{Name: "R"},
 			},
 			want: false,
 		},
-		{
-			id: 3,
+		3: {
 			expr: &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
 					X: &ast.Ident{Name: "q"},
@@ -571,8 +504,7 @@ func TestIsQCall(t *testing.T) {
 			},
 			want: true,
 		},
-		{
-			id: 4,
+		4: {
 			expr: &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
 					X: &ast.Ident{Name: "Q"},
@@ -580,8 +512,7 @@ func TestIsQCall(t *testing.T) {
 			},
 			want: false,
 		},
-		{
-			id: 5,
+		5: {
 			expr: &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
 					X: &ast.BadExpr{},
@@ -589,25 +520,15 @@ func TestIsQCall(t *testing.T) {
 			},
 			want: false,
 		},
-		{
-			id: 6,
+		6: {
 			expr: &ast.CallExpr{
 				Fun: &ast.Ident{Name: "q"},
 			},
 			want: false,
 		},
-	}
-
-	for _, tc := range testCases {
-		got := isQCall(tc.expr)
-		if got != tc.want {
-			t.Fatalf(
-				"\nTEST %d\nisQCall(%s)\ngot:  %v\nwant: %v",
-				tc.id,
-				pretty.Sprint(tc.expr),
-				got,
-				tc.want,
-			)
-		}
+	} {
+		t.Run(fmt.Sprintf("TEST %d", id), func(t *testing.T) {
+			a.Equal(t, test.want, isQCall(test.expr))
+		})
 	}
 }
