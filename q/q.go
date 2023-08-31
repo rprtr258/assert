@@ -248,23 +248,26 @@ func isPackage(n *ast.CallExpr, packageName string) bool {
 // This also allows the consumer of the package to control what happens
 // with leftover `q.Q` calls. Defaults to 2, because the user code calls
 // q.Q(), which calls getCallerInfo().
-const CallDepth = 2
+const CallDepth = 3
 
-// Q pretty-prints the given arguments
-func Q(v ...any) string {
+func q(v ...any) []string {
 	args := formatArgs(v...)
 	file, line, ok := getCallerInfo(CallDepth)
 	if !ok {
-		return output(args...) // no name=value printing
+		return args // no name=value printing
 	}
 
 	// q.Q(foo, bar, baz) -> []string{"foo", "bar", "baz"}
 	names, ok := argNames(file, line)
 	if !ok {
-		return output(args...) // no name=value printing
+		return args // no name=value printing
 	}
 
 	// Convert the arguments to name=value strings.
-	args = prependArgName(names, args)
-	return output(args...)
+	return prependArgName(names, args)
+}
+
+// Q pretty-prints the given arguments
+func Q(v ...any) string {
+	return output(q(v...)...)
 }
