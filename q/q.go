@@ -175,16 +175,10 @@ func formatArgs(args ...any) []string {
 	return formatted
 }
 
-// getCallerInfo returns the name, file, and line number of the caller
-func getCallerInfo(skip int) (funcName, file string, line int, ok bool) {
-	pc, file, line, ok := runtime.Caller(skip)
-	if !ok {
-		return "", "", 0, false
-	}
-
-	funcName = runtime.FuncForPC(pc).Name()
-
-	return funcName, file, line, true
+// getCallerInfo returns the file, and line number of the caller
+func getCallerInfo(skip int) (file string, line int, ok bool) {
+	_, file, line, ok = runtime.Caller(skip)
+	return file, line, ok
 }
 
 // prependArgName turns argument names and values into name=value strings, e.g.
@@ -259,7 +253,7 @@ const CallDepth = 2
 // Q pretty-prints the given arguments
 func Q(v ...any) string {
 	args := formatArgs(v...)
-	_, file, line, ok := getCallerInfo(CallDepth)
+	file, line, ok := getCallerInfo(CallDepth)
 	if !ok {
 		return output(args...) // no name=value printing
 	}
