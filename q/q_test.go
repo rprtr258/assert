@@ -367,7 +367,7 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 func TestArgNames(t *testing.T) {
 	const filename = "../cmd/main.go"
 	want := []string{"a", "b", "c", "d", "e", "f", "g"}
-	got, err := argNames(filename, 14)
+	got, err := argNames(filename, 18)
 	a.NoError(t, err)
 	a.Equal(t, want, got)
 }
