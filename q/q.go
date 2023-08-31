@@ -10,6 +10,8 @@ import (
 	"runtime"
 	"strings"
 	"unicode/utf8"
+
+	"github.com/k0kubun/pp"
 )
 
 type color string
@@ -82,7 +84,8 @@ func argName(arg ast.Expr) string {
 		*ast.UnaryExpr:
 		return exprToString(arg)
 	default:
-		return ""
+		// return ""
+		return exprToString(arg)
 	}
 }
 
@@ -100,25 +103,14 @@ func argNames(filename string, line int, pkgName, funcName string) ([]string, bo
 
 	var names []string
 	ast.Inspect(f, func(n ast.Node) bool {
-		call, is := n.(*ast.CallExpr)
-		if !is {
-			// The node is not a function call.
-			return true // visit next node
-		}
-
-		if fset.Position(call.End()).Line != line {
-			// The node is a function call, but it's on the wrong line.
-			return true
-		}
-
-		if !isQCall(call, pkgName, funcName) {
-			// The node is a function call on correct line, but it's not a Q()
-			// function.
-			return true
-		}
-
-		for _, arg := range call.Args {
-			names = append(names, argName(arg))
+		switch call := n.(type) {
+		case *ast.CallExpr: // function call
+			pp.Println(argName(call.Fun), fset.Position(call.Pos()).Line)
+			if fset.Position(call.Pos()).Line == line && isQCall(call, pkgName, funcName) {
+				for _, arg := range call.Args {
+					names = append(names, argName(arg))
+				}
+			}
 		}
 
 		return true
@@ -164,12 +156,6 @@ func exprToString(arg ast.Expr) string {
 	return strings.ReplaceAll(b.String(), "\t", "    ")
 }
 
-// getCallerInfo returns the file, and line number of the caller
-func getCallerInfo(skip int) (file string, line int, ok bool) {
-	_, file, line, ok = runtime.Caller(skip)
-	return file, line, ok
-}
-
 // isQCall returns true if the given function call expression is Q() or q.Q().
 func isQCall(n *ast.CallExpr, pkgName, funcName string) bool {
 	return isQFunction(n, funcName) || isPackage(n, pkgName)
@@ -198,20 +184,20 @@ func isPackage(n *ast.CallExpr, packageName string) bool {
 	return false
 }
 
-// Q -> getCallerInfo
+// ??? -> Q >> runtime.Caller
 const CallDepth = 2
 
-func Q(i int, pkgName, funcName string) string {
-	file, line, ok := getCallerInfo(CallDepth)
+func Q(pkgName, funcName string) []string {
+	_, file, line, ok := runtime.Caller(CallDepth)
 	if !ok {
-		return "<<<1"
+		return nil
 	}
 
 	// <pkgName>.<funcName>(foo, bar, baz) -> []string{"foo", "bar", "baz"}
 	names, ok := argNames(file, line, pkgName, funcName)
 	if !ok {
-		return "2>>>"
+		return nil
 	}
 
-	return names[min(i, len(names)-1)]
+	return names
 }
