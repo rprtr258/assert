@@ -14,6 +14,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/davecgh/go-spew/spew"
+	"github.com/k0kubun/pp"
 	"github.com/pmezard/go-difflib/difflib"
 	a "github.com/stretchr/testify/assert"
 
@@ -239,6 +240,17 @@ func diff[T any](expected, actual T) string {
 	return "\n\nDiff:\n" + diff
 }
 
+// Or returns the first non-zero value
+func Or[T comparable](xs ...T) T {
+	var zero T
+	for _, x := range xs {
+		if x != zero {
+			return x
+		}
+	}
+	return zero
+}
+
 func Equal[T any](t testing.TB, expected, actual T) {
 	t.Helper()
 
@@ -247,87 +259,92 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	}
 
 	diff := diff(expected, actual)
+	expectedName := Or(q.Q(1, "assert.Equal"), "expected")
+	actualName := Or(q.Q(2, "assert.Equal"), "actual")
 	a.Fail(t, fmt.Sprintf("Not equal: \n"+
-		"expected: %s\n"+
-		"actual  : %s%s", q.Q(expected), q.Q(actual), diff))
+		"%s: %s\n"+
+		"%s: %s\n"+
+		"%s", expectedName, pp.Sprint(expected),
+		actualName, pp.Sprint(actual),
+		diff))
 }
 
-func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any) {
-	if a.ObjectsAreEqual(expected, actual) {
-		return
-	}
+// func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any) {
+// 	if a.ObjectsAreEqual(expected, actual) {
+// 		return
+// 	}
 
-	diff := diff(expected, actual)
-	a.Fail(t, fmt.Sprintf("Not equal:\n"+
-		"expected: %q\n"+
-		"actual  : %q%q", q.Q(expected), q.Q(actual), diff), append([]any{format}, args...))
-}
+// 	diff := diff(expected, actual)
+// 	a.Fail(t, fmt.Sprintf("Not equal:\n"+
+// 		"expected: %q\n"+
+// 		"actual  : %q%q", q.Q(expected), q.Q(actual), diff), append([]any{format}, args...))
+// }
 
-func NotEqual[T any](t *testing.T, expected, actual T) {
-	t.Helper()
+// func NotEqual[T any](t *testing.T, expected, actual T) {
+// 	t.Helper()
 
-	if !a.ObjectsAreEqual(expected, actual) {
-		return
-	}
+// 	if !a.ObjectsAreEqual(expected, actual) {
+// 		return
+// 	}
 
-	diff := diff(expected, actual)
-	a.Fail(t, fmt.Sprintf("Equal: \n"+
-		"expected: %s\n"+
-		"actual  : %s%s", q.Q(expected), q.Q(actual), diff))
-}
+// 	diff := diff(expected, actual)
+// 	a.Fail(t, fmt.Sprintf("Equal: \n"+
+// 		"expected: %s\n"+
+// 		"actual  : %s%s", q.Q(expected), q.Q(actual), diff))
+// }
 
-func Zero[T any](t *testing.T, actual T) {
-	var zero T
-	Equal(t, zero, actual)
-}
+// func Zero[T any](t *testing.T, actual T) {
+// 	var zero T
+// 	Equal(t, zero, actual)
+// }
 
-func NotZero[T any](t *testing.T, actual T) {
-	var zero T
-	NotEqual(t, zero, actual)
-}
+// func NotZero[T any](t *testing.T, actual T) {
+// 	var zero T
+// 	NotEqual(t, zero, actual)
+// }
 
-func False(t *testing.T, actual bool) {
-	Equal(t, false, actual)
-}
+// func False(t *testing.T, actual bool) {
+// 	Equal(t, false, actual)
+// }
 
-func Falsef(t *testing.T, actual bool, format string, args ...any) {
-	Equalf(t, false, actual, format, args...)
-}
+// func Falsef(t *testing.T, actual bool, format string, args ...any) {
+// 	Equalf(t, false, actual, format, args...)
+// }
 
-func True(t *testing.T, actual bool) {
-	Equal(t, true, actual)
-}
+// func True(t *testing.T, actual bool) {
+// 	Equal(t, true, actual)
+// }
 
-func Truef(t *testing.T, actual bool, format string, args ...any) {
-	Equalf(t, true, actual, format, args...)
-}
+// func Truef(t *testing.T, actual bool, format string, args ...any) {
+// 	Equalf(t, true, actual, format, args...)
+// }
 
-func NoError(t testing.TB, err error) {
-	Equal(t, nil, err)
-}
+// func NoError(t testing.TB, err error) {
+// 	Equal(t, nil, err)
+// }
 
-func Contains[T comparable](t *testing.T, slice []T, item T) {
-	for _, v := range slice {
-		if v == item {
-			return
-		}
-	}
+// func Contains[T comparable](t *testing.T, slice []T, item T) {
+// 	for _, v := range slice {
+// 		if v == item {
+// 			return
+// 		}
+// 	}
 
-	a.Fail(t, fmt.Sprintf("Slice does not contain %s", spew.Sdump(item)))
-}
+// 	a.Fail(t, fmt.Sprintf("Slice does not contain %s", spew.Sdump(item)))
+// }
 
-func Substring(t *testing.T, text, needle string) {
-	if strings.Contains(text, needle) {
-		return
-	}
+// func Substring(t *testing.T, text, needle string) {
+// 	if strings.Contains(text, needle) {
+// 		return
+// 	}
 
-	a.Fail(t, fmt.Sprintf("%s does not contain %s", spew.Sdump(text), spew.Sdump(needle)))
-}
+// 	a.Fail(t, fmt.Sprintf("%s does not contain %s", spew.Sdump(text), spew.Sdump(needle)))
+// }
 
-func Substringf(t *testing.T, text, needle string, format string, args ...any) {
-	if strings.Contains(text, needle) {
-		return
-	}
+// func Substringf(t *testing.T, text, needle string, format string, args ...any) {
+// 	if strings.Contains(text, needle) {
+// 		return
+// 	}
 
-	a.Fail(t, fmt.Sprintf("%s does not contain %s", spew.Sdump(text), spew.Sdump(needle)), append([]any{format}, args...))
-}
+// 	a.Fail(t, fmt.Sprintf("%s does not contain %s", spew.Sdump(text), spew.Sdump(needle)), append([]any{format}, args...))
+// }

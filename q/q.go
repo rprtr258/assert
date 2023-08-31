@@ -91,11 +91,11 @@ func argName(arg ast.Expr) string {
 // argNames will return an empty string at the index position of that argument.
 // For example, q.Q(ip, port, 5432) would return []string{"ip", "port", ""}.
 // argNames returns an error if the source text cannot be parsed.
-func argNames(filename string, line int) ([]string, bool) {
+func argNames(filename string, line int) (string, bool) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filename, nil, 0)
 	if err != nil {
-		return nil, false
+		return "", false
 	}
 
 	var names []string
@@ -124,7 +124,8 @@ func argNames(filename string, line int) ([]string, bool) {
 		return true
 	})
 
-	return names, true
+	// TODO: wtf
+	return names[0], true
 }
 
 // argWidth returns the number of characters that will be seen when the given
@@ -205,17 +206,16 @@ func isPackage(n *ast.CallExpr, packageName string) bool {
 // Q -> getCallerInfo
 const CallDepth = 2
 
-// Q - get names of arguments from source code. Returns nil if failed to get.
-func Q(v ...any) []string {
+func Q(i int, funcName string) string {
 	file, line, ok := getCallerInfo(CallDepth)
 	if !ok {
-		return nil
+		return ""
 	}
 
 	// q.Q(foo, bar, baz) -> []string{"foo", "bar", "baz"}
 	names, ok := argNames(file, line)
 	if !ok {
-		return nil
+		return ""
 	}
 
 	return names

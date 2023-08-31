@@ -6,6 +6,27 @@ import (
 	"github.com/rprtr258/assert/q"
 )
 
+func dump(
+	a int,
+	b string,
+	c float64,
+	d bool,
+	e []int,
+	f []byte,
+	g []int,
+) string {
+	return fmt.Sprint(
+		q.Q(0, "main.dump"),
+		q.Q(1, "main.dump"),
+		q.Q(2, "main.dump"),
+		q.Q(3, "main.dump"),
+		q.Q(4, "main.dump"),
+		q.Q(5, "main.dump"),
+		q.Q(6, "main.dump"),
+		q.Q(7, "main.dump"),
+	)
+}
+
 func main() {
 	a := 123
 	b := "hello world"
@@ -15,5 +36,5 @@ func main() {
 	f := []byte("goodbye world")
 	g := e[1:]
 
-	fmt.Println(q.Q(a, b, c, d, e, f, g))
+	fmt.Println(dump(a, b, c, d, e, f, g))
 }
