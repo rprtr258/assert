@@ -10,8 +10,6 @@ import (
 	"runtime"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/k0kubun/pp"
 )
 
 type color string
@@ -166,41 +164,10 @@ func exprToString(arg ast.Expr) string {
 	return strings.ReplaceAll(b.String(), "\t", "    ")
 }
 
-// formatArgs converts the given args to pretty-printed, colorized strings.
-func formatArgs(args ...any) []string {
-	formatted := make([]string, len(args))
-	for i, arg := range args {
-		formatted[i] = colorize(pp.Sprint(arg), _csiCyan)
-	}
-	return formatted
-}
-
 // getCallerInfo returns the file, and line number of the caller
 func getCallerInfo(skip int) (file string, line int, ok bool) {
 	_, file, line, ok = runtime.Caller(skip)
 	return file, line, ok
-}
-
-// prependArgName turns argument names and values into name=value strings, e.g.
-// "port=443", "3+2=5". If the name is given, it will be bolded using ANSI
-// color codes. If no name is given, just the value will be returned.
-func prependArgName(names, values []string) []string {
-	prepended := make([]string, len(values))
-	for i, value := range values {
-		name := ""
-		if i < len(names) {
-			name = names[i]
-		}
-		if name == "" {
-			prepended[i] = value
-
-			continue
-		}
-		name = colorize(name, _csiBold)
-		prepended[i] = fmt.Sprintf("%s=%s", name, value)
-	}
-
-	return prepended
 }
 
 // isQCall returns true if the given function call expression is Q() or q.Q().
@@ -221,53 +188,35 @@ func isQFunction(n *ast.CallExpr) bool {
 	return ident.Name == "Q"
 }
 
-// isPackage returns true if the given function call expression is in the q
-// package. Since Q() is the only exported function from the q package, this is
+// isPackage returns true if the given function call expression is in the q package.
+// Since Q() is the only exported function from the q package, this is
 // sufficient for determining that we've found Q() in the source text.
 func isPackage(n *ast.CallExpr, packageName string) bool {
-	sel, ok := n.Fun.(*ast.SelectorExpr) // SelectorExpr example: a.B()
-	if !ok {
-		return false
+	switch sel := n.Fun.(type) {
+	case *ast.SelectorExpr: // SelectorExpr example: a.B()
+		switch ident := sel.X.(type) { // sel.X is the part that precedes the .
+		case *ast.Ident:
+			return ident.Name == packageName
+		}
 	}
-
-	ident, ok := sel.X.(*ast.Ident) // sel.X is the part that precedes the .
-	if !ok {
-		return false
-	}
-
-	return ident.Name == packageName
+	return false
 }
 
-// CallDepth allows setting the number of levels runtime.Caller will
-// skip when looking up the caller of the q.Q function. This allows
-// the `q` package to be wrapped by a project-specific wrapping function,
-// which would increase the depth by at least one. It's better to not
-// include calls to `q.Q` in released code at all and scrub them before,
-// a build is created, but in some cases it might be useful to provide
-// builds that do include the additional debug output provided by `q.Q`.
-// This also allows the consumer of the package to control what happens
-// with leftover `q.Q` calls. Defaults to 2, because the user code calls
-// q.Q(), which calls getCallerInfo().
-const CallDepth = 3
+// Q -> getCallerInfo
+const CallDepth = 2
 
-func q(v ...any) []string {
-	args := formatArgs(v...)
+// Q - get names of arguments from source code. Returns nil if failed to get.
+func Q(v ...any) []string {
 	file, line, ok := getCallerInfo(CallDepth)
 	if !ok {
-		return args // no name=value printing
+		return nil
 	}
 
 	// q.Q(foo, bar, baz) -> []string{"foo", "bar", "baz"}
 	names, ok := argNames(file, line)
 	if !ok {
-		return args // no name=value printing
+		return nil
 	}
 
-	// Convert the arguments to name=value strings.
-	return prependArgName(names, args)
-}
-
-// Q pretty-prints the given arguments
-func Q(v ...any) string {
-	return output(q(v...)...)
+	return names
 }

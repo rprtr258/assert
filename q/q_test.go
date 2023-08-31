@@ -395,89 +395,8 @@ func TestArgWidth(t *testing.T) {
 	}
 }
 
-// TestFormatArgs verifies that formatArgs() produces the expected string.
-func TestFormatArgs(t *testing.T) {
-	for id, test := range map[int]struct {
-		args []any
-		want []string
-	}{
-		1: {
-			args: []any{123},
-			want: []string{colorize("int(123)", _csiCyan)},
-		},
-		2: {
-			args: []any{123, 3.14, "hello world"},
-			want: []string{
-				colorize("int(123)", _csiCyan),
-				colorize("float64(3.14)", _csiCyan),
-				colorize("hello world", _csiCyan),
-			},
-		},
-		3: {
-			args: []any{[]string{"goodbye", "world"}},
-			want: []string{
-				colorize(`[]string{"goodbye", "world"}`, _csiCyan),
-			},
-		},
-		4: {
-			args: []any{
-				[]struct{ a, b int }{
-					{1, 2}, {2, 3}, {3, 4},
-				},
-			},
-			want: []string{
-				colorize(`[]struct { a int; b int }{
-    {a:1, b:2},
-    {a:2, b:3},
-    {a:3, b:4},
-}`, _csiCyan),
-			},
-		},
-	} {
-		t.Run(fmt.Sprintf("TEST %d", id), func(t *testing.T) {
-			a.Equal(t, test.want, formatArgs(test.args...))
-		})
-	}
-}
-
 // TestPrependArgName verifies that prependArgName() correctly merges a slice of
 // variable names and a slice of variabe values into name=value strings.
-func TestPrependArgName(t *testing.T) {
-	for _, test := range []struct {
-		names  []string
-		values []string
-		want   []string
-	}{
-		{
-			names:  []string{"myVar"},
-			values: []string{colorize("int(100)", _csiCyan)},
-			want:   []string{fmt.Sprintf("%s=%s", colorize("myVar", _csiBold), colorize("int(100)", _csiCyan))},
-		},
-		{
-			names:  []string{"", "myFloat"},
-			values: []string{colorize("hello", _csiCyan), colorize("float64(3.14)", _csiCyan)},
-			want: []string{
-				colorize("hello", _csiCyan),
-				fmt.Sprintf("%s=%s", colorize("myFloat", _csiBold), colorize("float64(3.14)", _csiCyan)),
-			},
-		},
-		{
-			names: []string{"myStructSlice", "", "myFunc"},
-			values: []string{
-				colorize("[]*Foo{&Foo{123, 234}, &Foo{345, 456}}", _csiCyan),
-				colorize("int(-666)", _csiCyan),
-				colorize("func (n int) bool { return n > 0 }", _csiCyan),
-			},
-			want: []string{
-				fmt.Sprintf("%s=%s", colorize("myStructSlice", _csiBold), colorize("[]*Foo{&Foo{123, 234}, &Foo{345, 456}}", _csiCyan)),
-				colorize("int(-666)", _csiCyan),
-				fmt.Sprintf("%s=%s", colorize("myFunc", _csiBold), colorize("func (n int) bool { return n > 0 }", _csiCyan)),
-			},
-		},
-	} {
-		a.Equal(t, test.want, prependArgName(test.names, test.values))
-	}
-}
 
 func TestIsQCall(t *testing.T) {
 	for id, test := range map[int]struct {
