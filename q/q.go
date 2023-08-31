@@ -2,7 +2,6 @@ package q
 
 import (
 	"bytes"
-	"errors"
 	"fmt"
 	"go/ast"
 	"go/parser"
@@ -94,11 +93,11 @@ func argName(arg ast.Expr) string {
 // argNames will return an empty string at the index position of that argument.
 // For example, q.Q(ip, port, 5432) would return []string{"ip", "port", ""}.
 // argNames returns an error if the source text cannot be parsed.
-func argNames(filename string, line int) ([]string, error) {
+func argNames(filename string, line int) ([]string, bool) {
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, filename, nil, 0)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse %q: %w", filename, err)
+		return nil, false
 	}
 
 	var names []string
@@ -127,7 +126,7 @@ func argNames(filename string, line int) ([]string, error) {
 		return true
 	})
 
-	return names, nil
+	return names, true
 }
 
 // argWidth returns the number of characters that will be seen when the given
@@ -157,25 +156,22 @@ func colorize(text string, c color) string {
 
 // exprToString returns the source text underlying the given ast.Expr.
 func exprToString(arg ast.Expr) string {
-	var buf strings.Builder
-	fset := token.NewFileSet()
-	if err := printer.Fprint(&buf, fset, arg); err != nil {
+	var b strings.Builder
+	if err := printer.Fprint(&b, token.NewFileSet(), arg); err != nil {
 		return ""
 	}
 
 	// CallExpr will be multi-line and indented with tabs. replace tabs with
 	// spaces so we can better control formatting during output().
-	return strings.ReplaceAll(buf.String(), "\t", "    ")
+	return strings.ReplaceAll(b.String(), "\t", "    ")
 }
 
 // formatArgs converts the given args to pretty-printed, colorized strings.
 func formatArgs(args ...any) []string {
-	formatted := make([]string, 0, len(args))
-	for _, a := range args {
-		s := colorize(pp.Sprint(a), _csiCyan)
-		formatted = append(formatted, s)
+	formatted := make([]string, len(args))
+	for i, arg := range args {
+		formatted[i] = colorize(pp.Sprint(arg), _csiCyan)
 	}
-
 	return formatted
 }
 
@@ -191,21 +187,16 @@ func formatArgs(args ...any) []string {
 // q.Q(), which calls getCallerInfo().
 const CallDepth = 2
 
-// getCallerInfo returns the name, file, and line number of the function calling
-// q.Q().
-func getCallerInfo() (funcName, file string, line int, err error) {
+// getCallerInfo returns the name, file, and line number of the function calling q.Q().
+func getCallerInfo() (funcName, file string, line int, ok bool) {
 	pc, file, line, ok := runtime.Caller(CallDepth)
 	if !ok {
-		// This error is not exported. It is only used internally in the q
-		// package. The error message isn't even used by the caller. So, I've
-		// suppressed the goerr113 linter here, which catches nonidiomatic
-		// error handling post Go 1.13 errors.
-		return "", "", 0, errors.New("failed to get info about the function calling q.Q") // nolint: goerr113
+		return "", "", 0, false
 	}
 
 	funcName = runtime.FuncForPC(pc).Name()
 
-	return funcName, file, line, nil
+	return funcName, file, line, true
 }
 
 // prependArgName turns argument names and values into name=value strings, e.g.
@@ -268,14 +259,14 @@ func isPackage(n *ast.CallExpr, packageName string) bool {
 // Q pretty-prints the given arguments
 func Q(v ...any) string {
 	args := formatArgs(v...)
-	_, file, line, err := getCallerInfo()
-	if err != nil {
+	_, file, line, ok := getCallerInfo()
+	if !ok {
 		return output(args...) // no name=value printing
 	}
 
 	// q.Q(foo, bar, baz) -> []string{"foo", "bar", "baz"}
-	names, err := argNames(file, line)
-	if err != nil {
+	names, ok := argNames(file, line)
+	if !ok {
 		return output(args...) // no name=value printing
 	}
 

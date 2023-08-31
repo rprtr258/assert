@@ -367,14 +367,14 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 func TestArgNames(t *testing.T) {
 	const filename = "../cmd/main.go"
 	want := []string{"a", "b", "c", "d", "e", "f", "g"}
-	got, err := argNames(filename, 18)
-	a.NoError(t, err)
+	got, ok := argNames(filename, 18)
+	a.True(t, ok)
 	a.Equal(t, want, got)
 }
 
 func TestArgNamesBadFilename(t *testing.T) {
-	_, err := argNames("BAD FILENAME", 666)
-	a.Error(t, err)
+	_, ok := argNames("BAD FILENAME", 666)
+	a.False(t, ok)
 }
 
 // TestArgWidth verifies that argWidth() returns the correct number of printable
