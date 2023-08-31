@@ -19,12 +19,12 @@ type color string
 
 const (
 	// ANSI color escape codes.
-	bold     color = "\033[1m"
-	yellow   color = "\033[33m"
-	cyan     color = "\033[36m"
-	endColor color = "\033[0m" // "reset everything"
+	_csiBold   color = "\033[1m"
+	_csiYellow color = "\033[33m"
+	_csiCyan   color = "\033[36m"
+	_csiReset  color = "\033[0m" // "reset everything"
 
-	maxLineWidth = 80
+	_maxLineWidth = 80
 )
 
 // output writes to the log buffer. Each log message is prepended with a
@@ -46,7 +46,7 @@ func output(args ...string) string {
 
 		// Break up long lines. If this is first arg printed on the line
 		// (lineArgs == 0), it makes no sense to break up the line.
-		if lineWidth > maxLineWidth && lineArgs != 0 {
+		if lineWidth > _maxLineWidth && lineArgs != 0 {
 			fmt.Fprint(&buf, "\n")
 			lineArgs = 0
 			lineWidth = argWidth
@@ -141,10 +141,10 @@ func argWidth(arg string) int {
 		"\r", "",
 		"\f", "",
 		"\v", "",
-		string(bold), "",
-		string(yellow), "",
-		string(cyan), "",
-		string(endColor), "",
+		string(_csiBold), "",
+		string(_csiYellow), "",
+		string(_csiCyan), "",
+		string(_csiReset), "",
 	)
 	s := replacer.Replace(arg)
 
@@ -154,7 +154,7 @@ func argWidth(arg string) int {
 // colorize returns the given text encapsulated in ANSI escape codes that
 // give the text color in the terminal.
 func colorize(text string, c color) string {
-	return string(c) + text + string(endColor)
+	return string(c) + text + string(_csiReset)
 }
 
 // exprToString returns the source text underlying the given ast.Expr.
@@ -171,10 +171,10 @@ func exprToString(arg ast.Expr) string {
 }
 
 // formatArgs converts the given args to pretty-printed, colorized strings.
-func formatArgs(args ...interface{}) []string {
+func formatArgs(args ...any) []string {
 	formatted := make([]string, 0, len(args))
 	for _, a := range args {
-		s := colorize(pp.Sprint(a), cyan)
+		s := colorize(pp.Sprint(a), _csiCyan)
 		formatted = append(formatted, s)
 	}
 
@@ -225,7 +225,7 @@ func prependArgName(names, values []string) []string {
 
 			continue
 		}
-		name = colorize(name, bold)
+		name = colorize(name, _csiBold)
 		prepended[i] = fmt.Sprintf("%s=%s", name, value)
 	}
 

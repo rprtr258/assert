@@ -16,13 +16,13 @@ func TestOutput(t *testing.T) {
 		{
 			args: fmt.Sprintf(
 				"%s=%s",
-				colorize("a", bold),
-				colorize("int(1)", cyan),
+				colorize("a", _csiBold),
+				colorize("int(1)", _csiCyan),
 			),
 			want: fmt.Sprintf(
 				"%s=%s",
-				colorize("a", bold),
-				colorize("int(1)", cyan),
+				colorize("a", _csiBold),
+				colorize("int(1)", _csiCyan),
 			),
 		},
 	} {
@@ -384,12 +384,12 @@ func TestArgWidth(t *testing.T) {
 		arg       string
 		wantWidth int
 	}{
-		{colorize("myVar", cyan), 5},
-		{colorize(`"myStringLiteral"`, cyan), 17},
-		{colorize("func (n int) { return n > 0 }(1)", cyan), 32},
-		{colorize("myVar", bold), 5},
-		{colorize("3.14", cyan), 4},
-		{colorize("你好", cyan), 2},
+		{colorize("myVar", _csiCyan), 5},
+		{colorize(`"myStringLiteral"`, _csiCyan), 17},
+		{colorize("func (n int) { return n > 0 }(1)", _csiCyan), 32},
+		{colorize("myVar", _csiBold), 5},
+		{colorize("3.14", _csiCyan), 4},
+		{colorize("你好", _csiCyan), 2},
 	} {
 		a.Equal(t, test.wantWidth, argWidth(test.arg))
 	}
@@ -398,29 +398,29 @@ func TestArgWidth(t *testing.T) {
 // TestFormatArgs verifies that formatArgs() produces the expected string.
 func TestFormatArgs(t *testing.T) {
 	for id, test := range map[int]struct {
-		args []interface{}
+		args []any
 		want []string
 	}{
 		1: {
-			args: []interface{}{123},
-			want: []string{colorize("int(123)", cyan)},
+			args: []any{123},
+			want: []string{colorize("int(123)", _csiCyan)},
 		},
 		2: {
-			args: []interface{}{123, 3.14, "hello world"},
+			args: []any{123, 3.14, "hello world"},
 			want: []string{
-				colorize("int(123)", cyan),
-				colorize("float64(3.14)", cyan),
-				colorize("hello world", cyan),
+				colorize("int(123)", _csiCyan),
+				colorize("float64(3.14)", _csiCyan),
+				colorize("hello world", _csiCyan),
 			},
 		},
 		3: {
-			args: []interface{}{[]string{"goodbye", "world"}},
+			args: []any{[]string{"goodbye", "world"}},
 			want: []string{
-				colorize(`[]string{"goodbye", "world"}`, cyan),
+				colorize(`[]string{"goodbye", "world"}`, _csiCyan),
 			},
 		},
 		4: {
-			args: []interface{}{
+			args: []any{
 				[]struct{ a, b int }{
 					{1, 2}, {2, 3}, {3, 4},
 				},
@@ -430,7 +430,7 @@ func TestFormatArgs(t *testing.T) {
     {a:1, b:2},
     {a:2, b:3},
     {a:3, b:4},
-}`, cyan),
+}`, _csiCyan),
 			},
 		},
 	} {
@@ -450,28 +450,28 @@ func TestPrependArgName(t *testing.T) {
 	}{
 		{
 			names:  []string{"myVar"},
-			values: []string{colorize("int(100)", cyan)},
-			want:   []string{fmt.Sprintf("%s=%s", colorize("myVar", bold), colorize("int(100)", cyan))},
+			values: []string{colorize("int(100)", _csiCyan)},
+			want:   []string{fmt.Sprintf("%s=%s", colorize("myVar", _csiBold), colorize("int(100)", _csiCyan))},
 		},
 		{
 			names:  []string{"", "myFloat"},
-			values: []string{colorize("hello", cyan), colorize("float64(3.14)", cyan)},
+			values: []string{colorize("hello", _csiCyan), colorize("float64(3.14)", _csiCyan)},
 			want: []string{
-				colorize("hello", cyan),
-				fmt.Sprintf("%s=%s", colorize("myFloat", bold), colorize("float64(3.14)", cyan)),
+				colorize("hello", _csiCyan),
+				fmt.Sprintf("%s=%s", colorize("myFloat", _csiBold), colorize("float64(3.14)", _csiCyan)),
 			},
 		},
 		{
 			names: []string{"myStructSlice", "", "myFunc"},
 			values: []string{
-				colorize("[]*Foo{&Foo{123, 234}, &Foo{345, 456}}", cyan),
-				colorize("int(-666)", cyan),
-				colorize("func (n int) bool { return n > 0 }", cyan),
+				colorize("[]*Foo{&Foo{123, 234}, &Foo{345, 456}}", _csiCyan),
+				colorize("int(-666)", _csiCyan),
+				colorize("func (n int) bool { return n > 0 }", _csiCyan),
 			},
 			want: []string{
-				fmt.Sprintf("%s=%s", colorize("myStructSlice", bold), colorize("[]*Foo{&Foo{123, 234}, &Foo{345, 456}}", cyan)),
-				colorize("int(-666)", cyan),
-				fmt.Sprintf("%s=%s", colorize("myFunc", bold), colorize("func (n int) bool { return n > 0 }", cyan)),
+				fmt.Sprintf("%s=%s", colorize("myStructSlice", _csiBold), colorize("[]*Foo{&Foo{123, 234}, &Foo{345, 456}}", _csiCyan)),
+				colorize("int(-666)", _csiCyan),
+				fmt.Sprintf("%s=%s", colorize("myFunc", _csiBold), colorize("func (n int) bool { return n > 0 }", _csiCyan)),
 			},
 		},
 	} {
