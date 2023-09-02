@@ -19,6 +19,25 @@ import (
 	"github.com/rprtr258/assert/q"
 )
 
+func mapJoin[T any](slice []T, toString func(T) string, sep string) string {
+	parts := make([]string, len(slice))
+	for i, v := range slice {
+		parts[i] = toString(v)
+	}
+	return strings.Join(parts, sep)
+}
+
+// or returns the first non-zero value
+func or[T comparable](xs ...T) T {
+	var zero T
+	for _, x := range xs {
+		if x != zero {
+			return x
+		}
+	}
+	return zero
+}
+
 // Stolen from the `go test` tool.
 // isTest tells whether name looks like a test (or benchmark, according to prefix).
 // It is a Test (say) if there is a character after Test that is not a lower-case letter.
@@ -105,31 +124,6 @@ type labeledContent struct {
 	content string
 }
 
-// labeledOutput returns a string consisting of the provided labeledContent.
-// Each labeled output is appended in the following manner:
-//
-//	{{label}}:
-//	    {{
-//	    content
-//	    }}
-//
-// The initial carriage return is required to undo/erase any padding added by testing.T.Errorf.
-// The "{{label}}:" is for the label.
-// If a label is shorter than the longest label provided, padding spaces are added to make all the labels match in length.
-// Once this alignment is achieved, "{{content}}" is added for the output.
-//
-// If the content of the labeledOutput contains line breaks, the subsequent
-// lines are aligned so that they start at the same location as the first line.
-func labeledOutput(content ...labeledContent) string {
-	lines := make([]string, len(content))
-	for i, v := range content {
-		lines[i] = v.label +
-			":\n    " +
-			strings.ReplaceAll(v.content, "\n", "\n    ")
-	}
-	return strings.Join(lines, "\n")
-}
-
 // diff returns a diff of both values as long as both are of the same type and
 // are a struct, map, slice, array or string. Otherwise it returns an empty string.
 func diff[T any](expected, actual T) string {
@@ -164,17 +158,6 @@ func diff[T any](expected, actual T) string {
 	return diff
 }
 
-// or returns the first non-zero value
-func or[T comparable](xs ...T) T {
-	var zero T
-	for _, x := range xs {
-		if x != zero {
-			return x
-		}
-	}
-	return zero
-}
-
 // objectsAreEqual determines if two objects are considered equal.
 //
 // This function does no assertion of any kind.
@@ -206,29 +189,38 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	}
 
 	argNames := q.Q("assert", "Equal")
-	expectedName := or(argNames[1], "Expected")
-	actualName := or(argNames[2], "Actual")
 
-	callerInfo := CallerInfo()
-	stacktraceItems := make([]string, len(callerInfo))
-	for i, v := range callerInfo {
-		j := strings.LastIndexByte(v.funcName, '/')
-		shortFuncName := v.funcName[j+1:]
-		stacktraceItems[i] =
-			termenv.String(v.file).Foreground(termenv.ANSIBrightWhite).String() +
-				":" +
-				termenv.String(strconv.Itoa(v.line)).Foreground(termenv.ANSIGreen).String() +
-				"\t" +
-				termenv.String(shortFuncName).Foreground(termenv.ANSIBlue).String()
+	t.Error("\n" + mapJoin([]labeledContent{
+		{
+			termenv.String("Stacktrace").Faint().String(),
+			mapJoin(CallerInfo(), func(v caller) string {
+				j := strings.LastIndexByte(v.funcName, '/')
+				shortFuncName := v.funcName[j+1:]
+				return termenv.String(v.file).Foreground(termenv.ANSIBrightWhite).String() +
+					":" +
+					termenv.String(strconv.Itoa(v.line)).Foreground(termenv.ANSIGreen).String() +
+					"\t" +
+					termenv.String(shortFuncName).Foreground(termenv.ANSIBlue).String()
 
-	}
-
-	t.Error("\n" + labeledOutput([]labeledContent{
-		{termenv.String("Stacktrace").Faint().String(), strings.Join(stacktraceItems, "\n")},
-		{termenv.String(expectedName).Faint().String(), pp.Sprint(expected)},
-		{termenv.String(actualName).Faint().String(), pp.Sprint(actual)},
-		{termenv.String("Not equal").Faint().String(), diff(expected, actual)},
-	}...))
+			}, "\n"),
+		},
+		{
+			termenv.String(or(argNames[1], "Expected")).Faint().String(),
+			pp.Sprint(expected),
+		},
+		{
+			termenv.String(or(argNames[2], "Actual")).Faint().String(),
+			pp.Sprint(actual),
+		},
+		{
+			termenv.String("Not equal").Faint().String(),
+			diff(expected, actual),
+		},
+	}, func(v labeledContent) string {
+		return v.label +
+			":\n    " +
+			strings.ReplaceAll(v.content, "\n", "\n    ")
+	}, "\n"))
 }
 
 // func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any) {
