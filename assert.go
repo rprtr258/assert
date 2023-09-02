@@ -125,7 +125,7 @@ type labeledContent struct {
 type diffLine struct {
 	selector         string
 	comment          string
-	expected, actual any
+	expected, actual reflect.Value
 }
 
 // TODO: change to iterators
@@ -136,8 +136,8 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 			return []diffLine{{
 				selector: selectorPrefix,
 				comment:  "",
-				expected: expected.Interface(),
-				actual:   actual.Interface(),
+				expected: expected,
+				actual:   actual,
 			}}
 		}
 
@@ -155,8 +155,8 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 			return []diffLine{{
 				selector: selectorPrefix,
 				comment:  fmt.Sprintf("len: %d != %d", lenExpected, lenActual),
-				expected: expected.Interface(),
-				actual:   pp.Sprint(actual.Interface()),
+				expected: expected,
+				actual:   actual,
 			}}
 		}
 
@@ -223,23 +223,23 @@ func Equal[T any](t testing.TB, expected, actual T) {
 
 			}, "\n"),
 		},
-		{
-			termenv.String(expectedName).Faint().String(),
-			pp.Sprint(expected),
-		},
-		{
-			termenv.String(actualName).Faint().String(),
-			pp.Sprint(actual),
-		},
+		// {
+		// 	termenv.String(expectedName).Faint().String(),
+		// 	pp.Sprint(expected),
+		// },
+		// {
+		// 	termenv.String(actualName).Faint().String(),
+		// 	pp.Sprint(actual),
+		// },
 		{
 			termenv.String("Not equal").Faint().String(),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
-				if line.expected == "" { // TODO: remove
+				if ok := (line.expected == reflect.Value{}); ok { // TODO: remove
 					return line.selector
 				}
 
-				expectedStr := pp.Sprint(line.expected)
-				actualStr := pp.Sprint(line.actual)
+				expectedStr := pp.Sprint(line.expected.Interface())
+				actualStr := pp.Sprint(line.actual.Interface())
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
 					return strings.Join([]string{
