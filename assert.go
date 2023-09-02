@@ -113,11 +113,6 @@ type labeledContent struct {
 //
 // If the content of the labeledOutput contains line breaks, the subsequent lines are aligned so that they start at the same location as the first line.
 func labeledOutput(content ...labeledContent) string {
-	longestLabel := 0
-	for _, v := range content {
-		longestLabel = max(longestLabel, len(v.label))
-	}
-
 	lines := make([]string, len(content))
 	for i, v := range content {
 		lines[i] = v.label +
