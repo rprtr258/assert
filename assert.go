@@ -1,6 +1,7 @@
 package assert
 
 import (
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -122,36 +123,79 @@ type labeledContent struct {
 }
 
 type diffLine struct {
-	selector       string
-	deleted, added string
+	selector         string
+	comment          string
+	expected, actual reflect.Value
+}
+
+// TODO: change to iterators
+func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine {
+	switch expected.Kind() {
+	case reflect.Int:
+		if expected.Int() != actual.Int() {
+			return []diffLine{{
+				selector: selectorPrefix,
+				comment:  "",
+				expected: expected,
+				actual:   actual,
+			}}
+		}
+
+		return nil
+	case reflect.Pointer:
+		return diffImpl(
+			"(*"+selectorPrefix+")",
+			reflect.ValueOf(expected).Elem(),
+			reflect.ValueOf(actual).Elem(),
+		)
+	case reflect.Slice:
+		lenExpected := expected.Len()
+		lenActual := actual.Len()
+		if lenExpected != lenActual {
+			return []diffLine{{
+				selector: selectorPrefix,
+				comment:  fmt.Sprintf("len: %d != %d", lenExpected, lenActual),
+				expected: expected,
+				actual:   actual,
+			}}
+		}
+
+		lines := make([]diffLine, lenExpected)
+		for i := range lines {
+			lines = append(lines, diffImpl(
+				fmt.Sprintf("%s[%d]", selectorPrefix, i),
+				expected.Index(i),
+				actual.Index(i),
+			)...)
+		}
+		return lines
+	}
+
+	panic(fmt.Sprintf("unsupported kind: %s", expected.Kind().String()))
 }
 
 // diff returns a diff of both values as long as both are of the same type and
 // are a struct, map, slice, array or string. Otherwise it returns an empty string.
 func diff[T any](expected, actual T) []diffLine {
-	ek := reflect.TypeOf(expected).Kind()
-
-	if ek != reflect.Struct &&
-		ek != reflect.Map &&
-		ek != reflect.Slice &&
-		ek != reflect.Array &&
-		ek != reflect.String {
-		return nil
-	}
-
-	// var e, a string
-	// switch ee := any(expected).(type) {
-	// case string:
-	// 	e, a = ee, any(actual).(string)
-	// default:
-	// 	e, a = spew.Sdump(expected), spew.Sdump(actual)
+	return diffImpl("", reflect.ValueOf(expected), reflect.ValueOf(actual))
+	// switch reflect.TypeOf(expected).Kind() {
+	// case reflect.Pointer:
+	// 	return
 	// }
 
-	return []diffLine{
-		{"[0]", "1", "2"},
-		{"[1]", "2", "3"},
-		{"[2]", "2", "4"},
-	}
+	// if ek != reflect.Struct &&
+	// 	ek != reflect.Map &&
+	// 	ek != reflect.Slice &&
+	// 	ek != reflect.Array &&
+	// 	ek != reflect.String {
+	// 	return nil
+	// }
+
+	// return []diffLine{
+	// 	{"[0]", "1", "2"},
+	// 	{"[1]", "2", "3"},
+	// 	{"[2]", "2", "4"},
+	// }
 }
 
 func Equal[T any](t testing.TB, expected, actual T) {
@@ -190,21 +234,20 @@ func Equal[T any](t testing.TB, expected, actual T) {
 		{
 			termenv.String("Not equal").Faint().String(),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
-				if line.deleted == "" { // TODO: remove
-					return line.selector
-				}
+				expectedStr := pp.Sprint(line.expected.Interface())
+				actualStr := pp.Sprint(line.actual.Interface())
 
-				if strings.ContainsRune(line.deleted, '\n') || strings.ContainsRune(line.added, '\n') {
+				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
 					return strings.Join([]string{
 						termenv.String(expectedName).Faint().String() + line.selector + " != " + termenv.String(actualName).Faint().String() + line.selector + ":",
-						termenv.String(line.deleted).Foreground(termenv.ANSIBrightRed).String(),
-						termenv.String(line.added).Foreground(termenv.ANSIBrightGreen).String(),
+						termenv.String(expectedStr).Foreground(termenv.ANSIBrightRed).String(),
+						termenv.String(actualStr).Foreground(termenv.ANSIBrightGreen).String(),
 					}, "\n")
 				}
 
 				return strings.Join([]string{
 					termenv.String(expectedName).Faint().String() + line.selector + " != " + termenv.String(actualName).Faint().String() + line.selector + ":",
-					"\t" + termenv.String(line.deleted).Foreground(termenv.ANSIBrightRed).String() + " != " + termenv.String(line.added).Foreground(termenv.ANSIBrightGreen).String(),
+					"\t" + termenv.String(expectedStr).Foreground(termenv.ANSIBrightRed).String() + " != " + termenv.String(actualStr).Foreground(termenv.ANSIBrightGreen).String(),
 				}, "\n")
 			}, "\n"),
 		},
