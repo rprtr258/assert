@@ -2,10 +2,10 @@ package assert
 
 import (
 	"bytes"
-	"fmt"
 	"path/filepath"
 	"reflect"
 	"runtime"
+	"strconv"
 	"strings"
 	"testing"
 	"unicode"
@@ -46,8 +46,8 @@ type caller struct {
 // CallerInfo returns an array of strings containing the file and line number
 // of each stack frame leading from the current test to the assert call that
 // failed.
-func CallerInfo() []string {
-	callers := []string{}
+func CallerInfo() []caller {
+	callers := []caller{}
 	for i := 0; ; i++ {
 		pc, file, line, ok := runtime.Caller(i)
 		if !ok {
@@ -82,7 +82,7 @@ func CallerInfo() []string {
 			dir := parts[len(parts)-2]
 			if dir != "assert" && dir != "mock" && dir != "require" || file == "mock_test.go" {
 				path, _ := filepath.Abs(file)
-				callers = append(callers, fmt.Sprintf("%s:%d", path, line))
+				callers = append(callers, caller{path, line})
 			}
 		}
 
@@ -121,8 +121,8 @@ func labeledOutput(content ...labeledContent) string {
 	lines := make([]string, len(content))
 	for i, v := range content {
 		lines[i] = v.label +
-			":\n\t" +
-			strings.ReplaceAll(v.content, "\n", "\n\t")
+			":\n    " +
+			strings.ReplaceAll(v.content, "\n", "\n    ")
 	}
 	return strings.Join(lines, "\n")
 }
@@ -206,8 +206,18 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	expectedName := or(argNames[1], "Expected")
 	actualName := or(argNames[2], "Actual")
 
+	callerInfo := CallerInfo()
+	stacktraceItems := make([]string, len(callerInfo))
+	for i, v := range callerInfo {
+		stacktraceItems[i] =
+			termenv.String(v.file).Foreground(termenv.ANSIBrightWhite).String() +
+				":" +
+				termenv.String(strconv.Itoa(v.line)).Foreground(termenv.ANSIBlue).String()
+
+	}
+
 	t.Error("\n" + labeledOutput([]labeledContent{
-		{termenv.String("Stacktrace").Faint().String(), strings.Join(CallerInfo(), "\n\t")},
+		{termenv.String("Stacktrace").Faint().String(), strings.Join(stacktraceItems, "\n    ")},
 		{termenv.String(expectedName).Faint().String(), pp.Sprint(expected)},
 		{termenv.String(actualName).Faint().String(), pp.Sprint(actual)},
 		{termenv.String("Not equal").Faint().String(), diff(expected, actual)},
