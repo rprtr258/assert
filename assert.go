@@ -300,7 +300,6 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 		}
 
 		lines := []diffLine{}
-		// common keys
 		for k := range commonKeys {
 			lines = append(lines, diffImpl(
 				fmt.Sprintf("%s[%v]", selectorPrefix, k),
@@ -308,18 +307,18 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 				actual.MapIndex(reflect.ValueOf(k)),
 			)...)
 		}
-		// expected keys not in actual
 		for k := range expectedOnlyKeys {
 			lines = append(lines, diffLine{
 				selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
+				comment:  "not found key in actual",
 				expected: expected.MapIndex(reflect.ValueOf(k)),
 				actual:   reflect.Value{},
 			})
 		}
-		// not expected keys present in actual
 		for k := range actualOnlyKeys {
 			lines = append(lines, diffLine{
 				selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
+				comment:  "unexpected key in actual",
 				expected: expected.MapIndex(reflect.ValueOf(k)),
 				actual:   actual.MapIndex(reflect.ValueOf(k)),
 			})
