@@ -412,7 +412,7 @@ func TestIsQCall(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("TEST %d", id), func(t *testing.T) {
-			a.Equal(t, test.want, isQCall(test.expr, "q", "Q"))
+			a.Equal(t, test.want, isFuncCall(test.expr, "q", "Q"))
 		})
 	}
 }
