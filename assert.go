@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"bytes"
 	"path/filepath"
 	"reflect"
 	"runtime"
@@ -158,33 +157,10 @@ func diff[T any](expected, actual T) string {
 	return diff
 }
 
-// objectsAreEqual determines if two objects are considered equal.
-//
-// This function does no assertion of any kind.
-func objectsAreEqual(expected, actual interface{}) bool {
-	if expected == nil || actual == nil {
-		return expected == actual
-	}
-
-	exp, ok := expected.([]byte)
-	if !ok {
-		return reflect.DeepEqual(expected, actual)
-	}
-
-	act, ok := actual.([]byte)
-	if !ok {
-		return false
-	}
-	if exp == nil || act == nil {
-		return exp == nil && act == nil
-	}
-	return bytes.Equal(exp, act)
-}
-
 func Equal[T any](t testing.TB, expected, actual T) {
 	t.Helper()
 
-	if objectsAreEqual(expected, actual) {
+	if reflect.DeepEqual(expected, actual) {
 		return
 	}
 
