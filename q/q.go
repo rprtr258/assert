@@ -1,15 +1,12 @@
 package q
 
 import (
-	"bytes"
-	"fmt"
 	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/token"
 	"runtime"
 	"strings"
-	"unicode/utf8"
 )
 
 type color string
@@ -22,39 +19,6 @@ const (
 
 	_maxLineWidth = 80
 )
-
-// output writes to the log buffer. Each log message is prepended with a
-// timestamp. Long lines are broken at 80 characters.
-func output(args ...string) string {
-	var buf bytes.Buffer
-
-	// Subsequent lines have to be indented by the width of the timestamp.
-	padding := "" // padding is the space between args.
-	lineArgs := 0 // number of args printed on the current log line.
-	lineWidth := 0
-	for _, arg := range args {
-		argWidth := argWidth(arg)
-		lineWidth += argWidth + len(padding)
-
-		// Some names in name=value strings contain newlines. Insert indentation
-		// after each newline so they line up.
-		arg = strings.ReplaceAll(arg, "\n", "\n")
-
-		// Break up long lines. If this is first arg printed on the line
-		// (lineArgs == 0), it makes no sense to break up the line.
-		if lineWidth > _maxLineWidth && lineArgs != 0 {
-			fmt.Fprint(&buf, "\n")
-			lineArgs = 0
-			lineWidth = argWidth
-			padding = ""
-		}
-		fmt.Fprint(&buf, padding, arg)
-		lineArgs++
-		padding = " "
-	}
-
-	return buf.String()
-}
 
 // argName returns the source text of the given argument if it's a variable or
 // an expression. If the argument is something else, like a literal, argName
@@ -113,25 +77,6 @@ func argNames(filename string, line int, pkgName, funcName string) ([]string, bo
 	})
 
 	return names, true
-}
-
-// argWidth returns the number of characters that will be seen when the given
-// argument is printed at the terminal.
-func argWidth(arg string) int {
-	// Strip zero-width characters.
-	replacer := strings.NewReplacer(
-		"\n", "",
-		"\t", "",
-		"\r", "",
-		"\f", "",
-		"\v", "",
-		string(_csiBold), "",
-		string(_csiCyan), "",
-		string(_csiReset), "",
-	)
-	s := replacer.Replace(arg)
-
-	return utf8.RuneCountInString(s)
 }
 
 // colorize returns the given text encapsulated in ANSI escape codes that

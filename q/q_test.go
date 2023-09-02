@@ -8,28 +8,6 @@ import (
 	a "github.com/stretchr/testify/assert"
 )
 
-func TestOutput(t *testing.T) {
-	for _, testcase := range []struct {
-		args string
-		want string
-	}{
-		{
-			args: fmt.Sprintf(
-				"%s=%s",
-				colorize("a", _csiBold),
-				colorize("int(1)", _csiCyan),
-			),
-			want: fmt.Sprintf(
-				"%s=%s",
-				colorize("a", _csiBold),
-				colorize("int(1)", _csiCyan),
-			),
-		},
-	} {
-		a.Equal(t, testcase.want, output(testcase.args))
-	}
-}
-
 // TestExtractingArgsFromSourceText verifies that exprToString() and argName()
 // arg able to extract the text of the arguments passed to q.Q().
 // For example, q.Q(myVar) should return "myVar".
@@ -383,24 +361,6 @@ func TestArgNames(t *testing.T) {
 func TestArgNamesBadFilename(t *testing.T) {
 	_, ok := argNames("BAD FILENAME", 0, "", "")
 	a.False(t, ok)
-}
-
-// TestArgWidth verifies that argWidth() returns the correct number of printable
-// characters in a string.
-func TestArgWidth(t *testing.T) {
-	for _, test := range []struct {
-		arg       string
-		wantWidth int
-	}{
-		{colorize("myVar", _csiCyan), 5},
-		{colorize(`"myStringLiteral"`, _csiCyan), 17},
-		{colorize("func (n int) { return n > 0 }(1)", _csiCyan), 32},
-		{colorize("myVar", _csiBold), 5},
-		{colorize("3.14", _csiCyan), 4},
-		{colorize("你好", _csiCyan), 2},
-	} {
-		a.Equal(t, test.wantWidth, argWidth(test.arg))
-	}
 }
 
 func TestIsQCall(t *testing.T) {
