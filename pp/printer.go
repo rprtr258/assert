@@ -531,7 +531,15 @@ func (p *printer) colorize(text string, color uint16) string {
 }
 
 func (p *printer) format(object interface{}) string {
-	pp := newPrinter(object, p.currentScheme, p.maxDepth, p.coloringEnabled, p.decimalUint, p.exportedOnly, p.thousandsSeparator)
+	pp := newPrinter(
+		object,
+		p.currentScheme,
+		p.maxDepth,
+		p.coloringEnabled,
+		p.decimalUint,
+		p.exportedOnly,
+		p.thousandsSeparator,
+	)
 	pp.depth = p.depth
 	pp.visited = p.visited
 	if value, ok := object.(reflect.Value); ok {
@@ -541,7 +549,7 @@ func (p *printer) format(object interface{}) string {
 }
 
 func (p *printer) indent() string {
-	return strings.Repeat("\t", p.depth)
+	return strings.Repeat("    ", p.depth)
 }
 
 // valueIsZero reports whether v is the zero value for its type.

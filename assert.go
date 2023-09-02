@@ -232,7 +232,20 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 		lines := []diffLine{}
 		for i := 0; i < lenExpected; i++ {
 			lines = append(lines, diffImpl(
-				fmt.Sprintf("%s[%d]", selectorPrefix, i),
+				fmt.Sprintf(
+					"%s%s%s%s",
+					selectorPrefix,
+					termenv.
+						String("["),
+					// Faint(),
+					termenv.
+						String(strconv.Itoa(i)),
+					// Faint(),
+					// Foreground(termenv.ANSIBlue),
+					termenv.
+						String("]"),
+					// Faint(),
+				),
 				expected.Index(i),
 				actual.Index(i),
 			)...)
@@ -253,9 +266,40 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 		lines := []diffLine{}
 		for i := 0; i < lenExpected; i++ {
 			lines = append(lines, diffImpl(
-				fmt.Sprintf("%s[%d]", selectorPrefix, i),
+				fmt.Sprintf(
+					"%s%s%s%s",
+					selectorPrefix,
+					termenv.
+						String("[").
+						Faint(),
+					termenv.
+						String(strconv.Itoa(i)).
+						Faint(),
+					// Foreground(termenv.ANSIBlue),
+					termenv.
+						String("]").
+						Faint(),
+				),
 				expected.Index(i),
 				actual.Index(i),
+			)...)
+		}
+		return lines
+	case reflect.Struct:
+		lines := []diffLine{}
+		fields := expected.Type().NumField()
+		for i := 0; i < fields; i++ {
+			lines = append(lines, diffImpl(
+				fmt.Sprintf(
+					"%s.%s",
+					selectorPrefix,
+					termenv.
+						String(expected.Type().Field(i).Name),
+					// Faint(),
+					// Foreground(termenv.ANSIBlue),
+				),
+				expected.Field(i),
+				actual.Field(i),
 			)...)
 		}
 		return lines
@@ -322,24 +366,6 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 // are a struct, map, slice, array or string. Otherwise it returns an empty string.
 func diff[T any](expected, actual T) []diffLine {
 	return diffImpl("", reflect.ValueOf(expected), reflect.ValueOf(actual))
-	// switch reflect.TypeOf(expected).Kind() {
-	// case reflect.Pointer:
-	// 	return
-	// }
-
-	// if ek != reflect.Struct &&
-	// 	ek != reflect.Map &&
-	// 	ek != reflect.Slice &&
-	// 	ek != reflect.Array &&
-	// 	ek != reflect.String {
-	// 	return nil
-	// }
-
-	// return []diffLine{
-	// 	{"[0]", "1", "2"},
-	// 	{"[1]", "2", "3"},
-	// 	{"[2]", "2", "4"},
-	// }
 }
 
 func Equal[T any](t testing.TB, expected, actual T) {
@@ -348,6 +374,11 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	if reflect.DeepEqual(expected, actual) {
 		return
 	}
+
+	// colorExpected := termenv.RGBColor("#00d5ff")
+	// colorActual := termenv.RGBColor("#fff500")
+	colorExpected := termenv.RGBColor("#96f759")
+	colorActual := termenv.RGBColor("#ff4053")
 
 	argNames := q.Q("assert", "Equal")
 	expectedName := or(argNames[1], "Expected")
@@ -376,28 +407,53 @@ func Equal[T any](t testing.TB, expected, actual T) {
 		// 	pp.Sprint(actual),
 		// },
 		{
-			termenv.String("Not equal").Faint().String(),
+			termenv.String("Not equal").Foreground(termenv.ANSIBrightRed).String(),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
 				if line.expected == (reflect.Value{}) { // TODO: remove
 					return line.selector
 				}
 
-				expectedStr := pp.Sprint(line.expected.Interface())
-				actualStr := pp.Sprint(line.actual.Interface())
+				shorten := func(name, s string) string {
+					// TODO: do string width if this code is kept
+					short := strings.NewReplacer(
+						"{\n    ", "{",
+						",\n    ", ", ",
+						",\n", "",
+					).Replace(s)
+					if len(name)+len(s) < 100 {
+						return short
+					}
+
+					return s
+				}
+
+				expectedStr := shorten(expectedName, pp.Sprint(line.expected.Interface()))
+				actualStr := shorten(actualName, pp.Sprint(line.actual.Interface()))
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
+					comment := ""
+					if line.comment != "" {
+						comment = termenv.String(line.comment).String() + ":"
+					}
+
 					return strings.Join([]string{
-						termenv.String(expectedName).Faint().String() + line.selector + " != " + termenv.String(actualName).Faint().String() + line.selector + ":",
-						termenv.String(expectedStr).String(),
-						termenv.String(actualStr).String(),
+						comment,
+						termenv.String(expectedName+line.selector).Foreground(colorExpected).String() + " = " + termenv.String(expectedStr).String(),
+						termenv.String(actualName+line.selector).Foreground(colorActual).String() + " = " + termenv.String(actualStr).String(),
 					}, "\n")
+				}
+
+				comment := ""
+				if line.comment != "" {
+					comment = ", " + termenv.String(line.comment).String()
 				}
 
 				return strings.Join([]string{
 					fmt.Sprintf(
-						"%s%s != %s%s:",
-						termenv.String(expectedName).Faint().String(), line.selector,
-						termenv.String(actualName).Faint().String(), line.selector,
+						"%s != %s%s:",
+						termenv.String(expectedName+line.selector).Foreground(colorExpected),
+						termenv.String(actualName+line.selector).Foreground(colorActual),
+						comment,
 					),
 					fmt.Sprintf(
 						"\t%s != %s",
@@ -405,7 +461,7 @@ func Equal[T any](t testing.TB, expected, actual T) {
 						termenv.String(actualStr).String(),
 					),
 				}, "\n")
-			}, "\n"),
+			}, "\n\n"),
 		},
 	}, func(v labeledContent) string {
 		return v.label +
