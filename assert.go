@@ -11,9 +11,9 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/k0kubun/pp"
 	"github.com/muesli/termenv"
 
+	"github.com/rprtr258/assert/pp"
 	"github.com/rprtr258/assert/q"
 )
 
@@ -131,8 +131,63 @@ type diffLine struct {
 // TODO: change to iterators
 func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine {
 	switch expected.Kind() {
-	case reflect.Int:
+	case reflect.Bool:
+		if expected.Bool() != actual.Bool() {
+			return []diffLine{{
+				selector: selectorPrefix,
+				comment:  "",
+				expected: expected,
+				actual:   actual,
+			}}
+		}
+
+		return nil
+	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 		if expected.Int() != actual.Int() {
+			return []diffLine{{
+				selector: selectorPrefix,
+				comment:  "",
+				expected: expected,
+				actual:   actual,
+			}}
+		}
+
+		return nil
+	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
+		if expected.Uint() != actual.Uint() {
+			return []diffLine{{
+				selector: selectorPrefix,
+				comment:  "",
+				expected: expected,
+				actual:   actual,
+			}}
+		}
+
+		return nil
+	case reflect.Float32, reflect.Float64:
+		if expected.Float() != actual.Float() {
+			return []diffLine{{
+				selector: selectorPrefix,
+				comment:  "",
+				expected: expected,
+				actual:   actual,
+			}}
+		}
+
+		return nil
+	case reflect.Complex64, reflect.Complex128:
+		if expected.Complex() != actual.Complex() {
+			return []diffLine{{
+				selector: selectorPrefix,
+				comment:  "",
+				expected: expected,
+				actual:   actual,
+			}}
+		}
+
+		return nil
+	case reflect.String:
+		if expected.String() != actual.String() {
 			return []diffLine{{
 				selector: selectorPrefix,
 				comment:  "",
@@ -160,6 +215,20 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 			}}
 		}
 
+		// check if only one is nil
+		if lenExpected == 0 {
+			if expected.IsNil() != actual.IsNil() {
+				return []diffLine{{
+					selector: selectorPrefix,
+					comment:  "",
+					expected: expected,
+					actual:   actual,
+				}}
+			}
+
+			return nil
+		}
+
 		lines := []diffLine{}
 		for i := 0; i < lenExpected; i++ {
 			lines = append(lines, diffImpl(
@@ -167,6 +236,81 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 				expected.Index(i),
 				actual.Index(i),
 			)...)
+		}
+		return lines
+	case reflect.Array:
+		lenExpected := expected.Len()
+		lenActual := actual.Len()
+		if lenExpected != lenActual {
+			return []diffLine{{
+				selector: selectorPrefix,
+				comment:  fmt.Sprintf("len: %d != %d", lenExpected, lenActual),
+				expected: expected,
+				actual:   actual,
+			}}
+		}
+
+		lines := []diffLine{}
+		for i := 0; i < lenExpected; i++ {
+			lines = append(lines, diffImpl(
+				fmt.Sprintf("%s[%d]", selectorPrefix, i),
+				expected.Index(i),
+				actual.Index(i),
+			)...)
+		}
+		return lines
+	case reflect.Map:
+		expectedKeys := map[any]struct{}{}
+		for _, k := range expected.MapKeys() {
+			expectedKeys[k.Interface()] = struct{}{}
+		}
+
+		actualKeys := map[any]struct{}{}
+		for _, k := range actual.MapKeys() {
+			actualKeys[k.Interface()] = struct{}{}
+		}
+
+		commonKeys := map[any]struct{}{}
+		expectedOnlyKeys := map[any]struct{}{}
+		for k := range expectedKeys {
+			if _, ok := actualKeys[k]; ok {
+				commonKeys[k] = struct{}{}
+			} else {
+				expectedOnlyKeys[k] = struct{}{}
+			}
+		}
+
+		actualOnlyKeys := map[any]struct{}{}
+		for k := range actualKeys {
+			if _, ok := expectedKeys[k]; !ok {
+				actualOnlyKeys[k] = struct{}{}
+			}
+		}
+
+		lines := []diffLine{}
+		// common keys
+		for k := range commonKeys {
+			lines = append(lines, diffImpl(
+				fmt.Sprintf("%s[%v]", selectorPrefix, pp.Sprint(k)),
+				expected.MapIndex(reflect.ValueOf(k)),
+				actual.MapIndex(reflect.ValueOf(k)),
+			)...)
+		}
+		// expected keys not in actual
+		for k := range expectedOnlyKeys {
+			lines = append(lines, diffLine{
+				selector: fmt.Sprintf("%s[%v]", selectorPrefix, pp.Sprint(k)),
+				expected: expected.MapIndex(reflect.ValueOf(k)),
+				actual:   reflect.Value{},
+			})
+		}
+		// not expected keys present in actual
+		for k := range actualOnlyKeys {
+			lines = append(lines, diffLine{
+				selector: fmt.Sprintf("%s[%v]", selectorPrefix, pp.Sprint(k)),
+				expected: expected.MapIndex(reflect.ValueOf(k)),
+				actual:   actual.MapIndex(reflect.ValueOf(k)),
+			})
 		}
 		return lines
 	}
@@ -234,7 +378,7 @@ func Equal[T any](t testing.TB, expected, actual T) {
 		{
 			termenv.String("Not equal").Faint().String(),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
-				if ok := (line.expected == reflect.Value{}); ok { // TODO: remove
+				if line.expected == (reflect.Value{}) { // TODO: remove
 					return line.selector
 				}
 
@@ -244,8 +388,8 @@ func Equal[T any](t testing.TB, expected, actual T) {
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
 					return strings.Join([]string{
 						termenv.String(expectedName).Faint().String() + line.selector + " != " + termenv.String(actualName).Faint().String() + line.selector + ":",
-						termenv.String(expectedStr).Foreground(termenv.ANSIBrightRed).String(),
-						termenv.String(actualStr).Foreground(termenv.ANSIBrightGreen).String(),
+						termenv.String(expectedStr).String(),
+						termenv.String(actualStr).String(),
 					}, "\n")
 				}
 
@@ -257,8 +401,8 @@ func Equal[T any](t testing.TB, expected, actual T) {
 					),
 					fmt.Sprintf(
 						"\t%s != %s",
-						termenv.String(expectedStr).Foreground(termenv.ANSIBrightRed).String(),
-						termenv.String(actualStr).Foreground(termenv.ANSIBrightGreen).String(),
+						termenv.String(expectedStr).String(),
+						termenv.String(actualStr).String(),
 					),
 				}, "\n")
 			}, "\n"),

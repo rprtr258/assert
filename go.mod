@@ -3,18 +3,17 @@ module github.com/rprtr258/assert
 go 1.21
 
 require (
-	github.com/k0kubun/pp v2.4.0+incompatible
+	github.com/mattn/go-colorable v0.1.13
 	github.com/muesli/termenv v0.15.2
 	github.com/stretchr/testify v1.8.0
+	golang.org/x/text v0.12.0
 )
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/k0kubun/colorstring v0.0.0-20150214042306-9440f1994b88 // indirect
 	github.com/kr/pretty v0.3.1 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
-	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
