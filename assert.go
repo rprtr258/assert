@@ -154,7 +154,20 @@ func diff[T any](expected, actual T) string {
 		Context:  1,
 	})
 
-	return diff
+	return mapJoin(strings.Split(diff, "\n"), func(line string) string {
+		if line == "" {
+			return ""
+		}
+
+		switch line[0] {
+		case '+':
+			return termenv.String(line).Foreground(termenv.ANSIBrightGreen).String()
+		case '-':
+			return termenv.String(line).Foreground(termenv.ANSIBrightRed).String()
+		default:
+			return line
+		}
+	}, "\n")
 }
 
 func Equal[T any](t testing.TB, expected, actual T) {
