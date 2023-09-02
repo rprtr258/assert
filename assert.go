@@ -163,7 +163,7 @@ func labeledOutput(content ...labeledContent) string {
 }
 
 // Fail reports a failure through
-func Fail(t testing.TB, failureMessage string, msgAndArgs ...any) bool {
+func Fail(t testing.TB, failureMessage string, msgAndArgs ...any) {
 	t.Helper()
 
 	t.Error("\n" + labeledOutput([]labeledContent{
@@ -171,8 +171,6 @@ func Fail(t testing.TB, failureMessage string, msgAndArgs ...any) bool {
 		{"Messages", messageFromMsgAndArgs(msgAndArgs...)},
 		{"Error Trace", strings.Join(CallerInfo(), "\n\t\t\t")},
 	}...) + "\n" + failureMessage)
-
-	return false
 }
 
 // diff returns a diff of both values as long as both are of the same type and
@@ -209,8 +207,8 @@ func diff[T any](expected, actual T) string {
 	return diff
 }
 
-// Or returns the first non-zero value
-func Or[T comparable](xs ...T) T {
+// or returns the first non-zero value
+func or[T comparable](xs ...T) T {
 	var zero T
 	for _, x := range xs {
 		if x != zero {
@@ -251,8 +249,8 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	}
 
 	argNames := q.Q("assert", "Equal")
-	expectedName := Or(argNames[1], "expected")
-	actualName := Or(argNames[2], "actual")
+	expectedName := or(argNames[1], "expected")
+	actualName := or(argNames[2], "actual")
 	Fail(t, fmt.Sprintf(
 		"%s: %s\n%s: %s\n%s: \n%s",
 		termenv.String(expectedName).Faint(),
