@@ -363,14 +363,6 @@ func Equal[T any](t testing.TB, expected, actual T) {
 
 			}, "\n"),
 		},
-		// {
-		// 	termenv.String(expectedName).Faint().String(),
-		// 	pp.Sprint(expected),
-		// },
-		// {
-		// 	termenv.String(actualName).Faint().String(),
-		// 	pp.Sprint(actual),
-		// },
 		{
 			termenv.String("Not equal").Foreground(termenv.ANSIBrightRed).String(),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
