@@ -319,7 +319,7 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 			lines = append(lines, diffLine{
 				selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
 				comment:  "unexpected key in actual",
-				expected: expected.MapIndex(reflect.ValueOf(k)),
+				expected: reflect.Value{},
 				actual:   actual.MapIndex(reflect.ValueOf(k)),
 			})
 		}
@@ -366,6 +366,12 @@ func Equal[T any](t testing.TB, expected, actual T) {
 		{
 			termenv.String("Not equal").Foreground(termenv.ANSIBrightRed).String(),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
+				/*
+					Bit complaining on go language: brackets on struct literal are
+					required here because compiler authors can't fix parser
+					and not interpret '{' as "if block" and that won't be fixed.
+					See https://github.com/golang/go/issues/9181
+				*/
 				if line.expected == (reflect.Value{}) { // TODO: remove
 					return line.selector
 				}
