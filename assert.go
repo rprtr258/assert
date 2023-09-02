@@ -9,14 +9,15 @@ import (
 	"runtime"
 	"strings"
 	"testing"
-	"time"
 	"unicode"
 	"unicode/utf8"
 
 	"github.com/davecgh/go-spew/spew"
-	// "github.com/k0kubun/pp"
+	"github.com/k0kubun/pp"
+	"github.com/muesli/termenv"
 	"github.com/pmezard/go-difflib/difflib"
-	// "github.com/rprtr258/assert/q"
+
+	"github.com/rprtr258/assert/q"
 )
 
 // Stolen from the `go test` tool.
@@ -151,78 +152,48 @@ type labeledContent struct {
 func labeledOutput(content ...labeledContent) string {
 	longestLabel := 0
 	for _, v := range content {
-		if len(v.label) > longestLabel {
-			longestLabel = len(v.label)
-		}
+		longestLabel = max(longestLabel, len(v.label))
 	}
-	var output string
-	for _, v := range content {
-		output += "\t" + v.label + ":" + strings.Repeat(" ", longestLabel-len(v.label)) + "\t" + indentMessageLines(v.content, longestLabel) + "\n"
+
+	lines := make([]string, len(content))
+	for i, v := range content {
+		lines[i] = v.label + ":" + strings.Repeat(" ", longestLabel-len(v.label)) + "\t" + indentMessageLines(v.content, longestLabel)
 	}
-	return output
+	return strings.Join(lines, "\n")
 }
 
 // Fail reports a failure through
 func Fail(t testing.TB, failureMessage string, msgAndArgs ...any) bool {
 	t.Helper()
 
-	content := []labeledContent{
-		{"Error Trace", strings.Join(CallerInfo(), "\n\t\t\t")},
-		{"Error", failureMessage},
+	t.Error("\n" + labeledOutput([]labeledContent{
 		{"Test", t.Name()},
-	}
-
-	message := messageFromMsgAndArgs(msgAndArgs...)
-	if message != "" {
-		content = append(content, labeledContent{"Messages", message})
-	}
-
-	t.Errorf("\n%s", ""+labeledOutput(content...))
+		{"Messages", messageFromMsgAndArgs(msgAndArgs...)},
+		{"Error Trace", strings.Join(CallerInfo(), "\n\t\t\t")},
+	}...) + "\n" + failureMessage)
 
 	return false
-}
-
-func typeAndKind(v any) (reflect.Type, reflect.Kind) {
-	t := reflect.TypeOf(v)
-	k := t.Kind()
-
-	if k == reflect.Ptr {
-		t = t.Elem()
-		k = t.Kind()
-	}
-	return t, k
 }
 
 // diff returns a diff of both values as long as both are of the same type and
 // are a struct, map, slice, array or string. Otherwise it returns an empty string.
 func diff[T any](expected, actual T) string {
-	// if expected == nil || actual == nil {
-	// 	return ""
-	// }
+	ek := reflect.TypeOf(expected).Kind()
 
-	et, ek := typeAndKind(expected)
-	at, _ := typeAndKind(actual)
-
-	if et != at {
-		return ""
-	}
-
-	if ek != reflect.Struct && ek != reflect.Map && ek != reflect.Slice && ek != reflect.Array && ek != reflect.String {
+	if ek != reflect.Struct &&
+		ek != reflect.Map &&
+		ek != reflect.Slice &&
+		ek != reflect.Array &&
+		ek != reflect.String {
 		return ""
 	}
 
 	var e, a string
-
-	switch et {
-	case reflect.TypeOf(""):
-		e = reflect.ValueOf(expected).String()
-		a = reflect.ValueOf(actual).String()
-	case reflect.TypeOf(time.Time{}):
-		e = spew.Sdump(expected)
-		a = spew.Sdump(actual)
+	switch ee := any(expected).(type) {
+	case string:
+		e, a = ee, any(actual).(string)
 	default:
-		e = spew.Sdump(expected)
-		a = spew.Sdump(actual)
+		e, a = spew.Sdump(expected), spew.Sdump(actual)
 	}
 
 	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
@@ -235,7 +206,7 @@ func diff[T any](expected, actual T) string {
 		Context:  1,
 	})
 
-	return "\n\nDiff:\n" + diff
+	return diff
 }
 
 // Or returns the first non-zero value
@@ -272,23 +243,26 @@ func objectsAreEqual(expected, actual interface{}) bool {
 	return bytes.Equal(exp, act)
 }
 
-// func Equal[T any](t testing.TB, expected, actual T) {
-// 	t.Helper()
+func Equal[T any](t testing.TB, expected, actual T) {
+	t.Helper()
 
-// 	if ObjectsAreEqual(expected, actual) {
-// 		return
-// 	}
+	if objectsAreEqual(expected, actual) {
+		return
+	}
 
-// 	diff := diff(expected, actual)
-// 	expectedName := Or(q.Q(1, "assert.Equal"), "expected")
-// 	actualName := Or(q.Q(2, "assert.Equal"), "actual")
-// 	Fail(t, fmt.Sprintf("Not equal: \n"+
-// 		"%s: %s\n"+
-// 		"%s: %s\n"+
-// 		"%s", expectedName, pp.Sprint(expected),
-// 		actualName, pp.Sprint(actual),
-// 		diff))
-// }
+	argNames := q.Q("assert", "Equal")
+	expectedName := Or(argNames[1], "expected")
+	actualName := Or(argNames[2], "actual")
+	Fail(t, fmt.Sprintf(
+		"%s: %s\n%s: %s\n%s: \n%s",
+		termenv.String(expectedName).Faint(),
+		pp.Sprint(expected),
+		termenv.String(actualName).Faint(),
+		pp.Sprint(actual),
+		termenv.String("diff").Faint(),
+		diff(expected, actual),
+	), "Not equal")
+}
 
 // func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any) {
 // 	if a.ObjectsAreEqual(expected, actual) {
@@ -314,10 +288,10 @@ func objectsAreEqual(expected, actual interface{}) bool {
 // 		"actual  : %s%s", q.Q(expected), q.Q(actual), diff))
 // }
 
-// func Zero[T any](t *testing.T, actual T) {
-// 	var zero T
-// 	Equal(t, zero, actual)
-// }
+func Zero[T any](t *testing.T, actual T) {
+	var zero T
+	Equal(t, zero, actual)
+}
 
 // func NotZero[T any](t *testing.T, actual T) {
 // 	var zero T
@@ -332,9 +306,9 @@ func objectsAreEqual(expected, actual interface{}) bool {
 // 	Equalf(t, false, actual, format, args...)
 // }
 
-// func True(t *testing.T, actual bool) {
-// 	Equal(t, true, actual)
-// }
+func True(t *testing.T, actual bool) {
+	Equal(t, true, actual)
+}
 
 // func Truef(t *testing.T, actual bool, format string, args ...any) {
 // 	Equalf(t, true, actual, format, args...)

@@ -10,8 +10,6 @@ import (
 	"runtime"
 	"strings"
 	"unicode/utf8"
-
-	"github.com/k0kubun/pp"
 )
 
 type color string
@@ -84,7 +82,6 @@ func argName(arg ast.Expr) string {
 		*ast.UnaryExpr:
 		return exprToString(arg)
 	default:
-		// return ""
 		return exprToString(arg)
 	}
 }
@@ -104,8 +101,7 @@ func argNames(filename string, line int, pkgName, funcName string) ([]string, bo
 	var names []string
 	ast.Inspect(f, func(n ast.Node) bool {
 		switch call := n.(type) {
-		case *ast.CallExpr: // function call
-			pp.Println(argName(call.Fun), fset.Position(call.Pos()).Line)
+		case *ast.CallExpr:
 			if fset.Position(call.Pos()).Line == line && isQCall(call, pkgName, funcName) {
 				for _, arg := range call.Args {
 					names = append(names, argName(arg))
