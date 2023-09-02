@@ -125,7 +125,7 @@ type labeledContent struct {
 type diffLine struct {
 	selector         string
 	comment          string
-	expected, actual reflect.Value
+	expected, actual any
 }
 
 // TODO: change to iterators
@@ -136,8 +136,8 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 			return []diffLine{{
 				selector: selectorPrefix,
 				comment:  "",
-				expected: expected,
-				actual:   actual,
+				expected: expected.Interface(),
+				actual:   actual.Interface(),
 			}}
 		}
 
@@ -155,13 +155,13 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 			return []diffLine{{
 				selector: selectorPrefix,
 				comment:  fmt.Sprintf("len: %d != %d", lenExpected, lenActual),
-				expected: expected,
-				actual:   actual,
+				expected: expected.Interface(),
+				actual:   pp.Sprint(actual.Interface()),
 			}}
 		}
 
-		lines := make([]diffLine, lenExpected)
-		for i := range lines {
+		lines := []diffLine{}
+		for i := 0; i < lenExpected; i++ {
 			lines = append(lines, diffImpl(
 				fmt.Sprintf("%s[%d]", selectorPrefix, i),
 				expected.Index(i),
@@ -234,8 +234,12 @@ func Equal[T any](t testing.TB, expected, actual T) {
 		{
 			termenv.String("Not equal").Faint().String(),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
-				expectedStr := pp.Sprint(line.expected.Interface())
-				actualStr := pp.Sprint(line.actual.Interface())
+				if line.expected == "" { // TODO: remove
+					return line.selector
+				}
+
+				expectedStr := pp.Sprint(line.expected)
+				actualStr := pp.Sprint(line.actual)
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
 					return strings.Join([]string{
@@ -246,8 +250,16 @@ func Equal[T any](t testing.TB, expected, actual T) {
 				}
 
 				return strings.Join([]string{
-					termenv.String(expectedName).Faint().String() + line.selector + " != " + termenv.String(actualName).Faint().String() + line.selector + ":",
-					"\t" + termenv.String(expectedStr).Foreground(termenv.ANSIBrightRed).String() + " != " + termenv.String(actualStr).Foreground(termenv.ANSIBrightGreen).String(),
+					fmt.Sprintf(
+						"%s%s != %s%s:",
+						termenv.String(expectedName).Faint().String(), line.selector,
+						termenv.String(actualName).Faint().String(), line.selector,
+					),
+					fmt.Sprintf(
+						"\t%s != %s",
+						termenv.String(expectedStr).Foreground(termenv.ANSIBrightRed).String(),
+						termenv.String(actualStr).Foreground(termenv.ANSIBrightGreen).String(),
+					),
 				}, "\n")
 			}, "\n"),
 		},
