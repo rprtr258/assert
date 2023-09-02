@@ -1,7 +1,6 @@
 package assert
 
 import (
-	"bufio"
 	"bytes"
 	"fmt"
 	"path/filepath"
@@ -39,19 +38,18 @@ func isTest(name, prefix string) bool {
 internally, causing it to print the file:line of the assert method, rather than where
 the problem actually occurred in calling code.*/
 
+type caller struct {
+	file string
+	line int
+}
+
 // CallerInfo returns an array of strings containing the file and line number
 // of each stack frame leading from the current test to the assert call that
 // failed.
 func CallerInfo() []string {
-	var pc uintptr
-	var ok bool
-	var file string
-	var line int
-	var name string
-
 	callers := []string{}
 	for i := 0; ; i++ {
-		pc, file, line, ok = runtime.Caller(i)
+		pc, file, line, ok := runtime.Caller(i)
 		if !ok {
 			// The breaks below failed to terminate the loop, and we ran off the
 			// end of the call stack.
@@ -67,7 +65,7 @@ func CallerInfo() []string {
 		if f == nil {
 			break
 		}
-		name = f.Name()
+		name := f.Name()
 
 		// testing.tRunner is the standard library function that calls
 		// tests. Subtests are called directly by tRunner, without going through
@@ -82,7 +80,7 @@ func CallerInfo() []string {
 		file = parts[len(parts)-1]
 		if len(parts) > 1 {
 			dir := parts[len(parts)-2]
-			if (dir != "assert" && dir != "mock" && dir != "require") || file == "mock_test.go" {
+			if dir != "assert" && dir != "mock" && dir != "require" || file == "mock_test.go" {
 				path, _ := filepath.Abs(file)
 				callers = append(callers, fmt.Sprintf("%s:%d", path, line))
 			}
@@ -97,42 +95,7 @@ func CallerInfo() []string {
 			break
 		}
 	}
-
 	return callers
-}
-
-// Aligns the provided message so that all lines after the first line start at the same location as the first line.
-// Assumes that the first line starts at the correct location (after carriage return, tab, label, spacer and tab).
-// The longestLabelLen parameter specifies the length of the longest label in the output (required becaues this is the
-// basis on which the alignment occurs).
-func indentMessageLines(message string, longestLabelLen int) string {
-	outBuf := new(bytes.Buffer)
-
-	for i, scanner := 0, bufio.NewScanner(strings.NewReader(message)); scanner.Scan(); i++ {
-		// no need to align first line because it starts at the correct location (after the label)
-		if i != 0 {
-			// append alignLen+1 spaces to align with "{{longestLabel}}:" before adding tab
-			outBuf.WriteString("\n\t" + strings.Repeat(" ", longestLabelLen+1) + "\t")
-		}
-		outBuf.WriteString(scanner.Text())
-	}
-
-	return outBuf.String()
-}
-
-func messageFromMsgAndArgs(msgAndArgs ...any) string {
-	switch len(msgAndArgs) {
-	case 0:
-		return ""
-	case 1:
-		msg := msgAndArgs[0]
-		if msgAsStr, ok := msg.(string); ok {
-			return msgAsStr
-		}
-		return fmt.Sprintf("%+v", msg)
-	default:
-		return fmt.Sprintf(msgAndArgs[0].(string), msgAndArgs[1:]...)
-	}
 }
 
 type labeledContent struct {
@@ -157,20 +120,11 @@ func labeledOutput(content ...labeledContent) string {
 
 	lines := make([]string, len(content))
 	for i, v := range content {
-		lines[i] = v.label + ":" + strings.Repeat(" ", longestLabel-len(v.label)) + "\t" + indentMessageLines(v.content, longestLabel)
+		lines[i] = v.label +
+			":\n\t" +
+			strings.ReplaceAll(v.content, "\n", "\n\t")
 	}
 	return strings.Join(lines, "\n")
-}
-
-// Fail reports a failure through
-func Fail(t testing.TB, failureMessage string, msgAndArgs ...any) {
-	t.Helper()
-
-	t.Error("\n" + labeledOutput([]labeledContent{
-		{"Test", t.Name()},
-		{"Messages", messageFromMsgAndArgs(msgAndArgs...)},
-		{"Error Trace", strings.Join(CallerInfo(), "\n\t\t\t")},
-	}...) + "\n" + failureMessage)
 }
 
 // diff returns a diff of both values as long as both are of the same type and
@@ -249,17 +203,15 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	}
 
 	argNames := q.Q("assert", "Equal")
-	expectedName := or(argNames[1], "expected")
-	actualName := or(argNames[2], "actual")
-	Fail(t, fmt.Sprintf(
-		"%s: %s\n%s: %s\n%s: \n%s",
-		termenv.String(expectedName).Faint(),
-		pp.Sprint(expected),
-		termenv.String(actualName).Faint(),
-		pp.Sprint(actual),
-		termenv.String("diff").Faint(),
-		diff(expected, actual),
-	), "Not equal")
+	expectedName := or(argNames[1], "Expected")
+	actualName := or(argNames[2], "Actual")
+
+	t.Error("\n" + labeledOutput([]labeledContent{
+		{termenv.String("Stacktrace").Faint().String(), strings.Join(CallerInfo(), "\n\t")},
+		{termenv.String(expectedName).Faint().String(), pp.Sprint(expected)},
+		{termenv.String(actualName).Faint().String(), pp.Sprint(actual)},
+		{termenv.String("Not equal").Faint().String(), diff(expected, actual)},
+	}...))
 }
 
 // func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any) {
