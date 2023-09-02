@@ -10,10 +10,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/k0kubun/pp"
 	"github.com/muesli/termenv"
-	"github.com/pmezard/go-difflib/difflib"
 
 	"github.com/rprtr258/assert/q"
 )
@@ -123,9 +121,14 @@ type labeledContent struct {
 	content string
 }
 
+type diffLine struct {
+	selector       string
+	deleted, added string
+}
+
 // diff returns a diff of both values as long as both are of the same type and
 // are a struct, map, slice, array or string. Otherwise it returns an empty string.
-func diff[T any](expected, actual T) string {
+func diff[T any](expected, actual T) []diffLine {
 	ek := reflect.TypeOf(expected).Kind()
 
 	if ek != reflect.Struct &&
@@ -133,41 +136,22 @@ func diff[T any](expected, actual T) string {
 		ek != reflect.Slice &&
 		ek != reflect.Array &&
 		ek != reflect.String {
-		return ""
+		return nil
 	}
 
-	var e, a string
-	switch ee := any(expected).(type) {
-	case string:
-		e, a = ee, any(actual).(string)
-	default:
-		e, a = spew.Sdump(expected), spew.Sdump(actual)
+	// var e, a string
+	// switch ee := any(expected).(type) {
+	// case string:
+	// 	e, a = ee, any(actual).(string)
+	// default:
+	// 	e, a = spew.Sdump(expected), spew.Sdump(actual)
+	// }
+
+	return []diffLine{
+		{"[0]", "1", "2"},
+		{"[1]", "2", "3"},
+		{"[2]", "2", "4"},
 	}
-
-	diff, _ := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-		A:        difflib.SplitLines(e),
-		B:        difflib.SplitLines(a),
-		FromFile: "Expected",
-		FromDate: "",
-		ToFile:   "Actual",
-		ToDate:   "",
-		Context:  1,
-	})
-
-	return mapJoin(strings.Split(diff, "\n"), func(line string) string {
-		if line == "" {
-			return ""
-		}
-
-		switch line[0] {
-		case '+':
-			return termenv.String(line).Foreground(termenv.ANSIBrightGreen).String()
-		case '-':
-			return termenv.String(line).Foreground(termenv.ANSIBrightRed).String()
-		default:
-			return line
-		}
-	}, "\n")
 }
 
 func Equal[T any](t testing.TB, expected, actual T) {
@@ -178,6 +162,8 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	}
 
 	argNames := q.Q("assert", "Equal")
+	expectedName := or(argNames[1], "Expected")
+	actualName := or(argNames[2], "Actual")
 
 	t.Error("\n" + mapJoin([]labeledContent{
 		{
@@ -194,16 +180,33 @@ func Equal[T any](t testing.TB, expected, actual T) {
 			}, "\n"),
 		},
 		{
-			termenv.String(or(argNames[1], "Expected")).Faint().String(),
+			termenv.String(expectedName).Faint().String(),
 			pp.Sprint(expected),
 		},
 		{
-			termenv.String(or(argNames[2], "Actual")).Faint().String(),
+			termenv.String(actualName).Faint().String(),
 			pp.Sprint(actual),
 		},
 		{
 			termenv.String("Not equal").Faint().String(),
-			diff(expected, actual),
+			mapJoin(diff(expected, actual), func(line diffLine) string {
+				if line.deleted == "" { // TODO: remove
+					return line.selector
+				}
+
+				if strings.ContainsRune(line.deleted, '\n') || strings.ContainsRune(line.added, '\n') {
+					return strings.Join([]string{
+						termenv.String(expectedName).Faint().String() + line.selector + " != " + termenv.String(actualName).Faint().String() + line.selector + ":",
+						termenv.String(line.deleted).Foreground(termenv.ANSIBrightRed).String(),
+						termenv.String(line.added).Foreground(termenv.ANSIBrightGreen).String(),
+					}, "\n")
+				}
+
+				return strings.Join([]string{
+					termenv.String(expectedName).Faint().String() + line.selector + " != " + termenv.String(actualName).Faint().String() + line.selector + ":",
+					"\t" + termenv.String(line.deleted).Foreground(termenv.ANSIBrightRed).String() + " != " + termenv.String(line.added).Foreground(termenv.ANSIBrightGreen).String(),
+				}, "\n")
+			}, "\n"),
 		},
 	}, func(v labeledContent) string {
 		return v.label +
