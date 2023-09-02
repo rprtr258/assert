@@ -380,10 +380,10 @@ func TestArgNames(t *testing.T) {
 	a.Equal(t, want, got)
 }
 
-// func TestArgNamesBadFilename(t *testing.T) {
-// 	_, ok := argNames("BAD FILENAME", 666)
-// 	a.False(t, ok)
-// }
+func TestArgNamesBadFilename(t *testing.T) {
+	_, ok := argNames("BAD FILENAME", 0, "", "")
+	a.False(t, ok)
+}
 
 // // TestArgWidth verifies that argWidth() returns the correct number of printable
 // // characters in a string.
