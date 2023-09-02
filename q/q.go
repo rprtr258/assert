@@ -149,7 +149,7 @@ func exprToString(arg ast.Expr) string {
 
 	// CallExpr will be multi-line and indented with tabs. replace tabs with
 	// spaces so we can better control formatting during output().
-	return strings.ReplaceAll(b.String(), "\t", "    ")
+	return b.String()
 }
 
 // isQCall returns true if the given function call expression is Q() or q.Q().

@@ -370,7 +370,7 @@ func TestArgNames(t *testing.T) {
 		`123`,
 		`"hello world"`,
 		`3.1415926`,
-		"func(n int) bool {\n    return n > 0\n}(1)",
+		"func(n int) bool {\n\treturn n > 0\n}(1)",
 		`[]int{1, 2, 3}`,
 		`[]byte("goodbye world")`,
 		`e[1:]`,
