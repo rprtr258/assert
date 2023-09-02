@@ -491,8 +491,99 @@ func NotEqual[T any](t *testing.T, expected, actual T) {
 }
 
 func Zero[T any](t *testing.T, actual T) {
+	t.Helper()
+
 	var zero T
-	Equal(t, zero, actual)
+	if reflect.DeepEqual(zero, actual) {
+		return
+	}
+
+	argNames := q.Q("assert", "Zero")
+	expectedName := "Zero"
+	actualName := or(argNames[1], "Actual")
+
+	t.Error("\n" + mapJoin([]labeledContent{
+		{
+			termenv.String("Stacktrace").Faint().String(),
+			mapJoin(CallerInfo(), func(v caller) string {
+				j := strings.LastIndexByte(v.funcName, '/')
+				shortFuncName := v.funcName[j+1:]
+				return termenv.String(v.file).Foreground(termenv.ANSIBrightWhite).String() +
+					":" +
+					termenv.String(strconv.Itoa(v.line)).Foreground(termenv.ANSIGreen).String() +
+					"\t" +
+					termenv.String(shortFuncName).Foreground(termenv.ANSIBlue).String()
+
+			}, "\n"),
+		},
+		{
+			termenv.String("Not equal").Foreground(termenv.ANSIBrightRed).String(),
+			mapJoin(diff(zero, actual), func(line diffLine) string {
+				/*
+					Bit complaining on go language: brackets on struct literal are
+					required here because compiler authors can't fix parser
+					and not interpret '{' as "if block" and that won't be fixed.
+					See https://github.com/golang/go/issues/9181
+				*/
+				if line.expected == (reflect.Value{}) { // TODO: remove
+					return line.selector
+				}
+
+				shorten := func(name, s string) string {
+					// TODO: do string width if this code is kept
+					short := strings.NewReplacer(
+						"{\n    ", "{",
+						",\n    ", ", ",
+						",\n", "",
+					).Replace(s)
+					if len(name)+len(s) < 100 {
+						return short
+					}
+
+					return s
+				}
+
+				expectedStr := shorten(expectedName, pp.Sprint(line.expected.Interface()))
+				actualStr := shorten(actualName, pp.Sprint(line.actual.Interface()))
+
+				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
+					comment := ""
+					if line.comment != "" {
+						comment = termenv.String(line.comment).String() + ":"
+					}
+
+					return strings.Join([]string{
+						comment,
+						termenv.String(expectedName+line.selector).Foreground(_colorExpected).String() + " = " + termenv.String(expectedStr).String(),
+						termenv.String(actualName+line.selector).Foreground(_colorActual).String() + " = " + termenv.String(actualStr).String(),
+					}, "\n")
+				}
+
+				comment := ""
+				if line.comment != "" {
+					comment = ", " + termenv.String(line.comment).String()
+				}
+
+				return strings.Join([]string{
+					fmt.Sprintf(
+						"%s != %s%s:",
+						termenv.String(expectedName+line.selector).Foreground(_colorExpected),
+						termenv.String(actualName+line.selector).Foreground(_colorActual),
+						comment,
+					),
+					fmt.Sprintf(
+						"\t%s != %s",
+						termenv.String(expectedStr).String(),
+						termenv.String(actualStr).String(),
+					),
+				}, "\n")
+			}, "\n\n"),
+		},
+	}, func(v labeledContent) string {
+		return v.label +
+			":\n    " +
+			strings.ReplaceAll(v.content, "\n", "\n    ")
+	}, "\n"))
 }
 
 // func NotZero[T any](t *testing.T, actual T) {
