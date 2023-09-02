@@ -232,20 +232,7 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 		lines := []diffLine{}
 		for i := 0; i < lenExpected; i++ {
 			lines = append(lines, diffImpl(
-				fmt.Sprintf(
-					"%s%s%s%s",
-					selectorPrefix,
-					termenv.
-						String("["),
-					// Faint(),
-					termenv.
-						String(strconv.Itoa(i)),
-					// Faint(),
-					// Foreground(termenv.ANSIBlue),
-					termenv.
-						String("]"),
-					// Faint(),
-				),
+				fmt.Sprintf("%s[%d]", selectorPrefix, i),
 				expected.Index(i),
 				actual.Index(i),
 			)...)
@@ -266,38 +253,19 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 		lines := []diffLine{}
 		for i := 0; i < lenExpected; i++ {
 			lines = append(lines, diffImpl(
-				fmt.Sprintf(
-					"%s%s%s%s",
-					selectorPrefix,
-					termenv.
-						String("[").
-						Faint(),
-					termenv.
-						String(strconv.Itoa(i)).
-						Faint(),
-					// Foreground(termenv.ANSIBlue),
-					termenv.
-						String("]").
-						Faint(),
-				),
+				fmt.Sprintf("%s[%d]", selectorPrefix, i),
 				expected.Index(i),
 				actual.Index(i),
 			)...)
 		}
 		return lines
 	case reflect.Struct:
+		typ := expected.Type()
 		lines := []diffLine{}
-		fields := expected.Type().NumField()
+		fields := typ.NumField()
 		for i := 0; i < fields; i++ {
 			lines = append(lines, diffImpl(
-				fmt.Sprintf(
-					"%s.%s",
-					selectorPrefix,
-					termenv.
-						String(expected.Type().Field(i).Name),
-					// Faint(),
-					// Foreground(termenv.ANSIBlue),
-				),
+				fmt.Sprintf("%s.%s", selectorPrefix, typ.Field(i).Name),
 				expected.Field(i),
 				actual.Field(i),
 			)...)
@@ -335,7 +303,7 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 		// common keys
 		for k := range commonKeys {
 			lines = append(lines, diffImpl(
-				fmt.Sprintf("%s[%v]", selectorPrefix, pp.Sprint(k)),
+				fmt.Sprintf("%s[%v]", selectorPrefix, k),
 				expected.MapIndex(reflect.ValueOf(k)),
 				actual.MapIndex(reflect.ValueOf(k)),
 			)...)
@@ -343,7 +311,7 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 		// expected keys not in actual
 		for k := range expectedOnlyKeys {
 			lines = append(lines, diffLine{
-				selector: fmt.Sprintf("%s[%v]", selectorPrefix, pp.Sprint(k)),
+				selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
 				expected: expected.MapIndex(reflect.ValueOf(k)),
 				actual:   reflect.Value{},
 			})
@@ -351,7 +319,7 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 		// not expected keys present in actual
 		for k := range actualOnlyKeys {
 			lines = append(lines, diffLine{
-				selector: fmt.Sprintf("%s[%v]", selectorPrefix, pp.Sprint(k)),
+				selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
 				expected: expected.MapIndex(reflect.ValueOf(k)),
 				actual:   actual.MapIndex(reflect.ValueOf(k)),
 			})
@@ -375,8 +343,6 @@ func Equal[T any](t testing.TB, expected, actual T) {
 		return
 	}
 
-	// colorExpected := termenv.RGBColor("#00d5ff")
-	// colorActual := termenv.RGBColor("#fff500")
 	colorExpected := termenv.RGBColor("#96f759")
 	colorActual := termenv.RGBColor("#ff4053")
 
