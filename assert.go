@@ -24,14 +24,15 @@ import (
 // It is a Test (say) if there is a character after Test that is not a lower-case letter.
 // We don't want TesticularCancer.
 func isTest(name, prefix string) bool {
-	if !strings.HasPrefix(name, prefix) {
+	switch {
+	case !strings.HasPrefix(name, prefix):
 		return false
-	}
-	if len(name) == len(prefix) { // "Test" is ok
+	case len(name) == len(prefix): // "Test" is ok
 		return true
+	default:
+		r, _ := utf8.DecodeRuneInString(name[len(prefix):])
+		return !unicode.IsLower(r)
 	}
-	r, _ := utf8.DecodeRuneInString(name[len(prefix):])
-	return !unicode.IsLower(r)
 }
 
 /* CallerInfo is necessary because the assert functions use the testing object
