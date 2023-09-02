@@ -40,8 +40,9 @@ internally, causing it to print the file:line of the assert method, rather than 
 the problem actually occurred in calling code.*/
 
 type caller struct {
-	file string
-	line int
+	file     string
+	line     int
+	funcName string
 }
 
 // CallerInfo returns an array of strings containing the file and line number
@@ -83,7 +84,7 @@ func CallerInfo() []caller {
 			dir := parts[len(parts)-2]
 			if dir != "assert" && dir != "mock" && dir != "require" || file == "mock_test.go" {
 				path, _ := filepath.Abs(file)
-				callers = append(callers, caller{path, line})
+				callers = append(callers, caller{path, line, name})
 			}
 		}
 
@@ -211,15 +212,19 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	callerInfo := CallerInfo()
 	stacktraceItems := make([]string, len(callerInfo))
 	for i, v := range callerInfo {
+		j := strings.LastIndexByte(v.funcName, '/')
+		shortFuncName := v.funcName[j+1:]
 		stacktraceItems[i] =
 			termenv.String(v.file).Foreground(termenv.ANSIBrightWhite).String() +
 				":" +
-				termenv.String(strconv.Itoa(v.line)).Foreground(termenv.ANSIBlue).String()
+				termenv.String(strconv.Itoa(v.line)).Foreground(termenv.ANSIGreen).String() +
+				"\t" +
+				termenv.String(shortFuncName).Foreground(termenv.ANSIBlue).String()
 
 	}
 
 	t.Error("\n" + labeledOutput([]labeledContent{
-		{termenv.String("Stacktrace").Faint().String(), strings.Join(stacktraceItems, "\n    ")},
+		{termenv.String("Stacktrace").Faint().String(), strings.Join(stacktraceItems, "\n")},
 		{termenv.String(expectedName).Faint().String(), pp.Sprint(expected)},
 		{termenv.String(actualName).Faint().String(), pp.Sprint(actual)},
 		{termenv.String("Not equal").Faint().String(), diff(expected, actual)},
