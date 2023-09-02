@@ -17,6 +17,11 @@ import (
 	"github.com/rprtr258/assert/q"
 )
 
+var (
+	_colorExpected = termenv.RGBColor("#96f759")
+	_colorActual   = termenv.RGBColor("#ff4053")
+)
+
 func mapJoin[T any](slice []T, toString func(T) string, sep string) string {
 	parts := make([]string, len(slice))
 	for i, v := range slice {
@@ -326,11 +331,12 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 		return lines
 	}
 
+	// TODO: remove and return "" when other types are supported
 	panic(fmt.Sprintf("unsupported kind: %s", expected.Kind().String()))
 }
 
 // diff returns a diff of both values as long as both are of the same type and
-// are a struct, map, slice, array or string. Otherwise it returns an empty string.
+// are a struct, map, slice, array or string. Otherwise it panics.
 func diff[T any](expected, actual T) []diffLine {
 	return diffImpl("", reflect.ValueOf(expected), reflect.ValueOf(actual))
 }
@@ -341,9 +347,6 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	if reflect.DeepEqual(expected, actual) {
 		return
 	}
-
-	colorExpected := termenv.RGBColor("#96f759")
-	colorActual := termenv.RGBColor("#ff4053")
 
 	argNames := q.Q("assert", "Equal")
 	expectedName := or(argNames[1], "Expected")
@@ -401,8 +404,8 @@ func Equal[T any](t testing.TB, expected, actual T) {
 
 					return strings.Join([]string{
 						comment,
-						termenv.String(expectedName+line.selector).Foreground(colorExpected).String() + " = " + termenv.String(expectedStr).String(),
-						termenv.String(actualName+line.selector).Foreground(colorActual).String() + " = " + termenv.String(actualStr).String(),
+						termenv.String(expectedName+line.selector).Foreground(_colorExpected).String() + " = " + termenv.String(expectedStr).String(),
+						termenv.String(actualName+line.selector).Foreground(_colorActual).String() + " = " + termenv.String(actualStr).String(),
 					}, "\n")
 				}
 
@@ -414,8 +417,8 @@ func Equal[T any](t testing.TB, expected, actual T) {
 				return strings.Join([]string{
 					fmt.Sprintf(
 						"%s != %s%s:",
-						termenv.String(expectedName+line.selector).Foreground(colorExpected),
-						termenv.String(actualName+line.selector).Foreground(colorActual),
+						termenv.String(expectedName+line.selector).Foreground(_colorExpected),
+						termenv.String(actualName+line.selector).Foreground(_colorActual),
 						comment,
 					),
 					fmt.Sprintf(
@@ -444,18 +447,48 @@ func Equal[T any](t testing.TB, expected, actual T) {
 // 		"actual  : %q%q", q.Q(expected), q.Q(actual), diff), append([]any{format}, args...))
 // }
 
-// func NotEqual[T any](t *testing.T, expected, actual T) {
-// 	t.Helper()
+func NotEqual[T any](t *testing.T, expected, actual T) {
+	t.Helper()
 
-// 	if !a.ObjectsAreEqual(expected, actual) {
-// 		return
-// 	}
+	if !reflect.DeepEqual(expected, actual) {
+		return
+	}
 
-// 	diff := diff(expected, actual)
-// 	Fail(t, fmt.Sprintf("Equal: \n"+
-// 		"expected: %s\n"+
-// 		"actual  : %s%s", q.Q(expected), q.Q(actual), diff))
-// }
+	argNames := q.Q("assert", "NotEqual")
+	expectedName := or(argNames[1], "Expected")
+	actualName := or(argNames[2], "Actual")
+
+	t.Error("\n" + mapJoin([]labeledContent{
+		{
+			termenv.String("Stacktrace").Faint().String(),
+			mapJoin(CallerInfo(), func(v caller) string {
+				j := strings.LastIndexByte(v.funcName, '/')
+				shortFuncName := v.funcName[j+1:]
+				return termenv.String(v.file).Foreground(termenv.ANSIBrightWhite).String() +
+					":" +
+					termenv.String(strconv.Itoa(v.line)).Foreground(termenv.ANSIGreen).String() +
+					"\t" +
+					termenv.String(shortFuncName).Foreground(termenv.ANSIBlue).String()
+
+			}, "\n"),
+		},
+		{
+			termenv.String("Equal").Foreground(termenv.ANSIBrightRed).String(),
+			strings.Join([]string{
+				fmt.Sprintf(
+					"%s and %s are equal, asserted not to, value is:",
+					termenv.String(expectedName).Foreground(_colorExpected),
+					termenv.String(actualName).Foreground(_colorActual),
+				),
+				"\t" + strings.ReplaceAll(pp.Sprint(expected), "\n", "\n\t"),
+			}, "\n"),
+		},
+	}, func(v labeledContent) string {
+		return v.label +
+			":\n    " +
+			strings.ReplaceAll(v.content, "\n", "\n    ")
+	}, "\n"))
+}
 
 func Zero[T any](t *testing.T, actual T) {
 	var zero T
