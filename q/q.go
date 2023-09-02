@@ -118,7 +118,7 @@ func argNames(filename string, line int, pkgName, funcName string) ([]string, bo
 	return names, true
 }
 
-// Q >> runtime.Caller
+// assert.* -> Q >> runtime.Caller
 const CallDepth = 2
 
 func Q(pkgName, funcName string) []string {
