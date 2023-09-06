@@ -11,15 +11,15 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/muesli/termenv"
+	col "github.com/rprtr258/col"
 
 	"github.com/rprtr258/assert/pp"
 	"github.com/rprtr258/assert/q"
 )
 
 var (
-	_colorExpected = termenv.RGBColor("#96f759")
-	_colorActual   = termenv.RGBColor("#ff4053")
+	_fgExpected = col.RGBColor("#96f759").Fg
+	_fgActual   = col.RGBColor("#ff4053").Fg
 )
 
 func mapJoin[T any](slice []T, toString func(T) string, sep string) string {
@@ -67,10 +67,10 @@ type caller struct {
 	funcName string
 }
 
-// CallerInfo returns an array of strings containing the file and line number
+// callerInfo returns an array of strings containing the file and line number
 // of each stack frame leading from the current test to the assert call that
 // failed.
-func CallerInfo() []caller {
+func callerInfo() []caller {
 	callers := []caller{}
 	for i := 0; ; i++ {
 		pc, file, line, ok := runtime.Caller(i)
@@ -136,6 +136,8 @@ type diffLine struct {
 // TODO: change to iterators
 func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine {
 	switch expected.Kind() {
+	case reflect.Invalid:
+		return nil
 	case reflect.Bool:
 		if expected.Bool() != actual.Bool() {
 			return []diffLine{{
@@ -332,13 +334,26 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) []diffLine 
 	}
 
 	// TODO: remove and return "" when other types are supported
-	panic(fmt.Sprintf("unsupported kind: %s", expected.Kind().String()))
+	panic(fmt.Sprintf("unsupported kind: %s, %#v", expected.Kind().String(), expected.Interface()))
 }
 
 // diff returns a diff of both values as long as both are of the same type and
 // are a struct, map, slice, array or string. Otherwise it panics.
 func diff[T any](expected, actual T) []diffLine {
 	return diffImpl("", reflect.ValueOf(expected), reflect.ValueOf(actual))
+}
+
+func formatLabeledContent(v labeledContent) string {
+	return v.label +
+		":\n    " +
+		strings.ReplaceAll(v.content, "\n", "\n    ")
+}
+
+func messageLabeledContent(format string, arg ...any) labeledContent {
+	return labeledContent{
+		label:   "Message",
+		content: fmt.Sprintf(format, arg...),
+	}
 }
 
 func Equal[T any](t testing.TB, expected, actual T) {
@@ -352,22 +367,10 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	expectedName := or(argNames[1], "Expected")
 	actualName := or(argNames[2], "Actual")
 
-	t.Error("\n" + mapJoin([]labeledContent{
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
 		{
-			termenv.String("Stacktrace").Faint().String(),
-			mapJoin(CallerInfo(), func(v caller) string {
-				j := strings.LastIndexByte(v.funcName, '/')
-				shortFuncName := v.funcName[j+1:]
-				return termenv.String(v.file).Foreground(termenv.ANSIBrightWhite).String() +
-					":" +
-					termenv.String(strconv.Itoa(v.line)).Foreground(termenv.ANSIGreen).String() +
-					"\t" +
-					termenv.String(shortFuncName).Foreground(termenv.ANSIBlue).String()
-
-			}, "\n"),
-		},
-		{
-			termenv.String("Not equal").Foreground(termenv.ANSIBrightRed).String(),
+			col.R("Not equal", col.ANSIBrightRed.Fg),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
 				/*
 					Bit complaining on go language: brackets on struct literal are
@@ -399,41 +402,117 @@ func Equal[T any](t testing.TB, expected, actual T) {
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
 					comment := ""
 					if line.comment != "" {
-						comment = termenv.String(line.comment).String() + ":"
+						comment = line.comment + ":"
 					}
 
 					return strings.Join([]string{
 						comment,
-						termenv.String(expectedName+line.selector).Foreground(_colorExpected).String() + " = " + termenv.String(expectedStr).String(),
-						termenv.String(actualName+line.selector).Foreground(_colorActual).String() + " = " + termenv.String(actualStr).String(),
+						col.R(expectedName+line.selector, _fgExpected) + " = " + expectedStr,
+						col.R(actualName+line.selector, _fgActual) + " = " + actualStr,
 					}, "\n")
 				}
 
 				comment := ""
 				if line.comment != "" {
-					comment = ", " + termenv.String(line.comment).String()
+					comment = ", " + line.comment
 				}
 
 				return strings.Join([]string{
 					fmt.Sprintf(
 						"%s != %s%s:",
-						termenv.String(expectedName+line.selector).Foreground(_colorExpected),
-						termenv.String(actualName+line.selector).Foreground(_colorActual),
+						col.R(expectedName+line.selector, _fgExpected),
+						col.R(actualName+line.selector, _fgActual),
 						comment,
 					),
 					fmt.Sprintf(
-						"\t%s != %s",
-						termenv.String(expectedStr).String(),
-						termenv.String(actualStr).String(),
+						"\t%s !=\n\t%s",
+						expectedStr,
+						actualStr,
 					),
 				}, "\n")
 			}, "\n\n"),
 		},
-	}, func(v labeledContent) string {
-		return v.label +
-			":\n    " +
-			strings.ReplaceAll(v.content, "\n", "\n    ")
-	}, "\n"))
+	})
+}
+
+func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any) {
+	t.Helper()
+
+	if reflect.DeepEqual(expected, actual) {
+		return
+	}
+
+	argNames := q.Q("assert", "Equal")
+	expectedName := or(argNames[1], "Expected")
+	actualName := or(argNames[2], "Actual")
+
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		messageLabeledContent(format, args...),
+		{
+			col.R("Not equal", col.ANSIBrightRed.Fg),
+			mapJoin(diff(expected, actual), func(line diffLine) string {
+				/*
+					Bit complaining on go language: brackets on struct literal are
+					required here because compiler authors can't fix parser
+					and not interpret '{' as "if block" and that won't be fixed.
+					See https://github.com/golang/go/issues/9181
+				*/
+				if line.expected == (reflect.Value{}) { // TODO: remove
+					return line.selector
+				}
+
+				shorten := func(name, s string) string {
+					// TODO: do string width if this code is kept
+					short := strings.NewReplacer(
+						"{\n    ", "{",
+						",\n    ", ", ",
+						",\n", "",
+					).Replace(s)
+					if len(name)+len(s) < 100 {
+						return short
+					}
+
+					return s
+				}
+
+				expectedStr := shorten(expectedName, pp.Sprint(line.expected.Interface()))
+				actualStr := shorten(actualName, pp.Sprint(line.actual.Interface()))
+
+				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
+					comment := ""
+					if line.comment != "" {
+						comment = line.comment + ":"
+					}
+
+					return strings.Join([]string{
+						comment,
+						col.R(expectedName+line.selector, _fgExpected) + " = " + expectedStr,
+						col.R(actualName+line.selector, _fgActual) + " = " + actualStr,
+					}, "\n")
+				}
+
+				comment := ""
+				if line.comment != "" {
+					comment = ", " + line.comment
+				}
+
+				return strings.Join([]string{
+					fmt.Sprintf(
+						"%s != %s%s:",
+						col.R(expectedName+line.selector, _fgExpected),
+						col.R(actualName+line.selector, _fgActual),
+						comment,
+					),
+					fmt.Sprintf(
+						"\t%s !=\n\t%s",
+						expectedStr,
+						actualStr,
+					),
+				}, "\n")
+			}, "\n\n"),
+		},
+	})
 }
 
 // func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any) {
@@ -447,6 +526,26 @@ func Equal[T any](t testing.TB, expected, actual T) {
 // 		"actual  : %q%q", q.Q(expected), q.Q(actual), diff), append([]any{format}, args...))
 // }
 
+func fail(t testing.TB, lines []labeledContent) {
+	t.Error("\n" + mapJoin(lines, formatLabeledContent, "\n"))
+}
+
+func stacktraceLabeledContent() labeledContent {
+	return labeledContent{
+		col.R("Stacktrace", col.Faint),
+		mapJoin(callerInfo(), func(v caller) string {
+			j := strings.LastIndexByte(v.funcName, '/')
+			shortFuncName := v.funcName[j+1:]
+			return col.R(v.file, col.ANSIBrightWhite.Fg) +
+				":" +
+				col.R(strconv.Itoa(v.line), col.ANSIGreen.Fg) +
+				"\t" +
+				col.R(shortFuncName, col.ANSIBlue.Fg)
+
+		}, "\n"),
+	}
+}
+
 func NotEqual[T any](t *testing.T, expected, actual T) {
 	t.Helper()
 
@@ -458,36 +557,20 @@ func NotEqual[T any](t *testing.T, expected, actual T) {
 	expectedName := or(argNames[1], "Expected")
 	actualName := or(argNames[2], "Actual")
 
-	t.Error("\n" + mapJoin([]labeledContent{
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
 		{
-			termenv.String("Stacktrace").Faint().String(),
-			mapJoin(CallerInfo(), func(v caller) string {
-				j := strings.LastIndexByte(v.funcName, '/')
-				shortFuncName := v.funcName[j+1:]
-				return termenv.String(v.file).Foreground(termenv.ANSIBrightWhite).String() +
-					":" +
-					termenv.String(strconv.Itoa(v.line)).Foreground(termenv.ANSIGreen).String() +
-					"\t" +
-					termenv.String(shortFuncName).Foreground(termenv.ANSIBlue).String()
-
-			}, "\n"),
-		},
-		{
-			termenv.String("Equal").Foreground(termenv.ANSIBrightRed).String(),
+			col.R("Equal", col.ANSIBrightRed.Fg),
 			strings.Join([]string{
 				fmt.Sprintf(
 					"%s and %s are equal, asserted not to, value is:",
-					termenv.String(expectedName).Foreground(_colorExpected),
-					termenv.String(actualName).Foreground(_colorActual),
+					col.R(expectedName, _fgExpected),
+					col.R(actualName, _fgActual),
 				),
 				"\t" + strings.ReplaceAll(pp.Sprint(expected), "\n", "\n\t"),
 			}, "\n"),
 		},
-	}, func(v labeledContent) string {
-		return v.label +
-			":\n    " +
-			strings.ReplaceAll(v.content, "\n", "\n    ")
-	}, "\n"))
+	})
 }
 
 func Zero[T any](t *testing.T, actual T) {
@@ -502,22 +585,10 @@ func Zero[T any](t *testing.T, actual T) {
 	expectedName := "Zero"
 	actualName := or(argNames[1], "Actual")
 
-	t.Error("\n" + mapJoin([]labeledContent{
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
 		{
-			termenv.String("Stacktrace").Faint().String(),
-			mapJoin(CallerInfo(), func(v caller) string {
-				j := strings.LastIndexByte(v.funcName, '/')
-				shortFuncName := v.funcName[j+1:]
-				return termenv.String(v.file).Foreground(termenv.ANSIBrightWhite).String() +
-					":" +
-					termenv.String(strconv.Itoa(v.line)).Foreground(termenv.ANSIGreen).String() +
-					"\t" +
-					termenv.String(shortFuncName).Foreground(termenv.ANSIBlue).String()
-
-			}, "\n"),
-		},
-		{
-			termenv.String("Not equal").Foreground(termenv.ANSIBrightRed).String(),
+			col.R("Not equal", col.ANSIBrightRed.Fg),
 			mapJoin(diff(zero, actual), func(line diffLine) string {
 				/*
 					Bit complaining on go language: brackets on struct literal are
@@ -549,90 +620,234 @@ func Zero[T any](t *testing.T, actual T) {
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
 					comment := ""
 					if line.comment != "" {
-						comment = termenv.String(line.comment).String() + ":"
+						comment = line.comment + ":"
 					}
 
 					return strings.Join([]string{
 						comment,
-						termenv.String(expectedName+line.selector).Foreground(_colorExpected).String() + " = " + termenv.String(expectedStr).String(),
-						termenv.String(actualName+line.selector).Foreground(_colorActual).String() + " = " + termenv.String(actualStr).String(),
+						col.R(expectedName+line.selector, _fgExpected) + " = " + expectedStr,
+						col.R(actualName+line.selector, _fgActual) + " = " + actualStr,
 					}, "\n")
 				}
 
 				comment := ""
 				if line.comment != "" {
-					comment = ", " + termenv.String(line.comment).String()
+					comment = ", " + line.comment
 				}
 
 				return strings.Join([]string{
 					fmt.Sprintf(
 						"%s != %s%s:",
-						termenv.String(expectedName+line.selector).Foreground(_colorExpected),
-						termenv.String(actualName+line.selector).Foreground(_colorActual),
+						col.R(expectedName+line.selector, _fgExpected),
+						col.R(actualName+line.selector, _fgActual),
 						comment,
 					),
-					fmt.Sprintf(
-						"\t%s != %s",
-						termenv.String(expectedStr).String(),
-						termenv.String(actualStr).String(),
-					),
+					fmt.Sprintf("\t%s != %s", expectedStr, actualStr),
 				}, "\n")
 			}, "\n\n"),
 		},
-	}, func(v labeledContent) string {
-		return v.label +
-			":\n    " +
-			strings.ReplaceAll(v.content, "\n", "\n    ")
-	}, "\n"))
+	})
 }
 
-// func NotZero[T any](t *testing.T, actual T) {
-// 	var zero T
-// 	NotEqual(t, zero, actual)
-// }
+func NotZero[T any](t *testing.T, actual T) {
+	t.Helper()
 
-// func False(t *testing.T, actual bool) {
-// 	Equal(t, false, actual)
-// }
+	var zero T
+	if !reflect.DeepEqual(zero, actual) {
+		return
+	}
 
-// func Falsef(t *testing.T, actual bool, format string, args ...any) {
-// 	Equalf(t, false, actual, format, args...)
-// }
+	argNames := q.Q("assert", "NotZero")
+	actualName := or(argNames[1], "Actual")
 
-func True(t *testing.T, actual bool) {
-	Equal(t, true, actual)
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		{
+			col.R("Value is zero", col.ANSIBrightRed.Fg),
+			fmt.Sprintf("%s is zero, asserted not to", col.R(actualName, _fgActual)),
+		},
+	})
 }
 
-// func Truef(t *testing.T, actual bool, format string, args ...any) {
-// 	Equalf(t, true, actual, format, args...)
-// }
+func True(t *testing.T, condition bool) {
+	t.Helper()
 
-// func NoError(t testing.TB, err error) {
-// 	Equal(t, nil, err)
-// }
+	if condition {
+		return
+	}
 
-// func Contains[T comparable](t *testing.T, slice []T, item T) {
-// 	for _, v := range slice {
-// 		if v == item {
-// 			return
-// 		}
-// 	}
+	argNames := q.Q("assert", "True")
+	conditionName := or(argNames[1], "Condition")
 
-// 	Fail(t, fmt.Sprintf("Slice does not contain %s", spew.Sdump(item)))
-// }
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		{
+			"Condition is false",
+			conditionName + col.R(" is false", col.ANSIBrightRed.Fg),
+		},
+	})
+}
 
-// func Substring(t *testing.T, text, needle string) {
-// 	if strings.Contains(text, needle) {
-// 		return
-// 	}
+func Truef(t *testing.T, condition bool, format string, args ...any) {
+	t.Helper()
 
-// 	Fail(t, fmt.Sprintf("%s does not contain %s", spew.Sdump(text), spew.Sdump(needle)))
-// }
+	if condition {
+		return
+	}
 
-// func Substringf(t *testing.T, text, needle string, format string, args ...any) {
-// 	if strings.Contains(text, needle) {
-// 		return
-// 	}
+	argNames := q.Q("assert", "Truef")
+	conditionName := or(argNames[1], "Condition")
 
-// 	Fail(t, fmt.Sprintf("%s does not contain %s", spew.Sdump(text), spew.Sdump(needle)), append([]any{format}, args...))
-// }
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		messageLabeledContent(format, args...),
+		{
+			"Condition is false",
+			conditionName + col.R(" is false", col.ANSIBrightRed.Fg),
+		},
+	})
+}
+
+func False(t *testing.T, condition bool) {
+	t.Helper()
+
+	if !condition {
+		return
+	}
+
+	argNames := q.Q("assert", "False")
+	conditionName := or(argNames[1], "Condition")
+
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		{
+			"Condition is true",
+			conditionName + col.R(" is true", col.ANSIBrightRed.Fg),
+		},
+	})
+}
+
+func Falsef(t *testing.T, condition bool, format string, args ...any) {
+	t.Helper()
+
+	if condition {
+		return
+	}
+
+	argNames := q.Q("assert", "Falsef")
+	conditionName := or(argNames[1], "Condition")
+
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		messageLabeledContent(format, args...),
+		{
+			"Condition is true",
+			conditionName + col.R(" is true", col.ANSIBrightRed.Fg),
+		},
+	})
+}
+
+func NoError(t testing.TB, err error) {
+	t.Helper()
+
+	if err == nil {
+		return
+	}
+
+	argNames := q.Q("assert", "NoError")
+	errorName := or(argNames[1], "Error")
+
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		{
+			"Unexpected error",
+			errorName + " is " + pp.Sprint(err.Error()),
+		},
+	})
+}
+
+func NoErrorf(t testing.TB, err error, format string, args ...any) {
+	t.Helper()
+
+	if err == nil {
+		return
+	}
+
+	argNames := q.Q("assert", "NoErrorf")
+	errorName := or(argNames[1], "Error")
+
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		messageLabeledContent(format, args...),
+		{
+			"Unexpected error",
+			errorName + " is " + pp.Sprint(err.Error()),
+		},
+	})
+}
+
+func Contains[T comparable](t *testing.T, slice []T, item T) {
+	for _, v := range slice {
+		if v == item {
+			return
+		}
+	}
+
+	argNames := q.Q("assert", "Contains")
+	sliceName := or(argNames[1], "Slice")
+	itemName := or(argNames[2], "Item")
+
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		{
+			label: "Slice does not contain item",
+			content: strings.Join([]string{
+				sliceName + ": " + pp.Sprint(slice),
+				itemName + ": " + pp.Sprint(item),
+			}, "\n"),
+		},
+	})
+}
+
+func Substring(t *testing.T, text, needle string) {
+	if strings.Contains(text, needle) {
+		return
+	}
+
+	argNames := q.Q("assert", "Substring")
+	textName := or(argNames[1], "Text")
+	needleName := or(argNames[2], "Needle")
+
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		{
+			label: "String does not contain substring",
+			content: strings.Join([]string{
+				textName + ": " + pp.Sprint(text),
+				needleName + ": " + pp.Sprint(needle),
+			}, "\n"),
+		},
+	})
+}
+
+func Substringf(t *testing.T, text, needle string, format string, args ...any) {
+	if strings.Contains(text, needle) {
+		return
+	}
+
+	argNames := q.Q("assert", "Substringf")
+	textName := or(argNames[1], "Text")
+	needleName := or(argNames[2], "Needle")
+
+	fail(t, []labeledContent{
+		stacktraceLabeledContent(),
+		messageLabeledContent(format, args...),
+		{
+			label: "String does not contain substring",
+			content: strings.Join([]string{
+				textName + ": " + pp.Sprint(text),
+				needleName + ": " + pp.Sprint(needle),
+			}, "\n"),
+		},
+	})
+}
