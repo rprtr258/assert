@@ -121,6 +121,7 @@ func argNames(filename string, line int, pkgName, funcName string) ([]string, bo
 // assert.* -> Q >> runtime.Caller
 const CallDepth = 2
 
+// TODO: check not pkgName, but full package name, as it might be aliased
 func Q(pkgName, funcName string) []string {
 	_, file, line, ok := runtime.Caller(CallDepth)
 	if !ok {

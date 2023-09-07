@@ -7,6 +7,7 @@ replace github.com/rprtr258/col => ../col
 require (
 	github.com/mattn/go-colorable v0.1.13
 	github.com/rprtr258/col v0.0.0-00010101000000-000000000000
+	github.com/rprtr258/fun v0.0.6
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/text v0.12.0
 )
