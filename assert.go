@@ -10,6 +10,7 @@ import (
 	"testing"
 	"unicode"
 	"unicode/utf8"
+	"unsafe"
 
 	col "github.com/rprtr258/col"
 	"github.com/rprtr258/fun/iter"
@@ -139,84 +140,96 @@ type labeledContent struct {
 type diffLine struct {
 	selector         string
 	comment          string
-	expected, actual reflect.Value
+	expected, actual any
 }
 
-func diffImpl(selectorPrefix string, expected, actual reflect.Value) iter.Seq[diffLine] {
-	if expected.Type() != actual.Type() {
+func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
+	etype, atype := reflect.TypeOf(expected), reflect.TypeOf(actual)
+	if etype != atype {
+		if etype == nil || atype == nil {
+			return iter.FromMany(diffLine{
+				selector: selectorPrefix,
+				comment:  "different types SHIT POOP SHIT POOP SHIT FUCK SHIT",
+				expected: etype,
+				actual:   atype,
+			})
+		}
+
 		return iter.FromMany(diffLine{
 			selector: selectorPrefix,
 			comment:  "different types",
-			expected: reflect.ValueOf(expected.Type().String()),
-			actual:   reflect.ValueOf(actual.Type().String()),
+			expected: etype.String(),
+			actual:   atype.String(),
 		})
 	}
 
-	switch expected.Kind() {
+	eval, aval := reflect.ValueOf(expected), reflect.ValueOf(actual)
+
+	switch etype.Kind() {
 	case reflect.Invalid:
 		return iter.FromNothing[diffLine]()
 	case reflect.Bool:
-		if expected.Bool() != actual.Bool() {
+		if e, a := expected.(bool), actual.(bool); e != a {
 			return iter.FromMany(diffLine{
 				selector: selectorPrefix,
 				comment:  "",
-				expected: expected,
-				actual:   actual,
+				expected: e,
+				actual:   a,
 			})
 		}
 
 		return iter.FromNothing[diffLine]()
 	case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
-		if expected.Int() != actual.Int() {
+		if e, a := eval.Int(), aval.Int(); e != a {
 			return iter.FromMany(diffLine{
 				selector: selectorPrefix,
 				comment:  "",
-				expected: expected,
-				actual:   actual,
+				expected: e,
+				actual:   a,
 			})
 		}
 
 		return iter.FromNothing[diffLine]()
 	case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
-		if expected.Uint() != actual.Uint() {
+		if e, a := eval.Uint(), aval.Uint(); e != a {
 			return iter.FromMany(diffLine{
 				selector: selectorPrefix,
 				comment:  "",
-				expected: expected,
-				actual:   actual,
+				expected: e,
+				actual:   a,
 			})
 		}
 
 		return iter.FromNothing[diffLine]()
 	case reflect.Float32, reflect.Float64:
-		if expected.Float() != actual.Float() {
+		if e, a := eval.Float(), aval.Float(); e != a {
 			return iter.FromMany(diffLine{
 				selector: selectorPrefix,
 				comment:  "",
-				expected: expected,
-				actual:   actual,
+				expected: e,
+				actual:   a,
 			})
 		}
 
 		return iter.FromNothing[diffLine]()
 	case reflect.Complex64, reflect.Complex128:
-		if expected.Complex() != actual.Complex() {
+		if e, a := eval.Complex(), aval.Complex(); e != a {
 			return iter.FromMany(diffLine{
 				selector: selectorPrefix,
 				comment:  "",
-				expected: expected,
-				actual:   actual,
+				expected: e,
+				actual:   a,
 			})
 		}
 
 		return iter.FromNothing[diffLine]()
 	case reflect.String:
-		if expected.String() != actual.String() {
+		if e, a := eval.String(), aval.String(); e != a {
 			return iter.FromMany(diffLine{
 				selector: selectorPrefix,
 				comment:  "",
-				expected: expected,
-				actual:   actual,
+				expected: e,
+				actual:   a,
 			})
 		}
 
@@ -224,12 +237,12 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) iter.Seq[di
 	case reflect.Pointer:
 		return diffImpl(
 			"(*"+selectorPrefix+")",
-			reflect.ValueOf(expected).Elem(),
-			reflect.ValueOf(actual).Elem(),
+			eval.Elem().Interface(),
+			aval.Elem().Interface(),
 		)
 	case reflect.Slice:
-		lenExpected := expected.Len()
-		lenActual := actual.Len()
+		lenExpected := eval.Len()
+		lenActual := aval.Len()
 		if lenExpected != lenActual {
 			return iter.FromMany(diffLine{
 				selector: selectorPrefix,
@@ -241,10 +254,10 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) iter.Seq[di
 
 		// check if only one is nil
 		if lenExpected == 0 {
-			if expected.IsNil() != actual.IsNil() {
+			if (expected == nil) != (actual == nil) {
 				return iter.FromMany(diffLine{
 					selector: selectorPrefix,
-					comment:  "",
+					comment:  "one slice is nil, other is not",
 					expected: expected,
 					actual:   actual,
 				})
@@ -258,13 +271,13 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) iter.Seq[di
 			func(i int) iter.Seq[diffLine] {
 				return diffImpl(
 					fmt.Sprintf("%s[%d]", selectorPrefix, i),
-					expected.Index(i),
-					actual.Index(i),
+					eval.Index(i).Interface(),
+					aval.Index(i).Interface(),
 				)
 			})
 	case reflect.Array:
-		lenExpected := expected.Len()
-		lenActual := actual.Len()
+		lenExpected := etype.Len()
+		lenActual := atype.Len()
 		if lenExpected != lenActual {
 			return iter.FromMany(diffLine{
 				selector: selectorPrefix,
@@ -279,110 +292,158 @@ func diffImpl(selectorPrefix string, expected, actual reflect.Value) iter.Seq[di
 			func(i int) iter.Seq[diffLine] {
 				return diffImpl(
 					fmt.Sprintf("%s[%d]", selectorPrefix, i),
-					expected.Index(i),
-					actual.Index(i),
+					eval.Index(i).Interface(),
+					aval.Index(i).Interface(),
 				)
 			})
 	case reflect.Struct:
-		typ := expected.Type()
-		fields := typ.NumField()
+		fields := etype.NumField()
 		return iter.FlatMap(
-			iter.
-				FromRange(0, fields, 1).
-				Filter(func(i int) bool {
-					return typ.Field(i).IsExported() // private fields not shown then ??????????????????????????????????
-				}),
+			iter.FromRange(0, fields, 1),
+			// Filter(func(i int) bool {
+			// 	return typ.Field(i).IsExported() // private fields not shown then ??????????????????????????????????
+			// }),
 			func(i int) iter.Seq[diffLine] {
+				if !etype.Field(i).IsExported() { // SHIT POOP SHIT FUCK SHIT POOP FUCK SHIT POOP
+					ef, af := eval.Field(i), aval.Field(i)
+
+					switch ef.Kind() {
+					case reflect.String:
+						if e, a := ef.String(), af.String(); e != a {
+							return iter.FromMany(diffLine{
+								selector: fmt.Sprintf("%s.%s", selectorPrefix, etype.Field(i).Name),
+								comment:  "",
+								expected: e,
+								actual:   a,
+							})
+						} else {
+							return iter.FromNothing[diffLine]()
+						}
+					case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+						if e, a := ef.Int(), af.Int(); e != a {
+							return iter.FromMany(diffLine{
+								selector: fmt.Sprintf("%s.%s", selectorPrefix, etype.Field(i).Name),
+								comment:  "",
+								expected: e,
+								actual:   a,
+							})
+						} else {
+							return iter.FromNothing[diffLine]()
+						}
+					default:
+						if ee, aa := reflect.NewAt(
+							eval.Field(i).Type(),
+							unsafe.Pointer(eval.Field(i).UnsafePointer()),
+						).Elem().Interface(), reflect.NewAt(
+							aval.Field(i).Type(),
+							unsafe.Pointer(aval.Field(i).UnsafePointer()),
+						).Elem().Interface(); ee != aa {
+							return iter.FromMany(diffLine{
+								selector: fmt.Sprintf("%s.%s", selectorPrefix, etype.Field(i).Name),
+								comment:  fmt.Sprintf("field values are different, or not, i can't see and can't show them to you because reflect is crap and golang is crap and i cant access private field values even for reading but for primitives it is allowed but Interface method is disallowed: %s", etype.Field(i).Name),
+								expected: aa,
+								actual:   ee,
+							})
+						}
+
+						return iter.FromNothing[diffLine]()
+					}
+				}
+
+				if eval.Field(i).Comparable() && eval.Field(i).Interface() == aval.Field(i).Interface() {
+					return iter.FromNothing[diffLine]()
+				}
+
 				return diffImpl(
-					fmt.Sprintf("%s.%s", selectorPrefix, typ.Field(i).Name),
-					expected.Field(i),
-					actual.Field(i),
+					fmt.Sprintf("%s.%s", selectorPrefix, etype.Field(i).Name),
+					eval.Field(i).Interface(),
+					aval.Field(i).Interface(),
 				)
 			})
-	case reflect.Map:
-		expectedKeys := map[any]struct{}{}
-		for _, k := range expected.MapKeys() {
-			expectedKeys[k.Interface()] = struct{}{}
-		}
+		// case reflect.Map:
+		// 	expectedKeys := map[any]struct{}{}
+		// 	for _, k := range eval.MapKeys() {
+		// 		expectedKeys[k.Interface()] = struct{}{}
+		// 	}
 
-		actualKeys := map[any]struct{}{}
-		for _, k := range actual.MapKeys() {
-			actualKeys[k.Interface()] = struct{}{}
-		}
+		// 	actualKeys := map[any]struct{}{}
+		// 	for _, k := range aval.MapKeys() {
+		// 		actualKeys[k.Interface()] = struct{}{}
+		// 	}
 
-		commonKeys := map[any]struct{}{}
-		expectedOnlyKeys := map[any]struct{}{}
-		for k := range expectedKeys {
-			if _, ok := actualKeys[k]; ok {
-				commonKeys[k] = struct{}{}
-			} else {
-				expectedOnlyKeys[k] = struct{}{}
-			}
-		}
+		// 	commonKeys := map[any]struct{}{}
+		// 	expectedOnlyKeys := map[any]struct{}{}
+		// 	for k := range expectedKeys {
+		// 		if _, ok := actualKeys[k]; ok {
+		// 			commonKeys[k] = struct{}{}
+		// 		} else {
+		// 			expectedOnlyKeys[k] = struct{}{}
+		// 		}
+		// 	}
 
-		actualOnlyKeys := map[any]struct{}{}
-		for k := range actualKeys {
-			if _, ok := expectedKeys[k]; !ok {
-				actualOnlyKeys[k] = struct{}{}
-			}
-		}
+		// 	actualOnlyKeys := map[any]struct{}{}
+		// 	for k := range actualKeys {
+		// 		if _, ok := expectedKeys[k]; !ok {
+		// 			actualOnlyKeys[k] = struct{}{}
+		// 		}
+		// 	}
 
-		return iter.Flatten(iter.FromMany(
-			iter.FlatMap(
-				iter.Keys(iter.FromDict(commonKeys)),
-				func(k any) iter.Seq[diffLine] {
-					return diffImpl(
-						fmt.Sprintf("%s[%v]", selectorPrefix, k),
-						expected.MapIndex(reflect.ValueOf(k)),
-						actual.MapIndex(reflect.ValueOf(k)),
-					)
-				}),
-			iter.Map(
-				iter.Keys(iter.FromDict(expectedOnlyKeys)),
-				func(k any) diffLine {
-					return diffLine{
-						selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
-						comment:  "not found key in actual",
-						expected: expected.MapIndex(reflect.ValueOf(k)),
-						actual:   reflect.Value{},
-					}
-				}),
-			iter.Map(
-				iter.Keys(iter.FromDict(actualOnlyKeys)),
-				func(k any) diffLine {
-					return diffLine{
-						selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
-						comment:  "unexpected key in actual",
-						expected: reflect.Value{},
-						actual:   actual.MapIndex(reflect.ValueOf(k)),
-					}
-				}),
-		))
-	case reflect.Interface:
-		if expected.IsNil() && actual.IsNil() {
-			return iter.FromNothing[diffLine]()
-		}
+		// 	return iter.Flatten(iter.FromMany(
+		// 		iter.FlatMap(
+		// 			iter.Keys(iter.FromDict(commonKeys)),
+		// 			func(k any) iter.Seq[diffLine] {
+		// 				return diffImpl(
+		// 					fmt.Sprintf("%s[%v]", selectorPrefix, k),
+		// 					eval.MapIndex(reflect.ValueOf(k)),
+		// 					aval.MapIndex(reflect.ValueOf(k)),
+		// 				)
+		// 			}),
+		// 		iter.Map(
+		// 			iter.Keys(iter.FromDict(expectedOnlyKeys)),
+		// 			func(k any) diffLine {
+		// 				return diffLine{
+		// 					selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
+		// 					comment:  "not found key in actual",
+		// 					expected: eval.MapIndex(reflect.ValueOf(k)).Interface(),
+		// 					actual:   nil,
+		// 				}
+		// 			}),
+		// 		iter.Map(
+		// 			iter.Keys(iter.FromDict(actualOnlyKeys)),
+		// 			func(k any) diffLine {
+		// 				return diffLine{
+		// 					selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
+		// 					comment:  "unexpected key in actual",
+		// 					expected: nil,
+		// 					actual:   aval.MapIndex(reflect.ValueOf(k)).Interface(),
+		// 				}
+		// 			}),
+		// 	))
+		// case reflect.Interface:
+		// 	if (expected == nil) && (actual == nil) {
+		// 		return iter.FromNothing[diffLine]()
+		// 	}
 
-		if expected.IsNil() || actual.IsNil() {
-			return iter.FromMany(diffLine{
-				selector: selectorPrefix,
-				comment:  "one is nil, one is not",
-				expected: expected,
-				actual:   actual,
-			})
-		}
+		// 	if (expected == nil) || (actual == nil) {
+		// 		return iter.FromMany(diffLine{
+		// 			selector: selectorPrefix,
+		// 			comment:  "one is nil, one is not",
+		// 			expected: expected,
+		// 			actual:   actual,
+		// 		})
+		// 	}
 
-		return diffImpl(selectorPrefix, expected.Elem(), actual.Elem())
+		// 	return diffImpl(selectorPrefix, eval.Elem(), aval.Elem())
 	}
 
 	// TODO: remove and return "" when other types are supported
-	panic(fmt.Sprintf("unsupported kind: %s, %#v", expected.Kind().String(), expected.Interface()))
+	panic(fmt.Sprintf("unsupported kind: %s, %#v", eval.Kind().String(), eval.Interface()))
 }
 
 // diff returns a diff of both values as long as both are of the same type and
 // are a struct, map, slice, array or string. Otherwise it panics.
 func diff[T any](expected, actual T) iter.Seq[diffLine] {
-	return diffImpl("", reflect.ValueOf(expected), reflect.ValueOf(actual))
+	return diffImpl("", expected, actual)
 }
 
 func formatLabeledContent(v labeledContent) string {
@@ -414,13 +475,7 @@ func Equal[T any](t testing.TB, expected, actual T) {
 		{
 			col.R("Not equal", col.ANSIBrightRed.Fg),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
-				/*
-					Bit complaining on go language: brackets on struct literal are
-					required here because compiler authors can't fix parser
-					and not interpret '{' as "if block" and that won't be fixed.
-					See https://github.com/golang/go/issues/9181
-				*/
-				if line.expected == (reflect.Value{}) { // TODO: remove
+				if line.expected == nil { // TODO: remove
 					return line.selector
 				}
 
@@ -438,8 +493,8 @@ func Equal[T any](t testing.TB, expected, actual T) {
 					return s
 				}
 
-				expectedStr := shorten(expectedName, pp.Sprint(line.expected.Interface()))
-				actualStr := shorten(actualName, pp.Sprint(line.actual.Interface()))
+				expectedStr := shorten(expectedName, pp.Sprint(line.expected))
+				actualStr := shorten(actualName, pp.Sprint(line.actual))
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
 					comment := ""
@@ -494,13 +549,7 @@ func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any)
 		{
 			col.R("Not equal", col.ANSIBrightRed.Fg),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
-				/*
-					Bit complaining on go language: brackets on struct literal are
-					required here because compiler authors can't fix parser
-					and not interpret '{' as "if block" and that won't be fixed.
-					See https://github.com/golang/go/issues/9181
-				*/
-				if line.expected == (reflect.Value{}) { // TODO: remove
+				if line.expected == nil { // TODO: remove
 					return line.selector
 				}
 
@@ -518,8 +567,8 @@ func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any)
 					return s
 				}
 
-				expectedStr := shorten(expectedName, pp.Sprint(line.expected.Interface()))
-				actualStr := shorten(actualName, pp.Sprint(line.actual.Interface()))
+				expectedStr := shorten(expectedName, pp.Sprint(line.expected))
+				actualStr := shorten(actualName, pp.Sprint(line.actual))
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
 					comment := ""
@@ -632,13 +681,7 @@ func Zero[T any](t *testing.T, actual T) {
 		{
 			col.R("Not equal", col.ANSIBrightRed.Fg),
 			mapJoin(diff(zero, actual), func(line diffLine) string {
-				/*
-					Bit complaining on go language: brackets on struct literal are
-					required here because compiler authors can't fix parser
-					and not interpret '{' as "if block" and that won't be fixed.
-					See https://github.com/golang/go/issues/9181
-				*/
-				if line.expected == (reflect.Value{}) { // TODO: remove
+				if line.expected == nil { // TODO: remove
 					return line.selector
 				}
 
@@ -656,8 +699,8 @@ func Zero[T any](t *testing.T, actual T) {
 					return s
 				}
 
-				expectedStr := shorten(expectedName, pp.Sprint(line.expected.Interface()))
-				actualStr := shorten(actualName, pp.Sprint(line.actual.Interface()))
+				expectedStr := shorten(expectedName, pp.Sprint(line.expected))
+				actualStr := shorten(actualName, pp.Sprint(line.actual))
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
 					comment := ""
