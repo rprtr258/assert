@@ -86,8 +86,8 @@ var (
 	checkCases = []any{
 		Private{b: false, i: 1, u: 2, f: 2.22, c: complex(5, 6)},
 		map[string]int{"hell": 23, "world": 34},
-		map[string]map[string]string{"s1": map[string]string{"v1": "m1", "va1": "me1"}, "si2": map[string]string{"v2": "m2"}},
-		Foo{Bar: 1, Hoge: "a", Hello: map[string]string{"hel": "world", "a": "b"}, HogeHoges: []HogeHoge{HogeHoge{Hell: "a", World: 1}, HogeHoge{Hell: "bbb", World: 100}}},
+		map[string]map[string]string{"s1": {"v1": "m1", "va1": "me1"}, "si2": {"v2": "m2"}},
+		Foo{Bar: 1, Hoge: "a", Hello: map[string]string{"hel": "world", "a": "b"}, HogeHoges: []HogeHoge{{Hell: "a", World: 1}, {Hell: "bbb", World: 100}}},
 		arr,
 		[]string{"aaa", "bbb", "ccc"},
 		make(chan bool, 10),
