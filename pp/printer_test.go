@@ -70,7 +70,6 @@ type Circular struct {
 }
 
 var c Circular = Circular{}
-var nilSlice []int
 
 func init() {
 	c.C = &c
@@ -86,7 +85,7 @@ var (
 func TestFormat(t *testing.T) {
 	processTestCases(t, Default, []testCase{
 		{nil, scuf.String("nil", scuf.FgCyan, scuf.ModBold)},
-		{nilSlice, "[]" + scuf.String("int", scuf.FgGreen) + "(" + scuf.String("nil", scuf.FgCyan, scuf.ModBold) + ")"},
+		{[]int(nil), "[]" + scuf.String("int", scuf.FgGreen) + "(" + scuf.String("nil", scuf.FgCyan, scuf.ModBold) + ")"},
 		{true, scuf.String("true", scuf.FgCyan, scuf.ModBold)},
 		{false, scuf.String("false", scuf.FgCyan, scuf.ModBold)},
 		{int(4), scuf.String("4", scuf.FgBlue, scuf.ModBold)},
