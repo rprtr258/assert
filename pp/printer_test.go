@@ -77,8 +77,7 @@ func init() {
 }
 
 var (
-	arr [3]int
-	tm  = time.Date(2015, time.January, 2, 0, 0, 0, 0, time.UTC)
+	tm = time.Date(2015, time.January, 2, 0, 0, 0, 0, time.UTC)
 
 	bigInt, _      = new(big.Int).SetString("-908f8474ea971baf", 16)
 	bigFloat, _, _ = big.ParseFloat("3.1415926535897932384626433832795028", 10, 10, big.ToZero)
@@ -232,7 +231,7 @@ Actual: %# v
 		map[string]int{"hell": 23, "world": 34},
 		map[string]map[string]string{"s1": {"v1": "m1", "va1": "me1"}, "si2": {"v2": "m2"}},
 		Foo{Bar: 1, Hoge: "a", Hello: map[string]string{"hel": "world", "a": "b"}, HogeHoges: []HogeHoge{{Hell: "a", World: 1}, {Hell: "bbb", World: 100}}},
-		arr,
+		[3]int{},
 		[]string{"aaa", "bbb", "ccc"},
 		make(chan bool, 10),
 		func(a string, b float32) int { return 0 },
