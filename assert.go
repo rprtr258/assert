@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"reflect"
+	"regexp"
 	"runtime"
 	"strconv"
 	"strings"
@@ -18,6 +19,14 @@ import (
 	"github.com/rprtr258/assert/pp"
 	"github.com/rprtr258/assert/q"
 )
+
+//go:linkname valueInterface reflect.valueInterface
+func valueInterface(v reflect.Value, safe bool) any
+
+// use instead of v.Interface
+func valueToInterface(v reflect.Value) any {
+	return valueInterface(v, false)
+}
 
 var (
 	_fgExpected = scuf.FgRGB(0x96, 0xf7, 0x59)
@@ -935,4 +944,16 @@ func Substringf(t *testing.T, text, needle string, format string, args ...any) {
 			}, "\n"),
 		},
 	})
+}
+
+func Regexp(t *testing.T, re, text string) {
+	True(t, regexp.MustCompile(re).MatchString(text))
+}
+
+func EqualError(t *testing.T, errText string, err error) {
+	Equal(t, errText, err.Error())
+}
+
+func Len[T any](t *testing.T, lenn int, slice []T) {
+	Equal(t, lenn, len(slice))
 }

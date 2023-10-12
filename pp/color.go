@@ -2,8 +2,7 @@
 package pp
 
 import (
-	"fmt"
-	"reflect"
+	"github.com/rprtr258/scuf"
 )
 
 const (
@@ -53,73 +52,74 @@ const (
 
 // To use with SetColorScheme.
 type ColorScheme struct {
-	Bool            uint16
-	Integer         uint16
-	Float           uint16
-	String          uint16
-	StringQuotation uint16
-	EscapedChar     uint16
-	FieldName       uint16
-	PointerAdress   uint16
-	Nil             uint16
-	Time            uint16
-	StructName      uint16
-	ObjectLength    uint16
+	Bool            []scuf.Modifier
+	Integer         []scuf.Modifier
+	Float           []scuf.Modifier
+	String          scuf.Modifier
+	StringQuotation []scuf.Modifier
+	EscapedChar     []scuf.Modifier
+	FieldName       scuf.Modifier
+	PointerAdress   []scuf.Modifier
+	Nil             []scuf.Modifier
+	Time            []scuf.Modifier
+	StructName      scuf.Modifier
+	ObjectLength    scuf.Modifier
 }
 
-var (
-	// DEPRECATED: Use PrettyPrinter.SetColoringEnabled().
-	ColoringEnabled = true
-
-	defaultScheme = ColorScheme{
-		Bool:            Cyan | Bold,
-		Integer:         Blue | Bold,
-		Float:           Magenta | Bold,
-		String:          Red,
-		StringQuotation: Red | Bold,
-		EscapedChar:     Magenta | Bold,
-		FieldName:       Yellow,
-		PointerAdress:   Blue | Bold,
-		Nil:             Cyan | Bold,
-		Time:            Blue | Bold,
-		StructName:      Green,
-		ObjectLength:    Blue,
-	}
-)
+var defaultScheme = ColorScheme{
+	Bool:            []scuf.Modifier{scuf.FgCyan, scuf.ModBold},
+	Integer:         []scuf.Modifier{scuf.FgBlue, scuf.ModBold},
+	Float:           []scuf.Modifier{scuf.FgMagenta, scuf.ModBold},
+	String:          scuf.FgRed,
+	StringQuotation: []scuf.Modifier{scuf.FgRed, scuf.ModBold},
+	EscapedChar:     []scuf.Modifier{scuf.FgMagenta, scuf.ModBold},
+	FieldName:       scuf.FgYellow,
+	PointerAdress:   []scuf.Modifier{scuf.FgBlue, scuf.ModBold},
+	Nil:             []scuf.Modifier{scuf.FgCyan, scuf.ModBold},
+	Time:            []scuf.Modifier{scuf.FgBlue, scuf.ModBold},
+	StructName:      scuf.FgGreen,
+	ObjectLength:    scuf.FgBlue,
+}
 
 func (cs *ColorScheme) fixColors() {
-	typ := reflect.Indirect(reflect.ValueOf(cs))
-	defaultType := reflect.ValueOf(defaultScheme)
-	for i := 0; i < typ.NumField(); i++ {
-		field := typ.Field(i)
-		if field.Uint() == 0 {
-			field.SetUint(defaultType.Field(i).Uint())
-		}
+	if cs.Bool == nil {
+		cs.Bool = defaultScheme.Bool
+	}
+	if cs.Integer == nil {
+		cs.Integer = defaultScheme.Integer
+	}
+	if cs.Float == nil {
+		cs.Float = defaultScheme.Float
+	}
+	if cs.String == nil {
+		cs.String = defaultScheme.String
+	}
+	if cs.StringQuotation == nil {
+		cs.StringQuotation = defaultScheme.StringQuotation
+	}
+	if cs.EscapedChar == nil {
+		cs.EscapedChar = defaultScheme.EscapedChar
+	}
+	if cs.FieldName == nil {
+		cs.FieldName = defaultScheme.FieldName
+	}
+	if cs.PointerAdress == nil {
+		cs.PointerAdress = defaultScheme.PointerAdress
+	}
+	if cs.Nil == nil {
+		cs.Nil = defaultScheme.Nil
+	}
+	if cs.Time == nil {
+		cs.Time = defaultScheme.Time
+	}
+	if cs.StructName == nil {
+		cs.StructName = defaultScheme.StructName
+	}
+	if cs.ObjectLength == nil {
+		cs.ObjectLength = defaultScheme.ObjectLength
 	}
 }
 
-func colorizeText(text string, color uint16) string {
-	foreground := color & maskForeground >> bitsForeground
-	background := color & maskBackground >> bitsBackground
-	bold := color & maskBold
-
-	if foreground == 0 && background == 0 && bold == 0 {
-		return text
-	}
-
-	modBold := ""
-	modForeground := ""
-	modBackground := ""
-
-	if bold > 0 {
-		modBold = "\033[1m"
-	}
-	if foreground > 0 {
-		modForeground = fmt.Sprintf("\033[%dm", foreground+ansiForegroundOffset)
-	}
-	if background > 0 {
-		modBackground = fmt.Sprintf("\033[%dm", background+ansiBackgroundOffset)
-	}
-
-	return fmt.Sprintf("%s%s%s%s\033[0m", modForeground, modBackground, modBold, text)
+func colorizeText(text string, mods ...scuf.Modifier) string {
+	return scuf.String(text, mods...)
 }
