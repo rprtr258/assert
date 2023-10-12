@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/mattn/go-colorable"
+	"github.com/rprtr258/scuf"
 )
 
 // Global variable API
@@ -174,10 +175,32 @@ func (pp *PrettyPrinter) ResetOutput() {
 	pp.out = defaultOut
 }
 
+func or[T interface {
+	scuf.Modifier | []scuf.Modifier
+}](x, y T) T {
+	if x == nil {
+		return y
+	}
+	return x
+}
+
 // SetColorScheme takes a colorscheme used by all future Print calls.
 func (pp *PrettyPrinter) SetColorScheme(scheme ColorScheme) {
-	scheme.fixColors()
-	pp.currentScheme = scheme
+	pp.currentScheme = ColorScheme{
+		Bool:            or(scheme.Bool, defaultScheme.Bool),
+		Integer:         or(scheme.Integer, defaultScheme.Integer),
+		Float:           or(scheme.Float, defaultScheme.Float),
+		String:          or(scheme.String, defaultScheme.String),
+		StringQuotation: or(scheme.StringQuotation, defaultScheme.StringQuotation),
+		EscapedChar:     or(scheme.EscapedChar, defaultScheme.EscapedChar),
+		FieldName:       or(scheme.FieldName, defaultScheme.FieldName),
+		PointerAdress:   or(scheme.PointerAdress, defaultScheme.PointerAdress),
+		Nil:             or(scheme.Nil, defaultScheme.Nil),
+		Time:            or(scheme.Time, defaultScheme.Time),
+		StructName:      or(scheme.StructName, defaultScheme.StructName),
+		ObjectLength:    or(scheme.ObjectLength, defaultScheme.ObjectLength),
+	}
+
 }
 
 // ResetColorScheme resets colorscheme to default.

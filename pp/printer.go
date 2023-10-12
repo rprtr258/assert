@@ -525,7 +525,7 @@ func (p *printer) nil() string {
 
 func (p *printer) colorize(text string, mods ...scuf.Modifier) string {
 	if p.coloringEnabled {
-		return colorizeText(text, mods...)
+		return scuf.String(text, mods...)
 	} else {
 		return text
 	}

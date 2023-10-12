@@ -51,7 +51,7 @@ func TestColorize(t *testing.T) {
 		},
 	} {
 		t.Run(test.input, func(t *testing.T) {
-			if output := colorizeText(test.input, test.mods...); output != test.result {
+			if output := scuf.String(test.input, test.mods...); output != test.result {
 				t.Errorf("Expected %q, got %q", test.result, output)
 			}
 		})
