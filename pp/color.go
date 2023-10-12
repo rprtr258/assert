@@ -5,51 +5,6 @@ import (
 	"github.com/rprtr258/scuf"
 )
 
-const (
-	// No color
-	NoColor uint16 = 1 << 15
-)
-
-const (
-	// Foreground colors for ColorScheme.
-	_ uint16 = iota | NoColor
-	Black
-	Red
-	Green
-	Yellow
-	Blue
-	Magenta
-	Cyan
-	White
-	bitsForeground       = 0
-	maskForeground       = 0xf
-	ansiForegroundOffset = 30 - 1
-)
-
-const (
-	// Background colors for ColorScheme.
-	_ uint16 = iota<<bitsBackground | NoColor
-	BackgroundBlack
-	BackgroundRed
-	BackgroundGreen
-	BackgroundYellow
-	BackgroundBlue
-	BackgroundMagenta
-	BackgroundCyan
-	BackgroundWhite
-	bitsBackground       = 4
-	maskBackground       = 0xf << bitsBackground
-	ansiBackgroundOffset = 40 - 1
-)
-
-const (
-	// Bold flag for ColorScheme.
-	Bold     uint16 = 1<<bitsBold | NoColor
-	bitsBold        = 8
-	maskBold        = 1 << bitsBold
-	ansiBold        = 1
-)
-
 // To use with SetColorScheme.
 type ColorScheme struct {
 	Bool            []scuf.Modifier
