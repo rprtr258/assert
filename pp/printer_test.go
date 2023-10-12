@@ -230,7 +230,7 @@ func processTestCases(t *testing.T, printer *PrettyPrinter, cases []testCase) {
 	t.Helper()
 
 	for _, test := range cases {
-		actual := fmt.Sprintf("%s", printer.format(test.object))
+		actual := printer.format(test.object)
 
 		trimmed := strings.Trim(strings.Replace(test.expect, "\t", "", -1), "\n")
 		expect := colorString(trimmed)
@@ -248,8 +248,7 @@ Actual: %# v
 	}
 
 	for _, object := range checkCases {
-		actual := fmt.Sprintf("%s", printer.format(object))
-		logResult(t, object, actual)
+		logResult(t, object, printer.format(object))
 	}
 }
 
