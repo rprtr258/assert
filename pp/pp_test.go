@@ -76,10 +76,10 @@ func TestWithLineInfoBackwardsCompatible(t *testing.T) {
 
 func TestStructPrintingWithTags(t *testing.T) {
 	type Foo struct {
-		IgnoreMe     interface{} `pp:"-"`
-		ChangeMyName string      `pp:"NewName"`
-		OmitIfEmpty  string      `pp:",omitempty"`
-		Full         string      `pp:"full,omitempty"`
+		IgnoreMe     any    `pp:"-"`
+		ChangeMyName string `pp:"NewName"`
+		OmitIfEmpty  string `pp:",omitempty"`
+		Full         string `pp:"full,omitempty"`
 	}
 
 	testCases := []struct {

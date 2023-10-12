@@ -22,11 +22,11 @@ const (
 	indentWidth = 2
 )
 
-func (pp *PrettyPrinter) format(object interface{}) string {
+func (pp *PrettyPrinter) format(object any) string {
 	return newPrinter(object, &pp.currentScheme, pp.maxDepth, pp.coloringEnabled, pp.decimalUint, pp.exportedOnly, pp.thousandsSeparator).String()
 }
 
-func newPrinter(object interface{}, currentScheme *ColorScheme, maxDepth int, coloringEnabled bool, decimalUint bool, exportedOnly bool, thousandsSeparator bool) *printer {
+func newPrinter(object any, currentScheme *ColorScheme, maxDepth int, coloringEnabled bool, decimalUint bool, exportedOnly bool, thousandsSeparator bool) *printer {
 	buffer := bytes.NewBufferString("")
 	tw := new(tabwriter.Writer)
 	tw.Init(buffer, indentWidth, 0, 1, ' ', 0)
@@ -111,7 +111,7 @@ func (p *printer) print(text string) {
 	fmt.Fprint(p.tw, text)
 }
 
-func (p *printer) printf(format string, args ...interface{}) {
+func (p *printer) printf(format string, args ...any) {
 	text := fmt.Sprintf(format, args...)
 	p.print(text)
 }
@@ -124,7 +124,7 @@ func (p *printer) indentPrint(text string) {
 	p.print(p.indent() + text)
 }
 
-func (p *printer) indentPrintf(format string, args ...interface{}) {
+func (p *printer) indentPrintf(format string, args ...any) {
 	text := fmt.Sprintf(format, args...)
 	p.indentPrint(text)
 }
@@ -465,7 +465,7 @@ func (p *printer) indented(proc func()) {
 	p.depth--
 }
 
-func (p *printer) fmtOrLocalizedSprintf(format string, a ...interface{}) string {
+func (p *printer) fmtOrLocalizedSprintf(format string, a ...any) string {
 	if p.localizedPrinter == nil {
 		return fmt.Sprintf(format, a...)
 	}
@@ -531,7 +531,7 @@ func (p *printer) colorize(text string, mods ...scuf.Modifier) string {
 	}
 }
 
-func (p *printer) format(object interface{}) string {
+func (p *printer) format(object any) string {
 	pp := newPrinter(
 		object,
 		p.currentScheme,

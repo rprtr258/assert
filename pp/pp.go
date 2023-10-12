@@ -70,69 +70,69 @@ func newPrettyPrinter(callerLevel int) *PrettyPrinter {
 }
 
 // Print prints given arguments.
-func (pp *PrettyPrinter) Print(a ...interface{}) (n int, err error) {
+func (pp *PrettyPrinter) Print(a ...any) (n int, err error) {
 	return fmt.Fprint(pp.out, pp.formatAll(a)...)
 }
 
 // Printf prints a given format.
-func (pp *PrettyPrinter) Printf(format string, a ...interface{}) (n int, err error) {
+func (pp *PrettyPrinter) Printf(format string, a ...any) (n int, err error) {
 	return fmt.Fprintf(pp.out, format, pp.formatAll(a)...)
 }
 
 // Println prints given arguments with newline.
-func (pp *PrettyPrinter) Println(a ...interface{}) (n int, err error) {
+func (pp *PrettyPrinter) Println(a ...any) (n int, err error) {
 	return fmt.Fprintln(pp.out, pp.formatAll(a)...)
 }
 
 // Sprint formats given arguments and returns the result as string.
-func (pp *PrettyPrinter) Sprint(a ...interface{}) string {
+func (pp *PrettyPrinter) Sprint(a ...any) string {
 	return fmt.Sprint(pp.formatAll(a)...)
 }
 
 // Sprintf formats with pretty print and returns the result as string.
-func (pp *PrettyPrinter) Sprintf(format string, a ...interface{}) string {
+func (pp *PrettyPrinter) Sprintf(format string, a ...any) string {
 	return fmt.Sprintf(format, pp.formatAll(a)...)
 }
 
 // Sprintln formats given arguments with newline and returns the result as string.
-func (pp *PrettyPrinter) Sprintln(a ...interface{}) string {
+func (pp *PrettyPrinter) Sprintln(a ...any) string {
 	return fmt.Sprintln(pp.formatAll(a)...)
 }
 
 // Fprint prints given arguments to a given writer.
-func (pp *PrettyPrinter) Fprint(w io.Writer, a ...interface{}) (n int, err error) {
+func (pp *PrettyPrinter) Fprint(w io.Writer, a ...any) (n int, err error) {
 	return fmt.Fprint(w, pp.formatAll(a)...)
 }
 
 // Fprintf prints format to a given writer.
-func (pp *PrettyPrinter) Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error) {
+func (pp *PrettyPrinter) Fprintf(w io.Writer, format string, a ...any) (n int, err error) {
 	return fmt.Fprintf(w, format, pp.formatAll(a)...)
 }
 
 // Fprintln prints given arguments to a given writer with newline.
-func (pp *PrettyPrinter) Fprintln(w io.Writer, a ...interface{}) (n int, err error) {
+func (pp *PrettyPrinter) Fprintln(w io.Writer, a ...any) (n int, err error) {
 	return fmt.Fprintln(w, pp.formatAll(a)...)
 }
 
 // Errorf formats given arguments and returns it as error type.
-func (pp *PrettyPrinter) Errorf(format string, a ...interface{}) error {
+func (pp *PrettyPrinter) Errorf(format string, a ...any) error {
 	return errors.New(pp.Sprintf(format, a...))
 }
 
 // Fatal prints given arguments and finishes execution with exit status 1.
-func (pp *PrettyPrinter) Fatal(a ...interface{}) {
+func (pp *PrettyPrinter) Fatal(a ...any) {
 	fmt.Fprint(pp.out, pp.formatAll(a)...)
 	os.Exit(1)
 }
 
 // Fatalf prints a given format and finishes execution with exit status 1.
-func (pp *PrettyPrinter) Fatalf(format string, a ...interface{}) {
+func (pp *PrettyPrinter) Fatalf(format string, a ...any) {
 	fmt.Fprintf(pp.out, format, pp.formatAll(a)...)
 	os.Exit(1)
 }
 
 // Fatalln prints given arguments with newline and finishes execution with exit status 1.
-func (pp *PrettyPrinter) Fatalln(a ...interface{}) {
+func (pp *PrettyPrinter) Fatalln(a ...any) {
 	fmt.Fprintln(pp.out, pp.formatAll(a)...)
 	os.Exit(1)
 }
@@ -185,8 +185,8 @@ func (pp *PrettyPrinter) ResetColorScheme() {
 	pp.currentScheme = defaultScheme
 }
 
-func (pp *PrettyPrinter) formatAll(objects []interface{}) []interface{} {
-	results := []interface{}{}
+func (pp *PrettyPrinter) formatAll(objects []any) []any {
+	results := []any{}
 
 	// fix for backwards capability
 	withLineInfo := pp.WithLineInfo
@@ -206,67 +206,67 @@ func (pp *PrettyPrinter) formatAll(objects []interface{}) []interface{} {
 }
 
 // Print prints given arguments.
-func Print(a ...interface{}) (n int, err error) {
+func Print(a ...any) (n int, err error) {
 	return Default.Print(a...)
 }
 
 // Printf prints a given format.
-func Printf(format string, a ...interface{}) (n int, err error) {
+func Printf(format string, a ...any) (n int, err error) {
 	return Default.Printf(format, a...)
 }
 
 // Println prints given arguments with newline.
-func Println(a ...interface{}) (n int, err error) {
+func Println(a ...any) (n int, err error) {
 	return Default.Println(a...)
 }
 
 // Sprint formats given arguments and returns the result as string.
-func Sprint(a ...interface{}) string {
+func Sprint(a ...any) string {
 	return Default.Sprint(a...)
 }
 
 // Sprintf formats with pretty print and returns the result as string.
-func Sprintf(format string, a ...interface{}) string {
+func Sprintf(format string, a ...any) string {
 	return Default.Sprintf(format, a...)
 }
 
 // Sprintln formats given arguments with newline and returns the result as string.
-func Sprintln(a ...interface{}) string {
+func Sprintln(a ...any) string {
 	return Default.Sprintln(a...)
 }
 
 // Fprint prints given arguments to a given writer.
-func Fprint(w io.Writer, a ...interface{}) (n int, err error) {
+func Fprint(w io.Writer, a ...any) (n int, err error) {
 	return Default.Fprint(w, a...)
 }
 
 // Fprintf prints format to a given writer.
-func Fprintf(w io.Writer, format string, a ...interface{}) (n int, err error) {
+func Fprintf(w io.Writer, format string, a ...any) (n int, err error) {
 	return Default.Fprintf(w, format, a...)
 }
 
 // Fprintln prints given arguments to a given writer with newline.
-func Fprintln(w io.Writer, a ...interface{}) (n int, err error) {
+func Fprintln(w io.Writer, a ...any) (n int, err error) {
 	return Default.Fprintln(w, a...)
 }
 
 // Errorf formats given arguments and returns it as error type.
-func Errorf(format string, a ...interface{}) error {
+func Errorf(format string, a ...any) error {
 	return Default.Errorf(format, a...)
 }
 
 // Fatal prints given arguments and finishes execution with exit status 1.
-func Fatal(a ...interface{}) {
+func Fatal(a ...any) {
 	Default.Fatal(a...)
 }
 
 // Fatalf prints a given format and finishes execution with exit status 1.
-func Fatalf(format string, a ...interface{}) {
+func Fatalf(format string, a ...any) {
 	Default.Fatalf(format, a...)
 }
 
 // Fatalln prints given arguments with newline and finishes execution with exit status 1.
-func Fatalln(a ...interface{}) {
+func Fatalln(a ...any) {
 	Default.Fatalln(a...)
 }
 
