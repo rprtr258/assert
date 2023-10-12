@@ -82,30 +82,6 @@ var (
 
 	bigInt, _      = new(big.Int).SetString("-908f8474ea971baf", 16)
 	bigFloat, _, _ = big.ParseFloat("3.1415926535897932384626433832795028", 10, 10, big.ToZero)
-
-	checkCases = []any{
-		Private{b: false, i: 1, u: 2, f: 2.22, c: complex(5, 6)},
-		map[string]int{"hell": 23, "world": 34},
-		map[string]map[string]string{"s1": {"v1": "m1", "va1": "me1"}, "si2": {"v2": "m2"}},
-		Foo{Bar: 1, Hoge: "a", Hello: map[string]string{"hel": "world", "a": "b"}, HogeHoges: []HogeHoge{{Hell: "a", World: 1}, {Hell: "bbb", World: 100}}},
-		arr,
-		[]string{"aaa", "bbb", "ccc"},
-		make(chan bool, 10),
-		func(a string, b float32) int { return 0 },
-		&HogeHoge{},
-		&Piyo{Field1: map[string]string{"a": "b", "cc": "dd"}, F2: &Foo{}, Fie3: 128},
-		[]any{1, 3},
-		any(1),
-		HogeHoge{A: "test"},
-		FooPri{Public: "hello", private: "world"},
-		new(regexp.Regexp),
-		unsafe.Pointer(new(regexp.Regexp)),
-		"日本\t語\n\000\U00101234a",
-		bigInt,
-		bigFloat,
-		&tm,
-		&User{Name: "k0kubun", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(), deletedAt: time.Now().UTC()},
-	}
 )
 
 func TestFormat(t *testing.T) {
@@ -235,19 +211,45 @@ func processTestCases(t *testing.T, printer *PrettyPrinter, cases []testCase) {
 		trimmed := strings.Trim(strings.Replace(test.expect, "\t", "", -1), "\n")
 		expect := colorString(trimmed)
 		if expect != actual {
-			v := reflect.ValueOf(test.object)
 			t.Errorf(`
 TestCase: %#v
 Type: %s
 Expect: %# v
 Actual: %# v
-`, test.object, v.Kind(), expect, actual)
+`,
+				test.object,
+				reflect.ValueOf(test.object).Kind(),
+				expect,
+				actual,
+			)
 			return
 		}
 		logResult(t, test.object, actual)
 	}
 
-	for _, object := range checkCases {
+	for _, object := range []any{
+		Private{b: false, i: 1, u: 2, f: 2.22, c: complex(5, 6)},
+		map[string]int{"hell": 23, "world": 34},
+		map[string]map[string]string{"s1": {"v1": "m1", "va1": "me1"}, "si2": {"v2": "m2"}},
+		Foo{Bar: 1, Hoge: "a", Hello: map[string]string{"hel": "world", "a": "b"}, HogeHoges: []HogeHoge{{Hell: "a", World: 1}, {Hell: "bbb", World: 100}}},
+		arr,
+		[]string{"aaa", "bbb", "ccc"},
+		make(chan bool, 10),
+		func(a string, b float32) int { return 0 },
+		&HogeHoge{},
+		&Piyo{Field1: map[string]string{"a": "b", "cc": "dd"}, F2: &Foo{}, Fie3: 128},
+		[]any{1, 3},
+		any(1),
+		HogeHoge{A: "test"},
+		FooPri{Public: "hello", private: "world"},
+		new(regexp.Regexp),
+		unsafe.Pointer(new(regexp.Regexp)),
+		"日本\t語\n\000\U00101234a",
+		bigInt,
+		bigFloat,
+		&tm,
+		&User{Name: "k0kubun", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(), deletedAt: time.Now().UTC()},
+	} {
 		logResult(t, object, printer.format(object))
 	}
 }
