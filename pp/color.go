@@ -36,42 +36,29 @@ var defaultScheme = ColorScheme{
 	ObjectLength:    scuf.FgBlue,
 }
 
+func or[T interface {
+	scuf.Modifier | []scuf.Modifier
+}](x, y T) T {
+	if x == nil {
+		return y
+	}
+	return x
+}
+
 func (cs *ColorScheme) fixColors() {
-	if cs.Bool == nil {
-		cs.Bool = defaultScheme.Bool
-	}
-	if cs.Integer == nil {
-		cs.Integer = defaultScheme.Integer
-	}
-	if cs.Float == nil {
-		cs.Float = defaultScheme.Float
-	}
-	if cs.String == nil {
-		cs.String = defaultScheme.String
-	}
-	if cs.StringQuotation == nil {
-		cs.StringQuotation = defaultScheme.StringQuotation
-	}
-	if cs.EscapedChar == nil {
-		cs.EscapedChar = defaultScheme.EscapedChar
-	}
-	if cs.FieldName == nil {
-		cs.FieldName = defaultScheme.FieldName
-	}
-	if cs.PointerAdress == nil {
-		cs.PointerAdress = defaultScheme.PointerAdress
-	}
-	if cs.Nil == nil {
-		cs.Nil = defaultScheme.Nil
-	}
-	if cs.Time == nil {
-		cs.Time = defaultScheme.Time
-	}
-	if cs.StructName == nil {
-		cs.StructName = defaultScheme.StructName
-	}
-	if cs.ObjectLength == nil {
-		cs.ObjectLength = defaultScheme.ObjectLength
+	*cs = ColorScheme{
+		Bool:            or(cs.Bool, defaultScheme.Bool),
+		Integer:         or(cs.Integer, defaultScheme.Integer),
+		Float:           or(cs.Float, defaultScheme.Float),
+		String:          or(cs.String, defaultScheme.String),
+		StringQuotation: or(cs.StringQuotation, defaultScheme.StringQuotation),
+		EscapedChar:     or(cs.EscapedChar, defaultScheme.EscapedChar),
+		FieldName:       or(cs.FieldName, defaultScheme.FieldName),
+		PointerAdress:   or(cs.PointerAdress, defaultScheme.PointerAdress),
+		Nil:             or(cs.Nil, defaultScheme.Nil),
+		Time:            or(cs.Time, defaultScheme.Time),
+		StructName:      or(cs.StructName, defaultScheme.StructName),
+		ObjectLength:    or(cs.ObjectLength, defaultScheme.ObjectLength),
 	}
 }
 
