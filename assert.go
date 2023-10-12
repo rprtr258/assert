@@ -12,16 +12,16 @@ import (
 	"unicode/utf8"
 	"unsafe"
 
-	col "github.com/rprtr258/col"
 	"github.com/rprtr258/fun/iter"
+	"github.com/rprtr258/scuf"
 
 	"github.com/rprtr258/assert/pp"
 	"github.com/rprtr258/assert/q"
 )
 
 var (
-	_fgExpected = col.RGBColor("#96f759").Fg
-	_fgActual   = col.RGBColor("#ff4053").Fg
+	_fgExpected = scuf.FgRGB(0x96, 0xf7, 0x59)
+	_fgActual   = scuf.FgRGB(0xff, 0x40, 0x53)
 )
 
 func mapJoin[T any](seq iter.Seq[T], toString func(T) string, sep string) string {
@@ -473,7 +473,7 @@ func Equal[T any](t testing.TB, expected, actual T) {
 	fail(t, []labeledContent{
 		stacktraceLabeledContent(),
 		{
-			col.R("Not equal", col.ANSIBrightRed.Fg),
+			scuf.String("Not equal", scuf.FgHiRed),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
 				if line.expected == nil { // TODO: remove
 					return line.selector
@@ -504,8 +504,8 @@ func Equal[T any](t testing.TB, expected, actual T) {
 
 					return strings.Join([]string{
 						comment,
-						col.R(expectedName+line.selector, _fgExpected) + " = " + expectedStr,
-						col.R(actualName+line.selector, _fgActual) + " = " + actualStr,
+						scuf.String(expectedName+line.selector, _fgExpected) + " = " + expectedStr,
+						scuf.String(actualName+line.selector, _fgActual) + " = " + actualStr,
 					}, "\n")
 				}
 
@@ -517,8 +517,8 @@ func Equal[T any](t testing.TB, expected, actual T) {
 				return strings.Join([]string{
 					fmt.Sprintf(
 						"%s != %s%s:",
-						col.R(expectedName+line.selector, _fgExpected),
-						col.R(actualName+line.selector, _fgActual),
+						scuf.String(expectedName+line.selector, _fgExpected),
+						scuf.String(actualName+line.selector, _fgActual),
 						comment,
 					),
 					fmt.Sprintf(
@@ -547,7 +547,7 @@ func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any)
 		stacktraceLabeledContent(),
 		messageLabeledContent(format, args...),
 		{
-			col.R("Not equal", col.ANSIBrightRed.Fg),
+			scuf.String("Not equal", scuf.FgHiRed),
 			mapJoin(diff(expected, actual), func(line diffLine) string {
 				if line.expected == nil { // TODO: remove
 					return line.selector
@@ -578,8 +578,8 @@ func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any)
 
 					return strings.Join([]string{
 						comment,
-						col.R(expectedName+line.selector, _fgExpected) + " = " + expectedStr,
-						col.R(actualName+line.selector, _fgActual) + " = " + actualStr,
+						scuf.String(expectedName+line.selector, _fgExpected) + " = " + expectedStr,
+						scuf.String(actualName+line.selector, _fgActual) + " = " + actualStr,
 					}, "\n")
 				}
 
@@ -591,8 +591,8 @@ func Equalf[T any](t testing.TB, expected, actual T, format string, args ...any)
 				return strings.Join([]string{
 					fmt.Sprintf(
 						"%s != %s%s:",
-						col.R(expectedName+line.selector, _fgExpected),
-						col.R(actualName+line.selector, _fgActual),
+						scuf.String(expectedName+line.selector, _fgExpected),
+						scuf.String(actualName+line.selector, _fgActual),
 						comment,
 					),
 					fmt.Sprintf(
@@ -623,15 +623,15 @@ func fail(t testing.TB, lines []labeledContent) {
 
 func stacktraceLabeledContent() labeledContent {
 	return labeledContent{
-		col.R("Stacktrace", col.Faint),
+		scuf.String("Stacktrace", scuf.ModFaint),
 		mapJoin(callerInfo(), func(v caller) string {
 			j := strings.LastIndexByte(v.funcName, '/')
 			shortFuncName := v.funcName[j+1:]
-			return col.R(v.file, col.ANSIBrightWhite.Fg) +
+			return scuf.String(v.file, scuf.FgHiWhite) +
 				":" +
-				col.R(strconv.Itoa(v.line), col.ANSIGreen.Fg) +
+				scuf.String(strconv.Itoa(v.line), scuf.FgGreen) +
 				"\t" +
-				col.R(shortFuncName, col.ANSIBlue.Fg)
+				scuf.String(shortFuncName, scuf.FgBlue)
 
 		}, "\n"),
 	}
@@ -651,12 +651,12 @@ func NotEqual[T any](t *testing.T, expected, actual T) {
 	fail(t, []labeledContent{
 		stacktraceLabeledContent(),
 		{
-			col.R("Equal", col.ANSIBrightRed.Fg),
+			scuf.String("Equal", scuf.FgHiRed),
 			strings.Join([]string{
 				fmt.Sprintf(
 					"%s and %s are equal, asserted not to, value is:",
-					col.R(expectedName, _fgExpected),
-					col.R(actualName, _fgActual),
+					scuf.String(expectedName, _fgExpected),
+					scuf.String(actualName, _fgActual),
 				),
 				"\t" + strings.ReplaceAll(pp.Sprint(expected), "\n", "\n\t"),
 			}, "\n"),
@@ -679,7 +679,7 @@ func Zero[T any](t *testing.T, actual T) {
 	fail(t, []labeledContent{
 		stacktraceLabeledContent(),
 		{
-			col.R("Not equal", col.ANSIBrightRed.Fg),
+			scuf.String("Not equal", scuf.FgHiRed),
 			mapJoin(diff(zero, actual), func(line diffLine) string {
 				if line.expected == nil { // TODO: remove
 					return line.selector
@@ -710,8 +710,8 @@ func Zero[T any](t *testing.T, actual T) {
 
 					return strings.Join([]string{
 						comment,
-						col.R(expectedName+line.selector, _fgExpected) + " = " + expectedStr,
-						col.R(actualName+line.selector, _fgActual) + " = " + actualStr,
+						scuf.String(expectedName+line.selector, _fgExpected) + " = " + expectedStr,
+						scuf.String(actualName+line.selector, _fgActual) + " = " + actualStr,
 					}, "\n")
 				}
 
@@ -723,8 +723,8 @@ func Zero[T any](t *testing.T, actual T) {
 				return strings.Join([]string{
 					fmt.Sprintf(
 						"%s != %s%s:",
-						col.R(expectedName+line.selector, _fgExpected),
-						col.R(actualName+line.selector, _fgActual),
+						scuf.String(expectedName+line.selector, _fgExpected),
+						scuf.String(actualName+line.selector, _fgActual),
 						comment,
 					),
 					fmt.Sprintf("\t%s != %s", expectedStr, actualStr),
@@ -748,8 +748,8 @@ func NotZero[T any](t *testing.T, actual T) {
 	fail(t, []labeledContent{
 		stacktraceLabeledContent(),
 		{
-			col.R("Value is zero", col.ANSIBrightRed.Fg),
-			fmt.Sprintf("%s is zero, asserted not to", col.R(actualName, _fgActual)),
+			scuf.String("Value is zero", scuf.FgHiRed),
+			fmt.Sprintf("%s is zero, asserted not to", scuf.String(actualName, _fgActual)),
 		},
 	})
 }
@@ -768,7 +768,7 @@ func True(t *testing.T, condition bool) {
 		stacktraceLabeledContent(),
 		{
 			"Condition is false",
-			conditionName + col.R(" is false", col.ANSIBrightRed.Fg),
+			conditionName + scuf.String(" is false", scuf.FgHiRed),
 		},
 	})
 }
@@ -788,7 +788,7 @@ func Truef(t *testing.T, condition bool, format string, args ...any) {
 		messageLabeledContent(format, args...),
 		{
 			"Condition is false",
-			conditionName + col.R(" is false", col.ANSIBrightRed.Fg),
+			conditionName + scuf.String(" is false", scuf.FgHiRed),
 		},
 	})
 }
@@ -807,7 +807,7 @@ func False(t *testing.T, condition bool) {
 		stacktraceLabeledContent(),
 		{
 			"Condition is true",
-			conditionName + col.R(" is true", col.ANSIBrightRed.Fg),
+			conditionName + scuf.String(" is true", scuf.FgHiRed),
 		},
 	})
 }
@@ -827,7 +827,7 @@ func Falsef(t *testing.T, condition bool, format string, args ...any) {
 		messageLabeledContent(format, args...),
 		{
 			"Condition is true",
-			conditionName + col.R(" is true", col.ANSIBrightRed.Fg),
+			conditionName + scuf.String(" is true", scuf.FgHiRed),
 		},
 	})
 }
