@@ -399,7 +399,7 @@ func (p *printer) printInterface() {
 
 func (p *printer) printPtr() {
 	if p.visited[p.value.Pointer()] {
-		p.printf("&%s{...}", p.elemTypeString())
+		p.printf("&%s{...}", p.colorizeType(p.value.Elem().Type()))
 		return
 	}
 	if p.value.Pointer() != 0 {
@@ -415,10 +415,6 @@ func (p *printer) printPtr() {
 
 func (p *printer) pointerAddr() string {
 	return p.colorize(fmt.Sprintf("%#v", p.value.Pointer()), p.currentScheme.PointerAdress)
-}
-
-func (p *printer) elemTypeString() string {
-	return p.colorizeType(p.value.Elem().Type())
 }
 
 func (p *printer) colorizeType(tt reflect.Type) string {
