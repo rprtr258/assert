@@ -18,17 +18,15 @@ import (
 	"golang.org/x/text/message"
 )
 
-const (
-	indentWidth = 2
-)
+const indentWidth = 2
 
 func (pp *PrettyPrinter) format(object any) string {
 	return newPrinter(object, &pp.currentScheme, pp.maxDepth, pp.coloringEnabled, pp.decimalUint, pp.exportedOnly, pp.thousandsSeparator).String()
 }
 
 func newPrinter(object any, currentScheme *ColorScheme, maxDepth int, coloringEnabled bool, decimalUint bool, exportedOnly bool, thousandsSeparator bool) *printer {
-	buffer := bytes.NewBufferString("")
-	tw := new(tabwriter.Writer)
+	buffer := &bytes.Buffer{}
+	tw := &tabwriter.Writer{}
 	tw.Init(buffer, indentWidth, 0, 1, ' ', 0)
 
 	printer := &printer{
