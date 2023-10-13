@@ -374,11 +374,7 @@ func (p *printer) printArray() {
 				// slice element
 				p.printf("%s,", p.format(p.value.Index(i)))
 				// space or newline
-				if (i+1)%groupsize == 0 || i+1 == p.value.Len() {
-					p.print("\n")
-				} else {
-					p.print(" ")
-				}
+				p.print(fun.IF((i+1)%groupsize == 0 || i+1 == p.value.Len(), "\n", " "))
 			}
 		} else {
 			for i := 0; i < p.value.Len(); i++ {
