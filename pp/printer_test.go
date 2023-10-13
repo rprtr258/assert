@@ -1,8 +1,6 @@
 package pp
 
 import (
-	"bytes"
-	"fmt"
 	"math/big"
 	"reflect"
 	"regexp"
@@ -283,8 +281,7 @@ func processTestCases(t *testing.T, printer *PrettyPrinter, cases []testCase) {
 	for _, test := range cases {
 		actual := printer.format(test.object)
 
-		trimmed := strings.Trim(strings.Replace(test.expect, "\t", "", -1), "\n")
-		expect := colorString(trimmed)
+		expect := strings.Trim(strings.Replace(test.expect, "\t", "", -1), "\n")
 		if expect != actual {
 			t.Errorf(`
 TestCase: %#v
@@ -333,44 +330,3 @@ func logResult(t *testing.T, object any, actual string) {
 	format := fun.IF(strings.Contains(actual, "\n"), "%#v =>\n%s\n", "%#v => %s\n")
 	t.Logf(format, object, actual)
 }
-
-func colorString(text string) string {
-	b := &bytes.Buffer{}
-	colored := false
-
-	lastMatch := []int{0, 0}
-	for _, match := range colorRe.FindAllStringIndex(text, -1) {
-		b.WriteString(text[lastMatch[1]:match[0]])
-		lastMatch = match
-
-		var colorText string
-		color := text[lastMatch[0]+1 : lastMatch[1]-1]
-		if code, ok := colors[color]; ok {
-			colored = (color != "reset")
-			colorText = fmt.Sprintf("\033[%sm", code)
-		} else {
-			colorText = text[lastMatch[0]:lastMatch[1]]
-		}
-		b.WriteString(colorText)
-	}
-	b.WriteString(text[lastMatch[1]:])
-
-	if colored {
-		b.WriteString("\033[0m")
-	}
-	return b.String()
-}
-
-var (
-	colorRe = regexp.MustCompile(`(?i)\[[a-z0-9_-]+\]`)
-	colors  = map[string]string{
-		"red":     "31",
-		"green":   "32",
-		"yellow":  "33",
-		"blue":    "34",
-		"magenta": "35",
-		"cyan":    "36",
-		"bold":    "1",
-		"reset":   "0",
-	}
-)
