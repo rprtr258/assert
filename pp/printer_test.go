@@ -11,6 +11,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/rprtr258/fun"
 	"github.com/rprtr258/scuf"
 )
 
@@ -257,10 +258,7 @@ Actual: %# v
 }
 
 func logResult(t *testing.T, object any, actual string) {
-	format := "%#v => %s\n"
-	if isMultiLine(actual) {
-		format = "%#v =>\n%s\n"
-	}
+	format := fun.IF(isMultiLine(actual), "%#v =>\n%s\n", "%#v => %s\n")
 	t.Logf(format, object, actual)
 }
 
