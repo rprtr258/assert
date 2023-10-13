@@ -376,11 +376,11 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 				}),
 		))
 	case reflect.Interface:
-		if (expected == nil) && (actual == nil) {
+		if expected == nil && actual == nil {
 			return iter.FromNothing[diffLine]()
 		}
 
-		if (expected == nil) || (actual == nil) {
+		if expected == nil || actual == nil {
 			return iter.FromMany(diffLine{
 				selector: selectorPrefix,
 				comment:  "one is nil, one is not",
