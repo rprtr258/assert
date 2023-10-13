@@ -112,12 +112,11 @@ func (p *printer) print(text string) {
 }
 
 func (p *printer) printf(format string, args ...any) {
-	text := fmt.Sprintf(format, args...)
-	p.print(text)
+	fmt.Fprintf(p.tw, format, args...)
 }
 
 func (p *printer) println(text string) {
-	p.print(text + "\n")
+	fmt.Fprintln(p.tw, text)
 }
 
 func (p *printer) indentPrint(text string) {
