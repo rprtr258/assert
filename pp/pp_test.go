@@ -4,29 +4,21 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultOutput(t *testing.T) {
-	testOutput := new(bytes.Buffer)
+	testOutput := &bytes.Buffer{}
 	init := GetDefaultOutput()
 	SetDefaultOutput(testOutput)
-	if GetDefaultOutput() != testOutput {
-		t.Errorf("failed to SetOutput")
-	}
-	if len(testOutput.String()) != 0 {
-		t.Errorf("testOutput should be initialized")
-	}
+	assert.Equal(t, testOutput, GetDefaultOutput())
+	assert.Equal(t, "", testOutput.String())
 	Print("abcde")
-	if len(testOutput.String()) == 0 {
-		t.Errorf("Expected Print output to testOutput, testOutput is %s", testOutput.String())
-	}
-	if init == GetDefaultOutput() {
-		t.Errorf("it should be changed DefaultOutput")
-	}
+	assert.NotEqual(t, "", testOutput.String())
+	assert.NotEqual(t, init, GetDefaultOutput())
 	ResetDefaultOutput()
-	if init != GetDefaultOutput() {
-		t.Errorf("it should be reset to initial default output")
-	}
+	assert.Equal(t, init, GetDefaultOutput())
 }
 
 func TestColorScheme(t *testing.T) {

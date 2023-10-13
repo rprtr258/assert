@@ -93,9 +93,9 @@ func (p *printer) String() string {
 	case reflect.Ptr:
 		p.printPtr()
 	case reflect.Func:
-		p.printf("%s {...}", p.colorizeType(p.value.Type()))
+		p.print(p.colorizeType(p.value.Type()) + " {...}")
 	case reflect.UnsafePointer:
-		p.printf("%s(%s)", p.colorizeType(p.value.Type()), p.pointerAddr())
+		p.print(p.colorizeType(p.value.Type()) + "(" + p.pointerAddr() + ")")
 	case reflect.Invalid:
 		p.print(p.nil())
 	default:
