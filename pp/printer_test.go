@@ -161,7 +161,22 @@ func TestFormat(t *testing.T) {
 				String(`\x00`, scuf.FgMagenta, scuf.ModBold).
 				String(`"`, scuf.FgRed, scuf.ModBold)
 		})},
-		{time.Date(2015, time.February, 14, 22, 15, 0, 0, time.UTC), scuf.String(`2015`, scuf.FgBlue, scuf.ModBold) + `-` + scuf.String(`02`, scuf.FgBlue, scuf.ModBold) + `-` + scuf.String(`14`, scuf.FgBlue, scuf.ModBold) + ` ` + scuf.String(`22`, scuf.FgBlue, scuf.ModBold) + `:` + scuf.String(`15`, scuf.FgBlue, scuf.ModBold) + `:` + scuf.String(`00`, scuf.FgBlue, scuf.ModBold) + ` ` + scuf.String(`UTC`, scuf.FgBlue, scuf.ModBold)},
+		{time.Date(2015, time.February, 14, 22, 15, 0, 0, time.UTC), scuf.NewString(func(b scuf.Buffer) {
+			b.
+				String(`2015`, scuf.FgBlue, scuf.ModBold).
+				String(`-`).
+				String(`02`, scuf.FgBlue, scuf.ModBold).
+				String(`-`).
+				String(`14`, scuf.FgBlue, scuf.ModBold).
+				SPC().
+				String(`22`, scuf.FgBlue, scuf.ModBold).
+				String(`:`).
+				String(`15`, scuf.FgBlue, scuf.ModBold).
+				String(`:`).
+				String(`00`, scuf.FgBlue, scuf.ModBold).
+				String(` `).
+				String(`UTC`, scuf.FgBlue, scuf.ModBold)
+		})},
 		{LargeBuffer{}, `pp.` + `[green]LargeBuffer[reset]` + `{
     ` + `[yellow]Buf[reset]` + `: [` + `[blue]1025[reset]` + `]` + `[green]uint8[reset]` + `{...},
 }`},
