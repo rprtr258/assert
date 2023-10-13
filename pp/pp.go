@@ -209,19 +209,11 @@ func (pp *PrettyPrinter) ResetColorScheme() {
 }
 
 func (pp *PrettyPrinter) formatAll(objects []any) []any {
-	results := []any{}
-
-	// fix for backwards capability
-	withLineInfo := pp.WithLineInfo
-	if pp == Default {
-		withLineInfo = WithLineInfo
-	}
-
-	if withLineInfo {
+	results := make([]any, 0, len(objects)+1)
+	if pp.WithLineInfo || pp == Default && WithLineInfo { // fix for backwards capability
 		_, fn, line, _ := runtime.Caller(pp.callerLevel)
 		results = append(results, fmt.Sprintf("%s:%d\n", fn, line))
 	}
-
 	for _, object := range objects {
 		results = append(results, pp.format(object))
 	}
