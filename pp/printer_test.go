@@ -258,12 +258,8 @@ Actual: %# v
 }
 
 func logResult(t *testing.T, object any, actual string) {
-	format := fun.IF(isMultiLine(actual), "%#v =>\n%s\n", "%#v => %s\n")
+	format := fun.IF(strings.Contains(actual, "\n"), "%#v =>\n%s\n", "%#v => %s\n")
 	t.Logf(format, object, actual)
-}
-
-func isMultiLine(text string) bool {
-	return strings.Contains(text, "\n")
 }
 
 func colorString(text string) string {
