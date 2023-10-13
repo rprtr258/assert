@@ -4,6 +4,8 @@ package pp
 import (
 	"reflect"
 	"sort"
+
+	"github.com/rprtr258/fun"
 )
 
 type sortedMap struct {
@@ -59,10 +61,12 @@ func sortMap(value reflect.Value) *sortedMap {
 	}
 
 	keys := value.MapKeys()
-	values := make([]reflect.Value, value.Len())
-	for i, k := range keys {
-		values[i] = value.MapIndex(k)
-	}
+
+	values := fun.Map[reflect.Value](
+		keys,
+		func(k reflect.Value) reflect.Value {
+			return value.MapIndex(k)
+		})
 
 	sorted := &sortedMap{
 		keys:   keys,
