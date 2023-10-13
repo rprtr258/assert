@@ -183,7 +183,11 @@ func TestFormat(t *testing.T) {
 }
 
 func TestThousands(t *testing.T) {
-	thousandsTestCases := []testCase{
+	thousandsPrinter := newPrettyPrinter(3)
+	thousandsPrinter.SetThousandsSeparator(true)
+	thousandsPrinter.SetDecimalUint(true)
+
+	processTestCases(t, thousandsPrinter, []testCase{
 		{int(4), scuf.String("4", scuf.FgBlue, scuf.ModBold)},
 		{int(4000), scuf.String("4,000", scuf.FgBlue, scuf.ModBold)},
 		{uint(1000), scuf.String("1,000", scuf.FgBlue, scuf.ModBold)},
@@ -191,13 +195,7 @@ func TestThousands(t *testing.T) {
 		{uint32(32000), scuf.String("32,000", scuf.FgBlue, scuf.ModBold)},
 		{uint64(64000), scuf.String("64,000", scuf.FgBlue, scuf.ModBold)},
 		{float64(3000.14), scuf.String("3,000.140000", scuf.FgMagenta, scuf.ModBold)},
-	}
-
-	thousandsPrinter := newPrettyPrinter(3)
-	thousandsPrinter.SetThousandsSeparator(true)
-	thousandsPrinter.SetDecimalUint(true)
-
-	processTestCases(t, thousandsPrinter, thousandsTestCases)
+	})
 }
 
 func processTestCases(t *testing.T, printer *PrettyPrinter, cases []testCase) {
@@ -253,11 +251,11 @@ Actual: %# v
 }
 
 func logResult(t *testing.T, object any, actual string) {
+	format := "%#v => %s\n"
 	if isMultiLine(actual) {
-		t.Logf("%#v =>\n%s\n", object, actual)
-	} else {
-		t.Logf("%#v => %s\n", object, actual)
+		format = "%#v =>\n%s\n"
 	}
+	t.Logf(format, object, actual)
 }
 
 func isMultiLine(text string) bool {
