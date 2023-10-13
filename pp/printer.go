@@ -417,32 +417,34 @@ func (p *printer) pointerAddr() string {
 	return p.colorize(fmt.Sprintf("%#v", p.value.Pointer()), p.currentScheme.PointerAdress)
 }
 
-func (p *printer) colorizeType(tt reflect.Type) string {
-	t := tt.String()
+var (
+	_reTypeSlice  = regexp.MustCompile(`^\[\].`)
+	_reTypeArray  = regexp.MustCompile(`^\[\d+\].`)
+	_reTypeStruct = regexp.MustCompile(`^[^\.]+\.[^\.]+$`)
+)
+
+func (p *printer) colorizeType(typ reflect.Type) string {
 	prefix := ""
+	typeStr := typ.String()
 
-	if p.matchRegexp(t, `^\[\].`) { // slice
+	if _reTypeSlice.MatchString(typeStr) {
 		prefix = "[]"
-		t = t[2:]
+		typeStr = typeStr[2:]
 	}
 
-	if p.matchRegexp(t, `^\[\d+\].`) { // array
-		num := regexp.MustCompile(`\d+`).FindString(t)
+	if _reTypeArray.MatchString(typeStr) {
+		num := regexp.MustCompile(`\d+`).FindString(typeStr)
 		prefix = fmt.Sprintf("[%s]", p.colorize(num, p.currentScheme.ObjectLength))
-		t = t[2+len(num):]
+		typeStr = typeStr[2+len(num):]
 	}
 
-	if p.matchRegexp(t, `^[^\.]+\.[^\.]+$`) { // struct
-		ts := strings.Split(t, ".")
-		t = fmt.Sprintf("%s.%s", ts[0], p.colorize(ts[1], p.currentScheme.StructName))
+	if _reTypeStruct.MatchString(typeStr) {
+		ts := strings.Split(typeStr, ".")
+		typeStr = fmt.Sprintf("%s.%s", ts[0], p.colorize(ts[1], p.currentScheme.StructName))
 	} else {
-		t = p.colorize(t, p.currentScheme.StructName)
+		typeStr = p.colorize(typeStr, p.currentScheme.StructName)
 	}
-	return prefix + t
-}
-
-func (p *printer) matchRegexp(text, exp string) bool {
-	return regexp.MustCompile(exp).MatchString(text)
+	return prefix + typeStr
 }
 
 func (p *printer) indented(proc func()) {
