@@ -67,14 +67,12 @@ func TestStructPrintingWithTags(t *testing.T) {
 		Full         string `pp:"full,omitempty"`
 	}
 
-	for _, tc := range []struct {
-		name               string
+	for name, tc := range map[string]struct {
 		foo                Foo
 		omitIfEmptyOmitted bool
 		fullOmitted        bool
 	}{
-		{
-			name: "all set",
+		"all set": {
 			foo: Foo{
 				IgnoreMe:     "i'm a secret",
 				ChangeMyName: "i'm an alias",
@@ -84,8 +82,7 @@ func TestStructPrintingWithTags(t *testing.T) {
 			omitIfEmptyOmitted: false,
 			fullOmitted:        false,
 		},
-		{
-			name: "omit if empty not set",
+		"omit if empty not set": {
 			foo: Foo{
 				IgnoreMe:     "i'm a secret",
 				ChangeMyName: "i'm an alias",
@@ -95,8 +92,7 @@ func TestStructPrintingWithTags(t *testing.T) {
 			omitIfEmptyOmitted: true,
 			fullOmitted:        false,
 		},
-		{
-			name: "both omitted",
+		"both omitted": {
 			foo: Foo{
 				IgnoreMe:     "i'm a secret",
 				ChangeMyName: "i'm an alias",
@@ -106,15 +102,14 @@ func TestStructPrintingWithTags(t *testing.T) {
 			omitIfEmptyOmitted: true,
 			fullOmitted:        true,
 		},
-		{
-			name:               "zero",
+		"zero": {
 			foo:                Foo{},
 			omitIfEmptyOmitted: true,
 			fullOmitted:        true,
 		},
 	} {
 		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
+		t.Run(name, func(t *testing.T) {
 			output := &bytes.Buffer{}
 			pp := New()
 			pp.SetOutput(output)
