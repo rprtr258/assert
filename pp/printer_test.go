@@ -222,8 +222,7 @@ func TestFormat(t *testing.T) {
 						NL()
 				})
 		})},
-		{[]uint16{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, `
-[]` + scuf.String(`uint16`, scuf.FgGreen) + `{
+		{[]uint16{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, `[]` + scuf.String(`uint16`, scuf.FgGreen) + `{
     ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `,
     ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `,
     ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `,
@@ -279,9 +278,7 @@ func processTestCases(t *testing.T, printer *PrettyPrinter, cases []testCase) {
 
 	for _, test := range cases {
 		actual := printer.format(test.object)
-
-		expect := strings.Trim(test.expect, "\n")
-		if expect != actual {
+		if test.expect != actual {
 			t.Errorf(`
 TestCase: %#v
 Type: %s
@@ -290,7 +287,7 @@ Actual: %# v
 `,
 				test.object,
 				reflect.ValueOf(test.object).Kind(),
-				expect,
+				test.expect,
 				actual,
 			)
 			return
