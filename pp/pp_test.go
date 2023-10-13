@@ -23,27 +23,22 @@ func TestDefaultOutput(t *testing.T) {
 
 func TestColorScheme(t *testing.T) {
 	SetColorScheme(ColorScheme{})
-
-	if len(Default.currentScheme.FieldName) == 0 {
-		t.FailNow()
-	}
+	assert.NotEqual(t, 0, len(Default.currentScheme.FieldName))
 }
 
 func TestWithLineInfo(t *testing.T) {
-	outputWithoutLineInfo := new(bytes.Buffer)
+	outputWithoutLineInfo := &bytes.Buffer{}
 	SetDefaultOutput(outputWithoutLineInfo)
 	Print("abcde")
 
-	outputWithLineInfo := new(bytes.Buffer)
+	outputWithLineInfo := &bytes.Buffer{}
 	SetDefaultOutput(outputWithLineInfo)
 	WithLineInfo = true
 	Print("abcde")
 
 	ResetDefaultOutput()
 
-	if bytes.Equal(outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes()) {
-		t.Errorf("outputWithLineInfo should not have the same contents than outputWithoutLineInfo")
-	}
+	assert.NotEqual(t, outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes())
 }
 
 func TestWithLineInfoBackwardsCompatible(t *testing.T) {
@@ -59,9 +54,7 @@ func TestWithLineInfoBackwardsCompatible(t *testing.T) {
 	pp.SetOutput(outputWithoutLineInfo)
 	pp.Print("abcde")
 
-	if bytes.Equal(outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes()) {
-		t.Errorf("outputWithLineInfo should not have the same contents than outputWithoutLineInfo")
-	}
+	assert.NotEqual(t, outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes())
 
 	ResetDefaultOutput()
 }
@@ -74,7 +67,7 @@ func TestStructPrintingWithTags(t *testing.T) {
 		Full         string `pp:"full,omitempty"`
 	}
 
-	testCases := []struct {
+	for _, tc := range []struct {
 		name               string
 		foo                Foo
 		omitIfEmptyOmitted bool
@@ -119,12 +112,10 @@ func TestStructPrintingWithTags(t *testing.T) {
 			omitIfEmptyOmitted: true,
 			fullOmitted:        true,
 		},
-	}
-
-	for _, tc := range testCases {
+	} {
 		tc := tc
 		t.Run(tc.name, func(t *testing.T) {
-			output := new(bytes.Buffer)
+			output := &bytes.Buffer{}
 			pp := New()
 			pp.SetOutput(output)
 
@@ -132,22 +123,11 @@ func TestStructPrintingWithTags(t *testing.T) {
 
 			result := output.String()
 
-			if strings.Contains(result, "IgnoreMe") {
-				t.Error("result should not contain IgnoreMe")
-			}
-
-			if strings.Contains(result, "OmitIfEmpty") && tc.omitIfEmptyOmitted {
-				t.Error("result should not contain OmitIfEmpty")
-			} else if !strings.Contains(result, "OmitIfEmpty") && !tc.omitIfEmptyOmitted {
-				t.Error("result should contain OmitIfEmpty")
-			}
+			assert.NotContains(t, result, "IgnoreMe")
+			assert.True(t, strings.Contains(result, "OmitIfEmpty") != tc.omitIfEmptyOmitted)
 
 			// field Full is renamed to full by the tag
-			if strings.Contains(result, "full") && tc.fullOmitted {
-				t.Error("result should not contain full")
-			} else if !strings.Contains(result, "full") && !tc.fullOmitted {
-				t.Error("result should contain full")
-			}
+			assert.True(t, strings.Contains(result, "full") != tc.fullOmitted)
 		})
 	}
 
