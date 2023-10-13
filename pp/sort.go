@@ -58,12 +58,10 @@ func sortMap(value reflect.Value) *sortedMap {
 		panic("sortMap is used for a non-Map value")
 	}
 
-	keys := make([]reflect.Value, value.Len())
+	keys := value.MapKeys()
 	values := make([]reflect.Value, value.Len())
-	mapKeys := value.MapKeys()
-	for i := 0; i < len(mapKeys); i++ {
-		keys[i] = mapKeys[i]
-		values[i] = value.MapIndex(mapKeys[i])
+	for i, k := range keys {
+		values[i] = value.MapIndex(k)
 	}
 
 	sorted := &sortedMap{
