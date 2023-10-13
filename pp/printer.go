@@ -280,51 +280,7 @@ func (p *printer) printSlice() {
 		return
 	}
 
-	if p.value.Len() == 0 {
-		p.printf(p.colorizeType(p.value.Type()) + "{}")
-		return
-	}
-
-	if p.value.Kind() == reflect.Slice {
-		if p.visited[p.value.Pointer()] {
-			// Stop travarsing cyclic reference
-			p.printf(p.colorizeType(p.value.Type()) + "{...}")
-			return
-		}
-		p.visited[p.value.Pointer()] = true
-	}
-
-	// Fold a large buffer
-	if p.value.Len() > BufferFoldThreshold {
-		p.printf(p.colorizeType(p.value.Type()) + "{...}")
-		return
-	}
-
-	p.println(p.colorizeType(p.value.Type()) + "{")
-	p.indented(func() {
-		groupsize := fun.
-			SwitchZero[int](p.value.Type().Elem().Kind()).
-			Case(reflect.Uint8, 16).
-			Case(reflect.Uint16, 8).
-			Case(reflect.Uint32, 8).
-			Case(reflect.Uint64, 4).
-			End()
-
-		if groupsize > 0 {
-			for i := 0; i < p.value.Len(); i++ {
-				if i%groupsize == 0 {
-					p.print(p.indent())
-				}
-				p.printf(p.format(p.value.Index(i)) + ",")
-				p.print(fun.IF((i+1)%groupsize == 0 || i+1 == p.value.Len(), "\n", " "))
-			}
-		} else {
-			for i := 0; i < p.value.Len(); i++ {
-				p.indentPrintf(p.format(p.value.Index(i)) + ",\n")
-			}
-		}
-	})
-	p.indentPrint("}")
+	p.printArray()
 }
 
 func (p *printer) printArray() {
