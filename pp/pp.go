@@ -45,11 +45,11 @@ type PrettyPrinter struct {
 	currentScheme      ColorScheme
 	outLock            sync.Mutex
 	maxDepth           int
-	coloringEnabled    bool
-	decimalUint        bool
-	thousandsSeparator bool
+	ColoringEnabled    bool
+	DecimalUint        bool
+	ThousandsSeparator bool
 	// This skips unexported fields of structs.
-	exportedOnly bool
+	ExportedOnly bool
 }
 
 // New creates a new PrettyPrinter that can be used to pretty print values
@@ -64,9 +64,9 @@ func newPrettyPrinter(callerLevel int) *PrettyPrinter {
 		out:             defaultOut,
 		currentScheme:   defaultScheme,
 		maxDepth:        -1,
-		coloringEnabled: true,
-		decimalUint:     true,
-		exportedOnly:    false,
+		ColoringEnabled: true,
+		DecimalUint:     true,
+		ExportedOnly:    false,
 	}
 }
 
@@ -136,22 +136,6 @@ func (pp *PrettyPrinter) Fatalf(format string, a ...any) {
 func (pp *PrettyPrinter) Fatalln(a ...any) {
 	fmt.Fprintln(pp.out, pp.formatAll(a)...)
 	os.Exit(1)
-}
-
-func (pp *PrettyPrinter) SetColoringEnabled(enabled bool) {
-	pp.coloringEnabled = enabled
-}
-
-func (pp *PrettyPrinter) SetDecimalUint(enabled bool) {
-	pp.decimalUint = enabled
-}
-
-func (pp *PrettyPrinter) SetExportedOnly(enabled bool) {
-	pp.exportedOnly = enabled
-}
-
-func (pp *PrettyPrinter) SetThousandsSeparator(enabled bool) {
-	pp.thousandsSeparator = enabled
 }
 
 // SetOutput sets pp's output

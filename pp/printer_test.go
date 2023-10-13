@@ -191,8 +191,8 @@ func TestFormat(t *testing.T) {
 
 func TestThousands(t *testing.T) {
 	thousandsPrinter := newPrettyPrinter(3)
-	thousandsPrinter.SetThousandsSeparator(true)
-	thousandsPrinter.SetDecimalUint(true)
+	thousandsPrinter.ThousandsSeparator = true
+	thousandsPrinter.DecimalUint = true
 
 	processTestCases(t, thousandsPrinter, []testCase{
 		{int(4), scuf.String("4", scuf.FgBlue, scuf.ModBold)},

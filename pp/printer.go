@@ -21,7 +21,7 @@ import (
 const indentWidth = 2
 
 func (pp *PrettyPrinter) format(object any) string {
-	return newPrinter(object, &pp.currentScheme, pp.maxDepth, pp.coloringEnabled, pp.decimalUint, pp.exportedOnly, pp.thousandsSeparator).String()
+	return newPrinter(object, &pp.currentScheme, pp.maxDepth, pp.ColoringEnabled, pp.DecimalUint, pp.ExportedOnly, pp.ThousandsSeparator).String()
 }
 
 func newPrinter(object any, currentScheme *ColorScheme, maxDepth int, coloringEnabled bool, decimalUint bool, exportedOnly bool, thousandsSeparator bool) *printer {
