@@ -312,18 +312,11 @@ func (p *printer) printSlice() {
 
 		if groupsize > 0 {
 			for i := 0; i < p.value.Len(); i++ {
-				// indent for new group
 				if i%groupsize == 0 {
 					p.print(p.indent())
 				}
-				// slice element
-				p.printf("%s,", p.format(p.value.Index(i)))
-				// space or newline
-				if (i+1)%groupsize == 0 || i+1 == p.value.Len() {
-					p.print("\n")
-				} else {
-					p.print(" ")
-				}
+				p.printf(p.format(p.value.Index(i)) + ",")
+				p.print(fun.IF((i+1)%groupsize == 0 || i+1 == p.value.Len(), "\n", " "))
 			}
 		} else {
 			for i := 0; i < p.value.Len(); i++ {
@@ -367,13 +360,10 @@ func (p *printer) printArray() {
 
 		if groupsize > 0 {
 			for i := 0; i < p.value.Len(); i++ {
-				// indent for new group
 				if i%groupsize == 0 {
 					p.print(p.indent())
 				}
-				// slice element
 				p.printf(p.format(p.value.Index(i)) + ",")
-				// space or newline
 				p.print(fun.IF((i+1)%groupsize == 0 || i+1 == p.value.Len(), "\n", " "))
 			}
 		} else {
@@ -386,8 +376,7 @@ func (p *printer) printArray() {
 }
 
 func (p *printer) printInterface() {
-	e := p.value.Elem()
-	switch {
+	switch e := p.value.Elem(); {
 	case e.Kind() == reflect.Invalid:
 		p.print(p.nil())
 	case e.IsValid():
