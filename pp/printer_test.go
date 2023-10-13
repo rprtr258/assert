@@ -14,11 +14,6 @@ import (
 	"github.com/rprtr258/scuf"
 )
 
-type testCase struct {
-	object any
-	expect string
-}
-
 type Foo struct {
 	Bar       int
 	Hoge      string
@@ -81,6 +76,11 @@ var (
 	bigInt, _      = new(big.Int).SetString("-908f8474ea971baf", 16)
 	bigFloat, _, _ = big.ParseFloat("3.1415926535897932384626433832795028", 10, 10, big.ToZero)
 )
+
+type testCase struct {
+	object any
+	expect string
+}
 
 func TestFormat(t *testing.T) {
 	processTestCases(t, Default, []testCase{
