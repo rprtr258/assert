@@ -440,7 +440,7 @@ func (p *printer) colorizeType(typ reflect.Type) string {
 
 	if _reTypeStruct.MatchString(typeStr) {
 		ts := strings.Split(typeStr, ".")
-		typeStr = fmt.Sprintf("%s.%s", ts[0], p.colorize(ts[1], p.currentScheme.StructName))
+		typeStr = ts[0] + "." + p.colorize(ts[1], p.currentScheme.StructName)
 	} else {
 		typeStr = p.colorize(typeStr, p.currentScheme.StructName)
 	}
