@@ -61,16 +61,13 @@ func sortMap(value reflect.Value) *sortedMap {
 	}
 
 	keys := value.MapKeys()
-
-	values := fun.Map[reflect.Value](
-		keys,
-		func(k reflect.Value) reflect.Value {
-			return value.MapIndex(k)
-		})
-
 	sorted := &sortedMap{
-		keys:   keys,
-		values: values,
+		keys: keys,
+		values: fun.Map[reflect.Value](
+			keys,
+			func(k reflect.Value) reflect.Value {
+				return value.MapIndex(k)
+			}),
 	}
 	sort.Stable(sorted)
 	return sorted
