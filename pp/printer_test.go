@@ -110,14 +110,44 @@ func TestFormat(t *testing.T) {
 		{float64(3.14), scuf.String("3.140000", scuf.FgMagenta, scuf.ModBold)},
 		{complex64(complex(3, -4)), scuf.String("(3-4i)", scuf.FgBlue, scuf.ModBold)},
 		{complex128(complex(5, 6)), scuf.String("(5+6i)", scuf.FgBlue, scuf.ModBold)},
-		{"string", scuf.String(`"`, scuf.FgRed, scuf.ModBold) + scuf.String("string", scuf.FgRed) + scuf.String(`"`, scuf.FgRed, scuf.ModBold)},
-		{[]string{}, "[]" + scuf.String("string", scuf.FgGreen) + "{}"},
-		{EmptyStruct{}, "pp." + scuf.String("EmptyStruct", scuf.FgGreen) + "{}"},
+		{"string", scuf.NewString(func(b scuf.Buffer) {
+			b.
+				String(`"`, scuf.FgRed, scuf.ModBold).
+				String("string", scuf.FgRed).
+				String(`"`, scuf.FgRed, scuf.ModBold)
+		})},
+		{[]string{}, scuf.NewString(func(b scuf.Buffer) {
+			b.
+				String("[]").
+				String("string", scuf.FgGreen).
+				String("{}")
+		})},
+		{EmptyStruct{}, scuf.NewString(func(b scuf.Buffer) {
+			b.
+				String("pp.").
+				String("EmptyStruct", scuf.FgGreen).
+				String("{}")
+		})},
 		{
-			[]*Piyo{nil, nil}, `[]*pp.` + scuf.String("Piyo", scuf.FgGreen) + `{
-    (*pp.` + scuf.String("Piyo", scuf.FgGreen) + `)(` + scuf.String("nil", scuf.FgCyan, scuf.ModBold) + `),
-    (*pp.` + scuf.String("Piyo", scuf.FgGreen) + `)(` + scuf.String("nil", scuf.FgCyan, scuf.ModBold) + `),
-}`,
+			[]*Piyo{nil, nil}, scuf.NewString(func(b scuf.Buffer) {
+				b.
+					String(`[]*pp.`).
+					String("Piyo", scuf.FgGreen).
+					InBytePair('{', '}', func(b scuf.Buffer) {
+						b.
+							NL().
+							String(`    (*pp.`).
+							String("Piyo", scuf.FgGreen).
+							String(`)(`).
+							String("nil", scuf.FgCyan, scuf.ModBold).
+							String(`),`).NL().
+							String(`    (*pp.`).
+							String("Piyo", scuf.FgGreen).
+							String(`)(`).
+							String("nil", scuf.FgCyan, scuf.ModBold).
+							String(`),`).NL()
+					})
+			}),
 		},
 		{
 			&c, `&pp.` + scuf.String("Circular", scuf.FgGreen) + `{
