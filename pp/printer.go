@@ -164,40 +164,47 @@ func (p *printer) printString() {
 
 func (p *printer) printMap() {
 	if p.value.Len() == 0 {
-		p.printf("%s{}", p.typeString())
+		p.printf(p.typeString() + "{}")
 		return
 	}
 
 	if p.visited[p.value.Pointer()] {
-		p.printf("%s{...}", p.typeString())
+		p.printf(p.typeString() + "{...}")
 		return
 	}
 	p.visited[p.value.Pointer()] = true
 
 	if PrintMapTypes {
-		p.printf("%s{\n", p.typeString())
+		p.printf(p.typeString() + "{\n")
 	} else {
 		p.println("{")
 	}
 	p.indented(func() {
 		value := sortMap(p.value)
 		for i := 0; i < value.Len(); i++ {
-			p.indentPrintf("%s:\t%s,\n", p.format(value.keys[i]), p.format(value.values[i]))
+			p.indentPrintf(
+				"%s:\t%s,\n",
+				p.format(value.keys[i]),
+				p.format(value.values[i]),
+			)
 		}
 	})
 	p.indentPrint("}")
 }
 
 func (p *printer) printStruct() {
+	typ := p.value.Type()
+
 	if p.value.CanInterface() {
-		if p.value.Type().String() == "time.Time" && p.value.Type().PkgPath() == "time" {
+		switch {
+		case typ.String() == "time.Time" && typ.PkgPath() == "time":
 			p.printTime()
 			return
-		} else if p.value.Type().String() == "big.Int" {
+		case typ.String() == "big.Int":
 			bigInt := p.value.Interface().(big.Int)
 			p.print(p.colorize(bigInt.String(), p.currentScheme.Integer))
 			return
-		} else if p.value.Type().String() == "big.Float" {
+		case typ.String() == "big.Float":
 			bigFloat := p.value.Interface().(big.Float)
 			p.print(p.colorize(bigFloat.String(), p.currentScheme.Float))
 			return
@@ -206,16 +213,16 @@ func (p *printer) printStruct() {
 
 	var fields []int
 	for i := 0; i < p.value.NumField(); i++ {
-		field := p.value.Type().Field(i)
-		value := p.value.Field(i)
+		field := typ.Field(i)
 		// ignore unexported if needed
 		if p.exportedOnly && field.PkgPath != "" {
 			continue
 		}
+
 		// ignore fields if zero value, or explicitly set
 		if tag := field.Tag.Get("pp"); tag != "" {
 			parts := strings.Split(tag, ",")
-			if len(parts) == 2 && parts[1] == "omitempty" && valueIsZero(value) {
+			if len(parts) == 2 && parts[1] == "omitempty" && valueIsZero(p.value.Field(i)) {
 				continue
 			}
 			if parts[0] == "-" {
@@ -224,7 +231,6 @@ func (p *printer) printStruct() {
 		}
 		fields = append(fields, i)
 	}
-
 	if len(fields) == 0 {
 		p.print(p.typeString() + "{}")
 		return
@@ -234,7 +240,6 @@ func (p *printer) printStruct() {
 	p.indented(func() {
 		for _, i := range fields {
 			field := p.value.Type().Field(i)
-			value := p.value.Field(i)
 
 			fieldName := field.Name
 			if tag := field.Tag.Get("pp"); tag != "" {
@@ -244,8 +249,11 @@ func (p *printer) printStruct() {
 				}
 			}
 
-			colorizedFieldName := p.colorize(fieldName, p.currentScheme.FieldName)
-			p.indentPrintf("%s:\t%s,\n", colorizedFieldName, p.format(value))
+			p.indentPrintf(
+				"%s:\t%s,\n",
+				p.colorize(fieldName, p.currentScheme.FieldName),
+				p.format(p.value.Field(i)),
+			)
 		}
 	})
 	p.indentPrint("}")
