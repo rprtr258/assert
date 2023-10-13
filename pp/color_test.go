@@ -1,4 +1,4 @@
-package pp
+package pp_test
 
 import (
 	"testing"
@@ -6,14 +6,12 @@ import (
 	"github.com/rprtr258/scuf"
 )
 
-type colorTest struct {
-	input  string
-	mods   []scuf.Modifier
-	result string
-}
-
 func TestColorize(t *testing.T) {
-	for _, test := range []colorTest{
+	for _, test := range []struct {
+		input  string
+		mods   []scuf.Modifier
+		result string
+	}{
 		{
 			"blue on red",
 			[]scuf.Modifier{scuf.FgBlue, scuf.BgRed},
