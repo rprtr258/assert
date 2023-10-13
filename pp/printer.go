@@ -329,14 +329,14 @@ func (p *printer) printSlice() {
 
 func (p *printer) printArray() {
 	if p.value.Len() == 0 {
-		p.printf("%s{}", p.colorizeType(p.value.Type()))
+		p.printf(p.colorizeType(p.value.Type()) + "{}")
 		return
 	}
 
 	if p.value.Kind() == reflect.Slice {
 		if p.visited[p.value.Pointer()] {
 			// Stop travarsing cyclic reference
-			p.printf("%s{...}", p.colorizeType(p.value.Type()))
+			p.printf(p.colorizeType(p.value.Type()) + "{...}")
 			return
 		}
 		p.visited[p.value.Pointer()] = true
@@ -344,7 +344,7 @@ func (p *printer) printArray() {
 
 	// Fold a large buffer
 	if p.value.Len() > BufferFoldThreshold {
-		p.printf("%s{...}", p.colorizeType(p.value.Type()))
+		p.printf(p.colorizeType(p.value.Type()) + "{...}")
 		return
 	}
 
