@@ -357,17 +357,13 @@ func (p *printer) printArray() {
 
 	p.println(p.typeString() + "{")
 	p.indented(func() {
-		groupsize := 0
-		switch p.value.Type().Elem().Kind() {
-		case reflect.Uint8:
-			groupsize = 16
-		case reflect.Uint16:
-			groupsize = 8
-		case reflect.Uint32:
-			groupsize = 8
-		case reflect.Uint64:
-			groupsize = 4
-		}
+		groupsize := fun.
+			SwitchZero[int](p.value.Type().Elem().Kind()).
+			Case(reflect.Uint8, 16).
+			Case(reflect.Uint16, 8).
+			Case(reflect.Uint32, 8).
+			Case(reflect.Uint64, 4).
+			End()
 
 		if groupsize > 0 {
 			for i := 0; i < p.value.Len(); i++ {
