@@ -177,13 +177,54 @@ func TestFormat(t *testing.T) {
 				String(` `).
 				String(`UTC`, scuf.FgBlue, scuf.ModBold)
 		})},
-		{LargeBuffer{}, `pp.` + `[green]LargeBuffer[reset]` + `{
-    ` + `[yellow]Buf[reset]` + `: [` + `[blue]1025[reset]` + `]` + `[green]uint8[reset]` + `{...},
-}`},
-		{[]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, `[]` + `[green]uint8[reset]` + `{
-			    ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `,
-			    ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `,
-			}`},
+		{LargeBuffer{}, scuf.NewString(func(b scuf.Buffer) {
+			b.
+				String(`pp.`).String(`LargeBuffer`, scuf.FgGreen).InBytePair('{', '}', func(b scuf.Buffer) {
+				b.
+					NL().
+					String(`    `).
+					String(`Buf`, scuf.FgYellow).
+					String(`: [`).
+					String(`1025`, scuf.FgBlue).
+					String(`]`).
+					String(`uint8`, scuf.FgGreen).
+					String(`{...},`).
+					NL()
+			})
+		})},
+		{[]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, scuf.NewString(func(b scuf.Buffer) {
+			b.
+				String(`[]`).
+				String(`uint8`, scuf.FgGreen).
+				InBytePair('{', '}', func(b scuf.Buffer) {
+					b.NL().
+						String(`			    `).
+						String(`0`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`1`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`2`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`3`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`4`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`5`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`6`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`7`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`8`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`9`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`0`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`1`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`2`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`3`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`4`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`5`, scuf.FgBlue, scuf.ModBold).String(`,`).
+						NL().
+						String(`			    `).
+						String(`6`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`7`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`8`, scuf.FgBlue, scuf.ModBold).String(`, `).
+						String(`9`, scuf.FgBlue, scuf.ModBold).String(`,`).
+						NL().
+						String(`			`)
+				})
+		})},
 		{[]uint16{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, `
 			[]` + `[green]uint16[reset]` + `{
 			    ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `,
