@@ -13,8 +13,37 @@ import (
 	"github.com/rprtr258/scuf"
 )
 
+type ColorScheme struct {
+	Bool            scuf.Modifier
+	Integer         scuf.Modifier
+	Float           scuf.Modifier
+	String          scuf.Modifier
+	StringQuotation scuf.Modifier
+	EscapedChar     scuf.Modifier
+	FieldName       scuf.Modifier
+	PointerAdress   scuf.Modifier
+	Nil             scuf.Modifier
+	Time            scuf.Modifier
+	StructName      scuf.Modifier
+	ObjectLength    scuf.Modifier
+}
+
+var defaultScheme = ColorScheme{
+	Bool:            scuf.CombineModifiers(scuf.FgCyan, scuf.ModBold),
+	Integer:         scuf.CombineModifiers(scuf.FgBlue, scuf.ModBold),
+	Float:           scuf.CombineModifiers(scuf.FgMagenta, scuf.ModBold),
+	String:          scuf.FgRed,
+	StringQuotation: scuf.CombineModifiers(scuf.FgRed, scuf.ModBold),
+	EscapedChar:     scuf.CombineModifiers(scuf.FgMagenta, scuf.ModBold),
+	FieldName:       scuf.FgYellow,
+	PointerAdress:   scuf.CombineModifiers(scuf.FgBlue, scuf.ModBold),
+	Nil:             scuf.CombineModifiers(scuf.FgCyan, scuf.ModBold),
+	Time:            scuf.CombineModifiers(scuf.FgBlue, scuf.ModBold),
+	StructName:      scuf.FgGreen,
+	ObjectLength:    scuf.FgBlue,
+}
+
 // Global variable API
-// see also: color.go
 var (
 	// Default pretty printer. It's public so that you can modify config globally.
 	Default = newPrettyPrinter(3) // pp.* => PrettyPrinter.* => formatAll
