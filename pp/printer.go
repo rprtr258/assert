@@ -123,8 +123,7 @@ func (p *printer) indentPrint(text string) {
 }
 
 func (p *printer) indentPrintf(format string, args ...any) {
-	text := fmt.Sprintf(format, args...)
-	p.indentPrint(text)
+	p.indentPrint(fmt.Sprintf(format, args...))
 }
 
 func (p *printer) colorPrint(text string, mod scuf.Modifier) {
