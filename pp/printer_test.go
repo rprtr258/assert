@@ -38,8 +38,7 @@ type HogeHoge struct {
 	A     any
 }
 
-type EmptyStruct struct {
-}
+type EmptyStruct struct{}
 
 type User struct {
 	Name      string
