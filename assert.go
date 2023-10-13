@@ -369,80 +369,80 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 					aval.Field(i).Interface(),
 				)
 			})
-		// case reflect.Map:
-		// 	expectedKeys := map[any]struct{}{}
-		// 	for _, k := range eval.MapKeys() {
-		// 		expectedKeys[k.Interface()] = struct{}{}
-		// 	}
+	case reflect.Map:
+		expectedKeys := map[any]struct{}{}
+		for _, k := range eval.MapKeys() {
+			expectedKeys[k.Interface()] = struct{}{}
+		}
 
-		// 	actualKeys := map[any]struct{}{}
-		// 	for _, k := range aval.MapKeys() {
-		// 		actualKeys[k.Interface()] = struct{}{}
-		// 	}
+		actualKeys := map[any]struct{}{}
+		for _, k := range aval.MapKeys() {
+			actualKeys[k.Interface()] = struct{}{}
+		}
 
-		// 	commonKeys := map[any]struct{}{}
-		// 	expectedOnlyKeys := map[any]struct{}{}
-		// 	for k := range expectedKeys {
-		// 		if _, ok := actualKeys[k]; ok {
-		// 			commonKeys[k] = struct{}{}
-		// 		} else {
-		// 			expectedOnlyKeys[k] = struct{}{}
-		// 		}
-		// 	}
+		commonKeys := map[any]struct{}{}
+		expectedOnlyKeys := map[any]struct{}{}
+		for k := range expectedKeys {
+			if _, ok := actualKeys[k]; ok {
+				commonKeys[k] = struct{}{}
+			} else {
+				expectedOnlyKeys[k] = struct{}{}
+			}
+		}
 
-		// 	actualOnlyKeys := map[any]struct{}{}
-		// 	for k := range actualKeys {
-		// 		if _, ok := expectedKeys[k]; !ok {
-		// 			actualOnlyKeys[k] = struct{}{}
-		// 		}
-		// 	}
+		actualOnlyKeys := map[any]struct{}{}
+		for k := range actualKeys {
+			if _, ok := expectedKeys[k]; !ok {
+				actualOnlyKeys[k] = struct{}{}
+			}
+		}
 
-		// 	return iter.Flatten(iter.FromMany(
-		// 		iter.FlatMap(
-		// 			iter.Keys(iter.FromDict(commonKeys)),
-		// 			func(k any) iter.Seq[diffLine] {
-		// 				return diffImpl(
-		// 					fmt.Sprintf("%s[%v]", selectorPrefix, k),
-		// 					eval.MapIndex(reflect.ValueOf(k)),
-		// 					aval.MapIndex(reflect.ValueOf(k)),
-		// 				)
-		// 			}),
-		// 		iter.Map(
-		// 			iter.Keys(iter.FromDict(expectedOnlyKeys)),
-		// 			func(k any) diffLine {
-		// 				return diffLine{
-		// 					selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
-		// 					comment:  "not found key in actual",
-		// 					expected: eval.MapIndex(reflect.ValueOf(k)).Interface(),
-		// 					actual:   nil,
-		// 				}
-		// 			}),
-		// 		iter.Map(
-		// 			iter.Keys(iter.FromDict(actualOnlyKeys)),
-		// 			func(k any) diffLine {
-		// 				return diffLine{
-		// 					selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
-		// 					comment:  "unexpected key in actual",
-		// 					expected: nil,
-		// 					actual:   aval.MapIndex(reflect.ValueOf(k)).Interface(),
-		// 				}
-		// 			}),
-		// 	))
-		// case reflect.Interface:
-		// 	if (expected == nil) && (actual == nil) {
-		// 		return iter.FromNothing[diffLine]()
-		// 	}
+		return iter.Flatten(iter.FromMany(
+			iter.FlatMap(
+				iter.Keys(iter.FromDict(commonKeys)),
+				func(k any) iter.Seq[diffLine] {
+					return diffImpl(
+						fmt.Sprintf("%s[%v]", selectorPrefix, k),
+						eval.MapIndex(reflect.ValueOf(k)),
+						aval.MapIndex(reflect.ValueOf(k)),
+					)
+				}),
+			iter.Map(
+				iter.Keys(iter.FromDict(expectedOnlyKeys)),
+				func(k any) diffLine {
+					return diffLine{
+						selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
+						comment:  "not found key in actual",
+						expected: eval.MapIndex(reflect.ValueOf(k)).Interface(),
+						actual:   nil,
+					}
+				}),
+			iter.Map(
+				iter.Keys(iter.FromDict(actualOnlyKeys)),
+				func(k any) diffLine {
+					return diffLine{
+						selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
+						comment:  "unexpected key in actual",
+						expected: nil,
+						actual:   aval.MapIndex(reflect.ValueOf(k)).Interface(),
+					}
+				}),
+		))
+	case reflect.Interface:
+		if (expected == nil) && (actual == nil) {
+			return iter.FromNothing[diffLine]()
+		}
 
-		// 	if (expected == nil) || (actual == nil) {
-		// 		return iter.FromMany(diffLine{
-		// 			selector: selectorPrefix,
-		// 			comment:  "one is nil, one is not",
-		// 			expected: expected,
-		// 			actual:   actual,
-		// 		})
-		// 	}
+		if (expected == nil) || (actual == nil) {
+			return iter.FromMany(diffLine{
+				selector: selectorPrefix,
+				comment:  "one is nil, one is not",
+				expected: expected,
+				actual:   actual,
+			})
+		}
 
-		// 	return diffImpl(selectorPrefix, eval.Elem(), aval.Elem())
+		return diffImpl(selectorPrefix, eval.Elem(), aval.Elem())
 	}
 
 	// TODO: remove and return "" when other types are supported
