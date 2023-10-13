@@ -87,15 +87,15 @@ func (p *printer) String() string {
 	case reflect.Slice:
 		p.printSlice()
 	case reflect.Chan:
-		p.printf("(%s)(%s)", p.typeString(), p.pointerAddr())
+		p.printf("(%s)(%s)", p.colorizeType(p.value.Type()), p.pointerAddr())
 	case reflect.Interface:
 		p.printInterface()
 	case reflect.Ptr:
 		p.printPtr()
 	case reflect.Func:
-		p.printf("%s {...}", p.typeString())
+		p.printf("%s {...}", p.colorizeType(p.value.Type()))
 	case reflect.UnsafePointer:
-		p.printf("%s(%s)", p.typeString(), p.pointerAddr())
+		p.printf("%s(%s)", p.colorizeType(p.value.Type()), p.pointerAddr())
 	case reflect.Invalid:
 		p.print(p.nil())
 	default:
@@ -165,18 +165,18 @@ func (p *printer) printString() {
 
 func (p *printer) printMap() {
 	if p.value.Len() == 0 {
-		p.printf(p.typeString() + "{}")
+		p.printf(p.colorizeType(p.value.Type()) + "{}")
 		return
 	}
 
 	if p.visited[p.value.Pointer()] {
-		p.printf(p.typeString() + "{...}")
+		p.printf(p.colorizeType(p.value.Type()) + "{...}")
 		return
 	}
 	p.visited[p.value.Pointer()] = true
 
 	if PrintMapTypes {
-		p.printf(p.typeString() + "{\n")
+		p.printf(p.colorizeType(p.value.Type()) + "{\n")
 	} else {
 		p.println("{")
 	}
@@ -233,11 +233,11 @@ func (p *printer) printStruct() {
 		fields = append(fields, i)
 	}
 	if len(fields) == 0 {
-		p.print(p.typeString() + "{}")
+		p.print(p.colorizeType(p.value.Type()) + "{}")
 		return
 	}
 
-	p.println(p.typeString() + "{")
+	p.println(p.colorizeType(p.value.Type()) + "{")
 	p.indented(func() {
 		for _, i := range fields {
 			field := p.value.Type().Field(i)
@@ -276,19 +276,19 @@ func (p *printer) printTime() {
 
 func (p *printer) printSlice() {
 	if p.value.IsNil() {
-		p.printf(p.typeString() + "(" + p.nil() + ")")
+		p.printf(p.colorizeType(p.value.Type()) + "(" + p.nil() + ")")
 		return
 	}
 
 	if p.value.Len() == 0 {
-		p.printf(p.typeString() + "{}")
+		p.printf(p.colorizeType(p.value.Type()) + "{}")
 		return
 	}
 
 	if p.value.Kind() == reflect.Slice {
 		if p.visited[p.value.Pointer()] {
 			// Stop travarsing cyclic reference
-			p.printf(p.typeString() + "{...}")
+			p.printf(p.colorizeType(p.value.Type()) + "{...}")
 			return
 		}
 		p.visited[p.value.Pointer()] = true
@@ -296,11 +296,11 @@ func (p *printer) printSlice() {
 
 	// Fold a large buffer
 	if p.value.Len() > BufferFoldThreshold {
-		p.printf(p.typeString() + "{...}")
+		p.printf(p.colorizeType(p.value.Type()) + "{...}")
 		return
 	}
 
-	p.println(p.typeString() + "{")
+	p.println(p.colorizeType(p.value.Type()) + "{")
 	p.indented(func() {
 		groupsize := fun.
 			SwitchZero[int](p.value.Type().Elem().Kind()).
@@ -336,14 +336,14 @@ func (p *printer) printSlice() {
 
 func (p *printer) printArray() {
 	if p.value.Len() == 0 {
-		p.printf("%s{}", p.typeString())
+		p.printf("%s{}", p.colorizeType(p.value.Type()))
 		return
 	}
 
 	if p.value.Kind() == reflect.Slice {
 		if p.visited[p.value.Pointer()] {
 			// Stop travarsing cyclic reference
-			p.printf("%s{...}", p.typeString())
+			p.printf("%s{...}", p.colorizeType(p.value.Type()))
 			return
 		}
 		p.visited[p.value.Pointer()] = true
@@ -351,11 +351,11 @@ func (p *printer) printArray() {
 
 	// Fold a large buffer
 	if p.value.Len() > BufferFoldThreshold {
-		p.printf("%s{...}", p.typeString())
+		p.printf("%s{...}", p.colorizeType(p.value.Type()))
 		return
 	}
 
-	p.println(p.typeString() + "{")
+	p.println(p.colorizeType(p.value.Type()) + "{")
 	p.indented(func() {
 		groupsize := fun.
 			SwitchZero[int](p.value.Type().Elem().Kind()).
@@ -387,12 +387,13 @@ func (p *printer) printArray() {
 
 func (p *printer) printInterface() {
 	e := p.value.Elem()
-	if e.Kind() == reflect.Invalid {
+	switch {
+	case e.Kind() == reflect.Invalid:
 		p.print(p.nil())
-	} else if e.IsValid() {
+	case e.IsValid():
 		p.print(p.format(e))
-	} else {
-		p.printf("%s(%s)", p.typeString(), p.nil())
+	default:
+		p.printf("%s(%s)", p.colorizeType(p.value.Type()), p.nil())
 	}
 }
 
@@ -408,16 +409,12 @@ func (p *printer) printPtr() {
 	if p.value.Elem().IsValid() {
 		p.printf("&%s", p.format(p.value.Elem()))
 	} else {
-		p.printf("(%s)(%s)", p.typeString(), p.nil())
+		p.printf("(%s)(%s)", p.colorizeType(p.value.Type()), p.nil())
 	}
 }
 
 func (p *printer) pointerAddr() string {
 	return p.colorize(fmt.Sprintf("%#v", p.value.Pointer()), p.currentScheme.PointerAdress)
-}
-
-func (p *printer) typeString() string {
-	return p.colorizeType(p.value.Type())
 }
 
 func (p *printer) elemTypeString() string {
