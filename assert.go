@@ -11,7 +11,6 @@ import (
 	"testing"
 	"unicode"
 	"unicode/utf8"
-	"unsafe"
 
 	"github.com/rprtr258/fun/iter"
 	"github.com/rprtr258/scuf"
@@ -19,14 +18,6 @@ import (
 	"github.com/rprtr258/assert/pp"
 	"github.com/rprtr258/assert/q"
 )
-
-//go:linkname valueInterface reflect.valueInterface
-func valueInterface(v reflect.Value, safe bool) any
-
-// use instead of v.Interface
-func valueToInterface(v reflect.Value) any {
-	return valueInterface(v, false)
-}
 
 var (
 	_fgExpected = scuf.FgRGB(0x96, 0xf7, 0x59)
@@ -310,63 +301,19 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 		return iter.FlatMap(
 			iter.FromRange(0, fields, 1),
 			// Filter(func(i int) bool {
-			// 	return typ.Field(i).IsExported() // private fields not shown then ??????????????????????????????????
+			// 	return compareExported && typ.Field(i).IsExported()
 			// }),
 			func(i int) iter.Seq[diffLine] {
-				if !etype.Field(i).IsExported() { // SHIT POOP SHIT FUCK SHIT POOP FUCK SHIT POOP
-					ef, af := eval.Field(i), aval.Field(i)
-
-					switch ef.Kind() {
-					case reflect.String:
-						if e, a := ef.String(), af.String(); e != a {
-							return iter.FromMany(diffLine{
-								selector: fmt.Sprintf("%s.%s", selectorPrefix, etype.Field(i).Name),
-								comment:  "",
-								expected: e,
-								actual:   a,
-							})
-						} else {
-							return iter.FromNothing[diffLine]()
-						}
-					case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-						if e, a := ef.Int(), af.Int(); e != a {
-							return iter.FromMany(diffLine{
-								selector: fmt.Sprintf("%s.%s", selectorPrefix, etype.Field(i).Name),
-								comment:  "",
-								expected: e,
-								actual:   a,
-							})
-						} else {
-							return iter.FromNothing[diffLine]()
-						}
-					default:
-						if ee, aa := reflect.NewAt(
-							eval.Field(i).Type(),
-							unsafe.Pointer(eval.Field(i).UnsafePointer()),
-						).Elem().Interface(), reflect.NewAt(
-							aval.Field(i).Type(),
-							unsafe.Pointer(aval.Field(i).UnsafePointer()),
-						).Elem().Interface(); ee != aa {
-							return iter.FromMany(diffLine{
-								selector: fmt.Sprintf("%s.%s", selectorPrefix, etype.Field(i).Name),
-								comment:  fmt.Sprintf("field values are different, or not, i can't see and can't show them to you because reflect is crap and golang is crap and i cant access private field values even for reading but for primitives it is allowed but Interface method is disallowed: %s", etype.Field(i).Name),
-								expected: aa,
-								actual:   ee,
-							})
-						}
-
-						return iter.FromNothing[diffLine]()
-					}
-				}
-
-				if eval.Field(i).Comparable() && eval.Field(i).Interface() == aval.Field(i).Interface() {
+				ee := valueToInterface(eval.Field(i))
+				aa := valueToInterface(aval.Field(i))
+				if eval.Field(i).Comparable() && ee == aa {
 					return iter.FromNothing[diffLine]()
 				}
 
 				return diffImpl(
 					fmt.Sprintf("%s.%s", selectorPrefix, etype.Field(i).Name),
-					eval.Field(i).Interface(),
-					aval.Field(i).Interface(),
+					ee,
+					aa,
 				)
 			})
 	case reflect.Map:
