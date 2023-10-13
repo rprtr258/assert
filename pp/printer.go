@@ -70,13 +70,13 @@ type printer struct {
 func (p *printer) String() string {
 	switch p.value.Kind() {
 	case reflect.Bool:
-		p.colorPrint(p.raw(), p.currentScheme.Bool...)
+		p.colorPrint(p.raw(), p.currentScheme.Bool)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 		reflect.Uintptr, reflect.Complex64, reflect.Complex128:
-		p.colorPrint(p.raw(), p.currentScheme.Integer...)
+		p.colorPrint(p.raw(), p.currentScheme.Integer)
 	case reflect.Float32, reflect.Float64:
-		p.colorPrint(p.raw(), p.currentScheme.Float...)
+		p.colorPrint(p.raw(), p.currentScheme.Float)
 	case reflect.String:
 		p.printString()
 	case reflect.Map:
@@ -128,15 +128,15 @@ func (p *printer) indentPrintf(format string, args ...any) {
 	p.indentPrint(text)
 }
 
-func (p *printer) colorPrint(text string, mods ...scuf.Modifier) {
-	p.print(p.colorize(text, mods...))
+func (p *printer) colorPrint(text string, mod scuf.Modifier) {
+	p.print(p.colorize(text, mod))
 }
 
 func (p *printer) printString() {
 	quoted := strconv.Quote(p.value.String())
 	quoted = quoted[1 : len(quoted)-1]
 
-	p.colorPrint(`"`, p.currentScheme.StringQuotation...)
+	p.colorPrint(`"`, p.currentScheme.StringQuotation)
 	for len(quoted) > 0 {
 		pos := strings.IndexByte(quoted, '\\')
 		if pos == -1 {
@@ -158,10 +158,10 @@ func (p *printer) printString() {
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9': // "\000"
 			n = 3
 		}
-		p.colorPrint(quoted[pos:pos+n+1], p.currentScheme.EscapedChar...)
+		p.colorPrint(quoted[pos:pos+n+1], p.currentScheme.EscapedChar)
 		quoted = quoted[pos+n+1:]
 	}
-	p.colorPrint(`"`, p.currentScheme.StringQuotation...)
+	p.colorPrint(`"`, p.currentScheme.StringQuotation)
 }
 
 func (p *printer) printMap() {
@@ -197,11 +197,11 @@ func (p *printer) printStruct() {
 			return
 		} else if p.value.Type().String() == "big.Int" {
 			bigInt := p.value.Interface().(big.Int)
-			p.print(p.colorize(bigInt.String(), p.currentScheme.Integer...))
+			p.print(p.colorize(bigInt.String(), p.currentScheme.Integer))
 			return
 		} else if p.value.Type().String() == "big.Float" {
 			bigFloat := p.value.Interface().(big.Float)
-			p.print(p.colorize(bigFloat.String(), p.currentScheme.Float...))
+			p.print(p.colorize(bigFloat.String(), p.currentScheme.Float))
 			return
 		}
 	}
@@ -257,13 +257,13 @@ func (p *printer) printTime() {
 	tm := p.value.Interface().(time.Time)
 	p.printf(
 		"%s-%s-%s %s:%s:%s %s",
-		p.colorize(strconv.Itoa(tm.Year()), p.currentScheme.Time...),
-		p.colorize(fmt.Sprintf("%02d", tm.Month()), p.currentScheme.Time...),
-		p.colorize(fmt.Sprintf("%02d", tm.Day()), p.currentScheme.Time...),
-		p.colorize(fmt.Sprintf("%02d", tm.Hour()), p.currentScheme.Time...),
-		p.colorize(fmt.Sprintf("%02d", tm.Minute()), p.currentScheme.Time...),
-		p.colorize(fmt.Sprintf("%02d", tm.Second()), p.currentScheme.Time...),
-		p.colorize(tm.Location().String(), p.currentScheme.Time...),
+		p.colorize(strconv.Itoa(tm.Year()), p.currentScheme.Time),
+		p.colorize(fmt.Sprintf("%02d", tm.Month()), p.currentScheme.Time),
+		p.colorize(fmt.Sprintf("%02d", tm.Day()), p.currentScheme.Time),
+		p.colorize(fmt.Sprintf("%02d", tm.Hour()), p.currentScheme.Time),
+		p.colorize(fmt.Sprintf("%02d", tm.Minute()), p.currentScheme.Time),
+		p.colorize(fmt.Sprintf("%02d", tm.Second()), p.currentScheme.Time),
+		p.colorize(tm.Location().String(), p.currentScheme.Time),
 	)
 }
 
@@ -417,7 +417,7 @@ func (p *printer) printPtr() {
 }
 
 func (p *printer) pointerAddr() string {
-	return p.colorize(fmt.Sprintf("%#v", p.value.Pointer()), p.currentScheme.PointerAdress...)
+	return p.colorize(fmt.Sprintf("%#v", p.value.Pointer()), p.currentScheme.PointerAdress)
 }
 
 func (p *printer) typeString() string {
@@ -432,12 +432,12 @@ func (p *printer) colorizeType(tt reflect.Type) string {
 	t := tt.String()
 	prefix := ""
 
-	if p.matchRegexp(t, `^\[\].+$`) { // slice
+	if p.matchRegexp(t, `^\[\].`) { // slice
 		prefix = "[]"
 		t = t[2:]
 	}
 
-	if p.matchRegexp(t, `^\[\d+\].+$`) { // array
+	if p.matchRegexp(t, `^\[\d+\].`) { // array
 		num := regexp.MustCompile(`\d+`).FindString(t)
 		prefix = fmt.Sprintf("[%s]", p.colorize(num, p.currentScheme.ObjectLength))
 		t = t[2+len(num):]
@@ -519,12 +519,12 @@ func (p *printer) raw() string {
 }
 
 func (p *printer) nil() string {
-	return p.colorize("nil", p.currentScheme.Nil...)
+	return p.colorize("nil", p.currentScheme.Nil)
 }
 
-func (p *printer) colorize(text string, mods ...scuf.Modifier) string {
+func (p *printer) colorize(text string, mod scuf.Modifier) string {
 	if p.coloringEnabled {
-		return scuf.String(text, mods...)
+		return scuf.String(text, mod)
 	} else {
 		return text
 	}
