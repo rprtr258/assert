@@ -12,6 +12,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
+	"github.com/rprtr258/fun"
 	"github.com/rprtr258/fun/iter"
 	"github.com/rprtr258/scuf"
 
@@ -653,32 +654,23 @@ func Zero[T any](t *testing.T, actual T) {
 				actualStr := shorten(actualName, pp.Sprint(line.actual))
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
-					comment := ""
-					if line.comment != "" {
-						comment = line.comment + ":"
-					}
-
-					return strings.Join([]string{
-						comment,
-						scuf.String(expectedName+line.selector, _fgExpected) + " = " + expectedStr,
-						scuf.String(actualName+line.selector, _fgActual) + " = " + actualStr,
-					}, "\n")
+					return scuf.NewString(func(b scuf.Buffer) {
+						b.
+							String(fun.IF(line.comment == "", "", line.comment+":")).NL().
+							String(expectedName+line.selector, _fgExpected).String(" = ").String(expectedStr).NL().
+							String(actualName+line.selector, _fgActual).String(" = ").String(actualStr)
+					})
 				}
 
-				comment := ""
-				if line.comment != "" {
-					comment = ", " + line.comment
-				}
-
-				return strings.Join([]string{
-					fmt.Sprintf(
-						"%s != %s%s:",
-						scuf.String(expectedName+line.selector, _fgExpected),
-						scuf.String(actualName+line.selector, _fgActual),
-						comment,
-					),
-					fmt.Sprintf("\t%s != %s", expectedStr, actualStr),
-				}, "\n")
+				return scuf.NewString(func(b scuf.Buffer) {
+					b.
+						String(expectedName+line.selector, _fgExpected).
+						String(" != ").
+						String(actualName+line.selector, _fgActual).
+						String(fun.IF(line.comment == "", "", ", "+line.comment)).
+						String(":").NL().
+						TAB().String(expectedStr).String(" != ").String(actualStr)
+				})
 			}, "\n\n"),
 		},
 	})
