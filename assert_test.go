@@ -17,5 +17,8 @@ type User struct {
 
 func TestDiffImpl(t *testing.T) {
 	// must not panic on comparing structs in private field User.pass
-	a.Len(t, diffImpl("", User{"a", Pass{"b", "c"}}, User{"d", Pass{"e", "f"}}).ToSlice(), 0)
+	a.Len(t, diffImpl("",
+		User{"a", Pass{"b", "c"}},
+		User{"d", Pass{"e", "f"}},
+	).ToSlice(), 0)
 }
