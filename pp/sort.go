@@ -64,10 +64,10 @@ func sortMap(value reflect.Value) *sortedMap {
 	sorted := &sortedMap{
 		keys: keys,
 		values: fun.Map[reflect.Value](
-			keys,
 			func(k reflect.Value) reflect.Value {
 				return value.MapIndex(k)
-			}),
+			},
+			keys...),
 	}
 	sort.Stable(sorted)
 	return sorted
