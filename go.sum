@@ -19,7 +19,7 @@ github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZV
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
 github.com/rprtr258/fun v0.0.13 h1:xNAHKdP4LIQEq3fohBwmZoJJ3du7OSlWvXvFMNf8WqI=
 github.com/rprtr258/fun v0.0.13/go.mod h1:styOCXbyVqY458UNFipnGuX7ddfLu9/VerFd3sNo1Mg=
-github.com/rprtr258/scuf v0.0.5 h1:HPAVmYGRZ9CQPplnjy1zjrp1X/2q7a4MKvqN4HiKdmU=
+github.com/rprtr258/scuf v0.0.5 h1:ScNYF3uQUlU3jBmZxHkEyrMjynQZn1eQEukchFLe6K4=
 github.com/rprtr258/scuf v0.0.5/go.mod h1:7vElmY1mWY4HX8XXBZEa5opCpvXERQBjALk4HMnJ8PE=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
