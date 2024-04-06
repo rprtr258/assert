@@ -49,26 +49,26 @@ func or[T comparable](xs ...T) T {
 	return zero
 }
 
-// Stolen from the `go test` tool.
-// isTest tells whether name looks like a test (or benchmark, according to prefix).
+// isTest tells whether name looks like a test or benchmark, according to prefix.
 // It is a Test (say) if there is a character after Test that is not a lower-case letter.
 // We don't want TesticularCancer.
-func isTest(name, prefix string) bool {
-	switch {
-	case !strings.HasPrefix(name, prefix):
-		return false
-	case len(name) == len(prefix): // "Test" is ok
-		return true
-	default:
-		r, _ := utf8.DecodeRuneInString(name[len(prefix):])
-		return !unicode.IsLower(r)
-	}
+func isTest(name string) bool {
+	return fun.Any(func(prefix string) bool {
+		switch {
+		case !strings.HasPrefix(name, prefix):
+			return false
+		case len(name) == len(prefix): // "Test" is ok
+			return true
+		default:
+			r, _ := utf8.DecodeRuneInString(name[len(prefix):])
+			return !unicode.IsLower(r)
+		}
+	}, "Test", "Benchmark", "Example")
 }
 
-/* CallerInfo is necessary because the assert functions use the testing object
-internally, causing it to print the file:line of the assert method, rather than where
-the problem actually occurred in calling code.*/
-
+// caller is necessary because the assert functions use the testing object
+// internally, causing it to print the file:line of the assert method, rather
+// than where the problem actually occurred in calling code.
 type caller struct {
 	file     string
 	line     int
@@ -123,9 +123,7 @@ func callerInfo() iter.Seq[caller] {
 			// Drop the package
 			segments := strings.Split(name, ".")
 			name = segments[len(segments)-1]
-			if isTest(name, "Test") ||
-				isTest(name, "Benchmark") ||
-				isTest(name, "Example") {
+			if isTest(name) {
 				break
 			}
 		}
