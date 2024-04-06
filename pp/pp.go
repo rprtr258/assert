@@ -29,16 +29,16 @@ type ColorScheme struct {
 }
 
 var defaultScheme = ColorScheme{
-	Bool:            scuf.CombineModifiers(scuf.FgCyan, scuf.ModBold),
-	Integer:         scuf.CombineModifiers(scuf.FgBlue, scuf.ModBold),
-	Float:           scuf.CombineModifiers(scuf.FgMagenta, scuf.ModBold),
+	Bool:            scuf.Combine(scuf.FgCyan, scuf.ModBold),
+	Integer:         scuf.Combine(scuf.FgBlue, scuf.ModBold),
+	Float:           scuf.Combine(scuf.FgMagenta, scuf.ModBold),
 	String:          scuf.FgRed,
-	StringQuotation: scuf.CombineModifiers(scuf.FgRed, scuf.ModBold),
-	EscapedChar:     scuf.CombineModifiers(scuf.FgMagenta, scuf.ModBold),
+	StringQuotation: scuf.Combine(scuf.FgRed, scuf.ModBold),
+	EscapedChar:     scuf.Combine(scuf.FgMagenta, scuf.ModBold),
 	FieldName:       scuf.FgYellow,
-	PointerAdress:   scuf.CombineModifiers(scuf.FgBlue, scuf.ModBold),
-	Nil:             scuf.CombineModifiers(scuf.FgCyan, scuf.ModBold),
-	Time:            scuf.CombineModifiers(scuf.FgBlue, scuf.ModBold),
+	PointerAdress:   scuf.Combine(scuf.FgBlue, scuf.ModBold),
+	Nil:             scuf.Combine(scuf.FgCyan, scuf.ModBold),
+	Time:            scuf.Combine(scuf.FgBlue, scuf.ModBold),
 	StructName:      scuf.FgGreen,
 	ObjectLength:    scuf.FgBlue,
 }
