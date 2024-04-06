@@ -364,10 +364,10 @@ func TestThousands(t *testing.T) {
 	})
 }
 
-func processTestCases(t *testing.T, printer *PrettyPrinter, cases []testCase) {
+func processTestCases(t *testing.T, printer *PrettyPrinter, tests []testCase) {
 	t.Helper()
 
-	for _, test := range cases {
+	for _, test := range tests {
 		actual := printer.format(test.object)
 		if test.expect != actual {
 			t.Errorf(`
