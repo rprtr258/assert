@@ -1,5 +1,4 @@
 run:
-  modules-download-mode: vendor
   tests: true
   timeout: 1m
 
