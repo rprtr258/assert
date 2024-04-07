@@ -3,7 +3,7 @@ package assert
 import (
 	"testing"
 
-	a "github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/assert"
 )
 
 type Pass struct {
@@ -17,8 +17,12 @@ type User struct {
 
 func TestDiffImpl(t *testing.T) {
 	// must not panic on comparing structs in private field User.pass
-	a.Len(t, diffImpl("",
+	assert.Equal(t, []diffLine{
+		{expected: "a", actual: "d", selector: ".Login"},
+		{expected: "b", actual: "e", selector: ".pass.Payload"},
+		{expected: "c", actual: "f", selector: ".pass.salt"},
+	}, diffImpl("",
 		User{"a", Pass{"b", "c"}},
 		User{"d", Pass{"e", "f"}},
-	).ToSlice(), 0)
+	).ToSlice())
 }

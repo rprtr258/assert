@@ -311,7 +311,6 @@ func (p *printer) printArray() {
 			Case(8, reflect.Uint16, reflect.Uint32).
 			Case(4, reflect.Uint64).
 			End()
-
 		if groupsize > 0 {
 			for i := 0; i < p.value.Len(); i++ {
 				if i%groupsize == 0 {

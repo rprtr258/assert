@@ -9,6 +9,7 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/kr/pretty"
 	"github.com/rprtr258/fun"
 	"github.com/rprtr258/scuf"
 )
@@ -252,9 +253,7 @@ func TestFormat(t *testing.T) {
 			scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `,` +
 			`
 }`},
-		{[]uint32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, `[]` +
-			scuf.String(`uint32`, scuf.FgGreen) +
-			`{
+		{[]uint32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, `[]` + scuf.String(`uint32`, scuf.FgGreen) + `{
     ` +
 			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` +
 			scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` +
@@ -279,8 +278,7 @@ func TestFormat(t *testing.T) {
 			scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` +
 			scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `,
 }`},
-		{[]uint64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, `[]` +
-			scuf.String(`uint64`, scuf.FgGreen) + `{
+		{[]uint64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, `[]` + scuf.String(`uint64`, scuf.FgGreen) + `{
     ` +
 			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` +
 			scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` +
@@ -296,34 +294,25 @@ func TestFormat(t *testing.T) {
 			scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `, ` +
 			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `,
 }`},
-		{[][]byte{{0, 1, 2}, {3, 4}, {255}}, `[]` +
-			scuf.String(`[]uint8`, scuf.FgGreen) +
-			`{
-    []` +
-			scuf.String(`uint8`, scuf.FgGreen) +
-			`{
+		{[][]byte{{0, 1, 2}, {3, 4}, {255}}, `[]` + scuf.String(`[]uint8`, scuf.FgGreen) + `{
+    []` + scuf.String(`uint8`, scuf.FgGreen) + `{
         ` +
 			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` +
 			scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` +
 			scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `,
     },
-    []` +
-			scuf.String(`uint8`, scuf.FgGreen) +
-			`{
+    []` + scuf.String(`uint8`, scuf.FgGreen) + `{
         ` +
 			scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` +
 			scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `,
     },
-    []` +
-			scuf.String(`uint8`, scuf.FgGreen) +
-			`{
+    []` + scuf.String(`uint8`, scuf.FgGreen) + `{
         ` +
 			scuf.String(`255`, scuf.FgBlue, scuf.ModBold) +
 			`,
     },
 }`},
-		{map[string]any{"foo": 10, "bar": map[int]int{20: 30}}, scuf.String(`map[string]interface {}`, scuf.FgGreen) +
-			`{
+		{map[string]any{"foo": 10, "bar": map[int]int{20: 30}}, scuf.String(`map[string]interface {}`, scuf.FgGreen) + `{
     ` +
 			scuf.String(`"`, scuf.FgRed, scuf.ModBold) +
 			scuf.String(`bar`, scuf.FgRed) +
@@ -368,22 +357,26 @@ func processTestCases(t *testing.T, printer *PrettyPrinter, tests []testCase) {
 	t.Helper()
 
 	for _, test := range tests {
-		actual := printer.format(test.object)
-		if test.expect != actual {
-			t.Errorf(`
+		test := test
+		t.Run(pretty.Sprintf("%#v", test.object), func(t *testing.T) {
+			t.Parallel()
+
+			actual := printer.format(test.object)
+			if test.expect != actual {
+				t.Errorf(`
 TestCase: %#v
 Type: %s
-Expect: %# v
-Actual: %# v
+Expect: %s
+Actual: %s
 `,
-				test.object,
-				reflect.ValueOf(test.object).Kind(),
-				test.expect,
-				actual,
-			)
-			return
-		}
-		logResult(t, test.object, actual)
+					test.object,
+					reflect.ValueOf(test.object).Kind(),
+					test.expect,
+					actual,
+				)
+				return
+			}
+		})
 	}
 
 	for _, object := range []any{
@@ -409,11 +402,16 @@ Actual: %# v
 		&tm,
 		&User{Name: "k0kubun", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(), deletedAt: time.Now().UTC()},
 	} {
-		logResult(t, object, printer.format(object))
+		object := object
+		t.Run(pretty.Sprintf("%#v", object), func(t *testing.T) {
+			t.Parallel()
+
+			logResult(t, object, printer.format(object))
+		})
 	}
 }
 
 func logResult(t *testing.T, object any, actual string) {
-	format := fun.IF(strings.Contains(actual, "\n"), "%#v =>\n%s\n", "%#v => %s\n")
-	t.Logf(format, object, actual)
+	sep := fun.IF(strings.Contains(actual, "\n"), '\n', ' ')
+	t.Logf("%#v =>%c%s\n\n", object, sep, actual)
 }

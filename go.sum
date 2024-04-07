@@ -17,8 +17,8 @@ github.com/pmezard/go-difflib v1.0.0 h1:4DBwDE0NGyQoBHbLQYPwSUPoCMWR5BEzIk/f1lZb
 github.com/pmezard/go-difflib v1.0.0/go.mod h1:iKH77koFhYxTK1pcRnkKkqfTogsbg7gZNVY4sRDYZ/4=
 github.com/rogpeppe/go-internal v1.9.0 h1:73kH8U+JUqXU8lRuOHeVHaa/SZPifC7BkcraZVejAe8=
 github.com/rogpeppe/go-internal v1.9.0/go.mod h1:WtVeX8xhTBvf0smdhujwtBcq4Qrzq/fJaraNFVN+nFs=
-github.com/rprtr258/fun v0.0.15 h1:2Z50R67cYqvOKJnhCV1EaNouWs9vV/1+HUdhqeyDdT4=
-github.com/rprtr258/fun v0.0.15/go.mod h1:styOCXbyVqY458UNFipnGuX7ddfLu9/VerFd3sNo1Mg=
+github.com/rprtr258/fun v0.0.16-0.20240407071119-ba32d9b883f9 h1:xK8by0agUShDc7UZRC09xOtDxt4Nwss3Xi8MC633AMQ=
+github.com/rprtr258/fun v0.0.16-0.20240407071119-ba32d9b883f9/go.mod h1:styOCXbyVqY458UNFipnGuX7ddfLu9/VerFd3sNo1Mg=
 github.com/rprtr258/scuf v0.0.6 h1:IHjqCCYNdyc0f/LKW2pW6jgnVEM2IhT3IOAiVK/BWc8=
 github.com/rprtr258/scuf v0.0.6/go.mod h1:7vElmY1mWY4HX8XXBZEa5opCpvXERQBjALk4HMnJ8PE=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
