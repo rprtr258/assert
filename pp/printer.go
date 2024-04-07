@@ -312,12 +312,16 @@ func (p *printer) printArray() {
 			Case(4, reflect.Uint64).
 			End()
 		if groupsize > 0 {
-			for i := 0; i < p.value.Len(); i++ {
-				if i%groupsize == 0 {
-					p.print(p.indent())
+			// TODO: iter by batches
+			for i := 0; i < p.value.Len(); i += groupsize {
+				p.print(p.indent())
+				for j := 0; j < groupsize && i+j < p.value.Len(); j++ {
+					p.print(p.format(p.value.Index(i+j)) + ",")
+					if j+1 < groupsize && i+j+1 < p.value.Len() {
+						p.print(" ")
+					}
 				}
-				p.printf(p.format(p.value.Index(i)) + ",")
-				p.print(fun.IF((i+1)%groupsize == 0 || i+1 == p.value.Len(), "\n", " "))
+				p.print("\n")
 			}
 		} else {
 			for i := 0; i < p.value.Len(); i++ {
