@@ -4,13 +4,11 @@ import (
 	"math/big"
 	"reflect"
 	"regexp"
-	"strings"
 	"testing"
 	"time"
 	"unsafe"
 
 	"github.com/kr/pretty"
-	"github.com/rprtr258/fun"
 	"github.com/rprtr258/scuf"
 )
 
@@ -412,6 +410,5 @@ Actual: %s
 }
 
 func logResult(t *testing.T, object any, actual string) {
-	sep := fun.IF(strings.Contains(actual, "\n"), '\n', ' ')
-	t.Logf("%#v =>%c%s\n\n", object, sep, actual)
+	t.Logf("%#v =>\n%s\n\n", object, actual)
 }

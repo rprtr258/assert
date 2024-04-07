@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/mattn/go-colorable"
+	colorable "github.com/mattn/go-colorable"
 	"github.com/rprtr258/scuf"
 )
 
