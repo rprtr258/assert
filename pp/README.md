@@ -1,4 +1,4 @@
-# pp [![Go](https://github.com/k0kubun/pp/workflows/Go/badge.svg)](https://github.com/k0kubun/pp/actions) [![Go Reference](https://pkg.go.dev/badge/github.com/k0kubun/pp/v3.svg)](https://pkg.go.dev/github.com/k0kubun/pp/v3)
+# pp [![Go](https://github.com/rprtr258/assert/pp/workflows/Go/badge.svg)](https://github.com/rprtr258/assert/pp/actions) [![Go Reference](https://pkg.go.dev/badge/github.com/rprtr258/assert/pp/v3.svg)](https://pkg.go.dev/github.com/rprtr258/assert/pp/v3)
 
 Colored pretty printer for Go language
 
@@ -9,7 +9,7 @@ Colored pretty printer for Go language
 Just call `pp.Print()`.
 
 ```go
-import "github.com/k0kubun/pp/v3"
+import "github.com/rprtr258/assert/pp"
 
 m := map[string]string{"foo": "bar", "hello": "world"}
 pp.Print(m)
@@ -28,7 +28,7 @@ pp.Sprint()
 pp.Fprintf()
 ```
 
-See [the documentation](https://pkg.go.dev/github.com/k0kubun/pp/v3#section-documentation) for API details.
+See [the documentation](https://pkg.go.dev/github.com/rprtr258/assert/pp#section-documentation) for API details.
 
 ### Configuration
 
@@ -48,7 +48,7 @@ mypp.SetExportedOnly(true)
 mypp.Println()
 ```
 
-See [PrettyPrinter documentation](https://pkg.go.dev/github.com/k0kubun/pp/v3#PrettyPrinter) for all available configurations.
+See [PrettyPrinter documentation](https://pkg.go.dev/github.com/rprtr258/assert/pp/v3#PrettyPrinter) for all available configurations.
 
 ### Custom colors
 

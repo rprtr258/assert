@@ -7,9 +7,10 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/rprtr258/scuf"
+
 	"github.com/rprtr258/assert/pp"
 	"github.com/rprtr258/assert/q"
-	"github.com/rprtr258/scuf"
 )
 
 type Foo struct {

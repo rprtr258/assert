@@ -1,4 +1,4 @@
-// pp.go: API definitions. The core implementation is delegated to printer.go.
+// API definitions. The core implementation is delegated to printer.go.
 package pp
 
 import (

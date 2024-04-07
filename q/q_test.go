@@ -5,7 +5,7 @@ import (
 	"go/ast"
 	"testing"
 
-	a "github.com/stretchr/testify/assert"
+	"github.com/rprtr258/assert/internal/ass"
 )
 
 // TestExtractingArgsFromSourceText verifies that exprToString() and argName()
@@ -330,11 +330,11 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 				return
 			}
 
-			a.Equal(t, test.want, exprToString(test.arg))
+			ass.Equal(t, test.want, exprToString(test.arg))
 		})
 
 		t.Run(fmt.Sprintf("argName(%T)", test.arg), func(t *testing.T) {
-			a.Equal(t, test.want, argName(test.arg))
+			ass.Equal(t, test.want, argName(test.arg))
 		})
 	}
 }
@@ -354,13 +354,13 @@ func TestArgNames(t *testing.T) {
 		`e[1:]`,
 	}
 	got, ok := argNames(filename, 237, "main", "dump")
-	a.True(t, ok)
-	a.Equal(t, want, got)
+	ass.True(t, ok)
+	ass.Equal(t, want, got)
 }
 
 func TestArgNamesBadFilename(t *testing.T) {
 	_, ok := argNames("BAD FILENAME", 0, "", "")
-	a.False(t, ok)
+	ass.False(t, ok)
 }
 
 func TestIsQCall(t *testing.T) {
@@ -412,7 +412,7 @@ func TestIsQCall(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("TEST %d", id), func(t *testing.T) {
-			a.Equal(t, test.want, isFuncCall(test.expr, "q", "Q"))
+			ass.Equal(t, test.want, isFuncCall(test.expr, "q", "Q"))
 		})
 	}
 }

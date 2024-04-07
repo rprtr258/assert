@@ -2,28 +2,28 @@ package pp
 
 import (
 	"bytes"
-	"strings"
+	"io"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/rprtr258/assert/internal/ass"
 )
 
 func TestDefaultOutput(t *testing.T) {
 	testOutput := &bytes.Buffer{}
 	init := GetDefaultOutput()
 	SetDefaultOutput(testOutput)
-	assert.Equal(t, testOutput, GetDefaultOutput())
-	assert.Equal(t, "", testOutput.String())
+	ass.Equal[io.Writer](t, testOutput, GetDefaultOutput())
+	ass.Equal(t, "", testOutput.String())
 	Print("abcde")
-	assert.NotEqual(t, "", testOutput.String())
-	assert.NotEqual(t, init, GetDefaultOutput())
+	ass.NotEqual(t, "", testOutput.String())
+	ass.NotEqual(t, init, GetDefaultOutput())
 	ResetDefaultOutput()
-	assert.Equal(t, init, GetDefaultOutput())
+	ass.Equal(t, init, GetDefaultOutput())
 }
 
 func TestColorScheme(t *testing.T) {
 	SetColorScheme(ColorScheme{})
-	assert.NotEqual(t, 0, len(Default.currentScheme.FieldName))
+	ass.NotEqual(t, 0, len(Default.currentScheme.FieldName))
 }
 
 func TestWithLineInfo(t *testing.T) {
@@ -38,7 +38,7 @@ func TestWithLineInfo(t *testing.T) {
 
 	ResetDefaultOutput()
 
-	assert.NotEqual(t, outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes())
+	ass.NotEqual(t, outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes())
 }
 
 func TestWithLineInfoBackwardsCompatible(t *testing.T) {
@@ -54,7 +54,7 @@ func TestWithLineInfoBackwardsCompatible(t *testing.T) {
 	pp.SetOutput(outputWithoutLineInfo)
 	pp.Print("abcde")
 
-	assert.NotEqual(t, outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes())
+	ass.NotEqual(t, outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes())
 
 	ResetDefaultOutput()
 }
@@ -67,10 +67,10 @@ func TestStructPrintingWithTags(t *testing.T) {
 		Full         string `pp:"full,omitempty"`
 	}
 
-	for name, tc := range map[string]struct {
-		foo                Foo
-		omitIfEmptyOmitted bool
-		fullOmitted        bool
+	for name, test := range map[string]struct {
+		foo                  Foo
+		omitIfEmptyIsPresent bool
+		fullIsPresent        bool
 	}{
 		"all set": {
 			foo: Foo{
@@ -79,8 +79,8 @@ func TestStructPrintingWithTags(t *testing.T) {
 				OmitIfEmpty:  "i'm not empty",
 				Full:         "hello",
 			},
-			omitIfEmptyOmitted: false,
-			fullOmitted:        false,
+			omitIfEmptyIsPresent: true,
+			fullIsPresent:        true,
 		},
 		"omit if empty not set": {
 			foo: Foo{
@@ -89,8 +89,8 @@ func TestStructPrintingWithTags(t *testing.T) {
 				OmitIfEmpty:  "",
 				Full:         "hello",
 			},
-			omitIfEmptyOmitted: true,
-			fullOmitted:        false,
+			omitIfEmptyIsPresent: false,
+			fullIsPresent:        true,
 		},
 		"both omitted": {
 			foo: Foo{
@@ -99,30 +99,30 @@ func TestStructPrintingWithTags(t *testing.T) {
 				OmitIfEmpty:  "",
 				Full:         "",
 			},
-			omitIfEmptyOmitted: true,
-			fullOmitted:        true,
+			omitIfEmptyIsPresent: false,
+			fullIsPresent:        false,
 		},
 		"zero": {
-			foo:                Foo{},
-			omitIfEmptyOmitted: true,
-			fullOmitted:        true,
+			foo:                  Foo{},
+			omitIfEmptyIsPresent: false,
+			fullIsPresent:        false,
 		},
 	} {
-		tc := tc
+		test := test
 		t.Run(name, func(t *testing.T) {
 			output := &bytes.Buffer{}
 			pp := New()
 			pp.SetOutput(output)
 
-			pp.Print(tc.foo)
+			pp.Print(test.foo)
 
 			result := output.String()
 
-			assert.NotContains(t, result, "IgnoreMe")
-			assert.True(t, strings.Contains(result, "OmitIfEmpty") != tc.omitIfEmptyOmitted)
+			ass.SContainsNot(t, "IgnoreMe", result)
+			ass.SContainsIs(t, test.omitIfEmptyIsPresent, "OmitIfEmpty", result)
 
 			// field Full is renamed to full by the tag
-			assert.True(t, strings.Contains(result, "full") != tc.fullOmitted)
+			ass.SContainsIs(t, test.fullIsPresent, "full", result)
 		})
 	}
 

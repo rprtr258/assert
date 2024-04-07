@@ -1,4 +1,4 @@
-// printer.go: The actual pretty print implementation. Everything in this file should be private.
+// The actual pretty print implementation. Everything in this file should be private.
 package pp
 
 import (
