@@ -6,16 +6,17 @@ on:
 
 jobs:
   lint:
-    name: GolangCI Lint
+    name: Lint
     runs-on: ubuntu-latest
-    container: golangci/golangci-lint:v1.50-alpine
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Run linter
-        run: golangci-lint run
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.54
 
   tests:
     name: Run unit tests with the race detector enabled
