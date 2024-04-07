@@ -79,7 +79,7 @@ type caller struct {
 // of each stack frame leading from the current test to the assert call that
 // failed.
 func callerInfo() iter.Seq[caller] {
-	return func(yield func(caller) bool) bool {
+	return func(yield func(caller) bool) {
 		for i := 0; ; i++ {
 			pc, file, line, ok := runtime.Caller(i)
 			if !ok {
@@ -115,7 +115,7 @@ func callerInfo() iter.Seq[caller] {
 				if dir != "assert" && dir != "mock" && dir != "require" || file == "mock_test.go" {
 					path, _ := filepath.Abs(file)
 					if !yield(caller{path, line, name}) {
-						return false
+						return
 					}
 				}
 			}
@@ -127,7 +127,6 @@ func callerInfo() iter.Seq[caller] {
 				break
 			}
 		}
-		return true
 	}
 }
 

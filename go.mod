@@ -4,7 +4,7 @@ go 1.21
 
 require (
 	github.com/mattn/go-colorable v0.1.13
-	github.com/rprtr258/fun v0.0.13
+	github.com/rprtr258/fun v0.0.15
 	github.com/rprtr258/scuf v0.0.6
 	github.com/stretchr/testify v1.8.4
 	golang.org/x/text v0.14.0

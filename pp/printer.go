@@ -307,10 +307,9 @@ func (p *printer) printArray() {
 	p.indented(func() {
 		groupsize := fun.
 			SwitchZero[int](p.value.Type().Elem().Kind()).
-			Case(reflect.Uint8, 16).
-			Case(reflect.Uint16, 8).
-			Case(reflect.Uint32, 8).
-			Case(reflect.Uint64, 4).
+			Case(16, reflect.Uint8).
+			Case(8, reflect.Uint16, reflect.Uint32).
+			Case(4, reflect.Uint64).
 			End()
 
 		if groupsize > 0 {
