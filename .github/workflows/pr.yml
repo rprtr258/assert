@@ -1,0 +1,36 @@
+name: PR
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Run linter
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: v1.54
+
+  tests:
+    name: Run unit tests with the race detector enabled
+    runs-on: ubuntu-latest
+    container: golang:1.21-alpine
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 1
+
+      - name: Install GCC and C libraries required by the race detector
+        run: apk add --update gcc musl-dev
+
+      - name: Run unit tests
+        run: go test -v -race ./...
