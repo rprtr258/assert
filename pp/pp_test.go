@@ -125,5 +125,4 @@ func TestStructPrintingWithTags(t *testing.T) {
 			ass.SContainsIs(t, test.fullIsPresent, "full", result)
 		})
 	}
-
 }

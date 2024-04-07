@@ -315,7 +315,6 @@ func stacktraceLabeledContent() labeledContent {
 				scuf.String(strconv.Itoa(v.line), scuf.FgGreen) +
 				"\t" +
 				scuf.String(shortFuncName, scuf.FgBlue)
-
 		}, "\n"),
 	}
 }

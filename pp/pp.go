@@ -213,7 +213,6 @@ func (pp *PrettyPrinter) SetColorScheme(scheme ColorScheme) {
 		StructName:      or(scheme.StructName, defaultScheme.StructName),
 		ObjectLength:    or(scheme.ObjectLength, defaultScheme.ObjectLength),
 	}
-
 }
 
 // ResetColorScheme resets colorscheme to default.
