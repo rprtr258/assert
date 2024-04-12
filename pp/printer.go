@@ -13,7 +13,6 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/rprtr258/fun"
 	"github.com/rprtr258/scuf"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
@@ -305,12 +304,16 @@ func (p *printer) printArray() {
 
 	p.println(p.colorizeType(p.value.Type()) + "{")
 	p.indented(func() {
-		groupsize := fun.
-			SwitchZero[int](p.value.Type().Elem().Kind()).
-			Case(16, reflect.Uint8).
-			Case(8, reflect.Uint16, reflect.Uint32).
-			Case(4, reflect.Uint64).
-			End()
+		var groupsize int
+		switch p.value.Type().Elem().Kind() {
+		case reflect.Uint8:
+			groupsize = 16
+		case reflect.Uint16, reflect.Uint32:
+			groupsize = 8
+		case reflect.Uint64:
+			groupsize = 4
+		}
+
 		if groupsize > 0 {
 			// TODO: iter by batches
 			for i := 0; i < p.value.Len(); i += groupsize {

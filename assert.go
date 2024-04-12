@@ -12,10 +12,10 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/rprtr258/fun"
 	"github.com/rprtr258/fun/iter"
 	"github.com/rprtr258/scuf"
 
+	"github.com/rprtr258/assert/internal/fun"
 	"github.com/rprtr258/assert/pp"
 	"github.com/rprtr258/assert/q"
 )
@@ -53,17 +53,21 @@ func or[T comparable](xs ...T) T {
 // It is a Test (say) if there is a character after Test that is not a lower-case letter.
 // We don't want TesticularCancer.
 func isTest(name string) bool {
-	return fun.Any(func(prefix string) bool {
-		switch {
-		case !strings.HasPrefix(name, prefix):
-			return false
-		case len(name) == len(prefix): // "Test" is ok
-			return true
-		default:
-			r, _ := utf8.DecodeRuneInString(name[len(prefix):])
-			return !unicode.IsLower(r)
+	for _, prefix := range []string{"Test", "Benchmark", "Example"} {
+		if !strings.HasPrefix(name, prefix) {
+			continue
 		}
-	}, "Test", "Benchmark", "Example")
+
+		if len(name) == len(prefix) { // "Test" is ok
+			return true
+		}
+
+		r, _ := utf8.DecodeRuneInString(name[len(prefix):])
+		if unicode.IsUpper(r) {
+			return true
+		}
+	}
+	return false
 }
 
 // caller is necessary because the assert functions use the testing object
@@ -387,7 +391,7 @@ func Zero[T any](tb testing.TB, actual T) {
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
 					return scuf.NewString(func(b scuf.Buffer) {
 						b.
-							String(fun.IF(line.comment == "", "", line.comment+":")).NL().
+							String(fun.Ternary(line.comment == "", "", line.comment+":")).NL().
 							String(expectedName+line.selector, _fgExpected).String(" = ").String(expectedStr).NL().
 							String(actualName+line.selector, _fgActual).String(" = ").String(actualStr)
 					})
@@ -398,7 +402,7 @@ func Zero[T any](tb testing.TB, actual T) {
 						String(expectedName+line.selector, _fgExpected).
 						String(" != ").
 						String(actualName+line.selector, _fgActual).
-						String(fun.IF(line.comment == "", "", ", "+line.comment)).
+						String(fun.Ternary(line.comment == "", "", ", "+line.comment)).
 						String(":").NL().
 						TAB().String(expectedStr).String(" != ").String(actualStr)
 				})
