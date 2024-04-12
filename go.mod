@@ -5,7 +5,6 @@ go 1.21
 require (
 	github.com/kr/pretty v0.3.1
 	github.com/mattn/go-colorable v0.1.13
-	github.com/rprtr258/fun v0.0.16-0.20240407071119-ba32d9b883f9
 	github.com/rprtr258/scuf v0.0.6
 	golang.org/x/text v0.14.0
 )

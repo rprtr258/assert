@@ -12,7 +12,6 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/rprtr258/fun/iter"
 	"github.com/rprtr258/scuf"
 
 	"github.com/rprtr258/assert/internal/fun"
@@ -25,7 +24,7 @@ var (
 	_fgActual   = scuf.FgRGB(0xff, 0x40, 0x53)
 )
 
-func mapJoin[T any](seq iter.Seq[T], toString func(T) string, sep string) string {
+func mapJoin[T any](seq fun.Seq[T], toString func(T) string, sep string) string {
 	var sb strings.Builder
 	seq(func(v T) bool {
 		if sb.Len() > 0 {
@@ -82,7 +81,7 @@ type caller struct {
 // callerInfo returns an array of strings containing the file and line number
 // of each stack frame leading from the current test to the assert call that
 // failed.
-func callerInfo() iter.Seq[caller] {
+func callerInfo() fun.Seq[caller] {
 	return func(yield func(caller) bool) {
 		for i := 0; ; i++ {
 			pc, file, line, ok := runtime.Caller(i)
@@ -305,7 +304,7 @@ func Equalf[T any](tb testing.TB, expected, actual T, format string, args ...any
 // }
 
 func fail(tb testing.TB, lines []labeledContent) {
-	tb.Error("\n" + mapJoin(iter.FromMany(lines...), formatLabeledContent, "\n"))
+	tb.Error("\n" + mapJoin(fun.FromMany(lines...), formatLabeledContent, "\n"))
 }
 
 func stacktraceLabeledContent() labeledContent {

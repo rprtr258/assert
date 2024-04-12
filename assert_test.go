@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/rprtr258/assert/internal/ass"
+	"github.com/rprtr258/assert/internal/fun"
 )
 
 type Pass struct {
@@ -15,6 +16,15 @@ type User struct {
 	pass  Pass
 }
 
+func toSlice[T any](seq fun.Seq[T]) []T {
+	var xs []T
+	seq(func(x T) bool {
+		xs = append(xs, x)
+		return true
+	})
+	return xs
+}
+
 func TestDiffImpl(t *testing.T) {
 	// must not panic on comparing structs in private field User.pass
 	expected := []diffLine{
@@ -22,9 +32,9 @@ func TestDiffImpl(t *testing.T) {
 		{expected: "b", actual: "e", selector: ".pass.Payload"},
 		{expected: "c", actual: "f", selector: ".pass.salt"},
 	}
-	actual := diffImpl("",
+	actual := toSlice(diffImpl("",
 		User{"a", Pass{"b", "c"}},
 		User{"d", Pass{"e", "f"}},
-	).ToSlice()
+	))
 	ass.Equal(t, expected, actual)
 }
