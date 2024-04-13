@@ -13,9 +13,9 @@ import (
 	"unicode/utf8"
 
 	"github.com/rprtr258/assert/internal/fun"
+	"github.com/rprtr258/assert/internal/pp"
+	"github.com/rprtr258/assert/internal/q"
 	"github.com/rprtr258/assert/internal/scuf"
-	"github.com/rprtr258/assert/pp"
-	"github.com/rprtr258/assert/q"
 )
 
 var (

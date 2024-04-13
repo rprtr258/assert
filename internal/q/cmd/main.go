@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/rprtr258/assert/q"
+	"github.com/rprtr258/assert/internal/q"
 )
 
 func dump(
