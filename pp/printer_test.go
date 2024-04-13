@@ -89,9 +89,27 @@ var c = func() Circular {
 var (
 	tm = time.Date(2015, time.January, 2, 0, 0, 0, 0, time.UTC)
 
-	bigInt, _      = (&big.Int{}).SetString("-908f8474ea971baf", 16)
-	bigFloat, _, _ = big.ParseFloat("3.1415926535897932384626433832795028", 10, 10, big.ToZero)
-	_MSK, _        = time.LoadLocation("Europe/Moscow")
+	bigInt = func() *big.Int {
+		res, ok := (&big.Int{}).SetString("-908f8474ea971baf", 16)
+		if !ok {
+			panic("failed to set bigInt")
+		}
+		return res
+	}()
+	bigFloat = func() *big.Float {
+		res, _, err := big.ParseFloat("3.1415926535897932384626433832795028", 10, 10, big.ToZero)
+		if err != nil {
+			panic(err.Error())
+		}
+		return res
+	}()
+	_MSK = func() *time.Location {
+		res, err := time.LoadLocation("Europe/Moscow")
+		if err != nil {
+			panic(err.Error())
+		}
+		return res
+	}()
 )
 
 func TestFormat(t *testing.T) {

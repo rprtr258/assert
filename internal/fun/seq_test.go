@@ -47,7 +47,7 @@ func TestToSlice(t *testing.T) {
 	}{
 		"Empty": {
 			seq:      func(func(int) bool) {},
-			expected: []int{},
+			expected: nil,
 		},
 		"Integers": {
 			seq: func(yield func(int) bool) {
