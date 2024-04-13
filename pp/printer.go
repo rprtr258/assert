@@ -13,10 +13,10 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/rprtr258/fun"
-	"github.com/rprtr258/scuf"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+
+	"github.com/rprtr258/assert/internal/scuf"
 )
 
 const indentWidth = 2
@@ -126,7 +126,7 @@ func (p *printer) indentPrintf(format string, args ...any) {
 	p.indentPrint(fmt.Sprintf(format, args...))
 }
 
-func (p *printer) colorPrint(text string, mod scuf.Modifier) {
+func (p *printer) colorPrint(text string, mod string) {
 	p.print(p.colorize(text, mod))
 }
 
@@ -305,12 +305,16 @@ func (p *printer) printArray() {
 
 	p.println(p.colorizeType(p.value.Type()) + "{")
 	p.indented(func() {
-		groupsize := fun.
-			SwitchZero[int](p.value.Type().Elem().Kind()).
-			Case(16, reflect.Uint8).
-			Case(8, reflect.Uint16, reflect.Uint32).
-			Case(4, reflect.Uint64).
-			End()
+		var groupsize int
+		switch p.value.Type().Elem().Kind() {
+		case reflect.Uint8:
+			groupsize = 16
+		case reflect.Uint16, reflect.Uint32:
+			groupsize = 8
+		case reflect.Uint64:
+			groupsize = 4
+		}
+
 		if groupsize > 0 {
 			// TODO: iter by batches
 			for i := 0; i < p.value.Len(); i += groupsize {
@@ -459,7 +463,7 @@ func (p *printer) nil() string {
 	return p.colorize("nil", p.currentScheme.Nil)
 }
 
-func (p *printer) colorize(text string, mod scuf.Modifier) string {
+func (p *printer) colorize(text string, mod scuf.Mod) string {
 	if p.coloringEnabled {
 		return scuf.String(text, mod)
 	} else {

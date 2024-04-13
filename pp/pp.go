@@ -9,36 +9,35 @@ import (
 	"runtime"
 	"sync"
 
-	colorable "github.com/mattn/go-colorable"
-	"github.com/rprtr258/scuf"
+	"github.com/rprtr258/assert/internal/scuf"
 )
 
 type ColorScheme struct {
-	Bool            scuf.Modifier
-	Integer         scuf.Modifier
-	Float           scuf.Modifier
-	String          scuf.Modifier
-	StringQuotation scuf.Modifier
-	EscapedChar     scuf.Modifier
-	FieldName       scuf.Modifier
-	PointerAdress   scuf.Modifier
-	Nil             scuf.Modifier
-	Time            scuf.Modifier
-	StructName      scuf.Modifier
-	ObjectLength    scuf.Modifier
+	Bool            string
+	Integer         string
+	Float           string
+	String          string
+	StringQuotation string
+	EscapedChar     string
+	FieldName       string
+	PointerAdress   string
+	Nil             string
+	Time            string
+	StructName      string
+	ObjectLength    string
 }
 
 var defaultScheme = ColorScheme{
-	Bool:            scuf.Combine(scuf.FgCyan, scuf.ModBold),
-	Integer:         scuf.Combine(scuf.FgBlue, scuf.ModBold),
-	Float:           scuf.Combine(scuf.FgMagenta, scuf.ModBold),
+	Bool:            scuf.FgCyan + ";" + scuf.ModBold,
+	Integer:         scuf.FgBlue + ";" + scuf.ModBold,
+	Float:           scuf.FgMagenta + ";" + scuf.ModBold,
 	String:          scuf.FgRed,
-	StringQuotation: scuf.Combine(scuf.FgRed, scuf.ModBold),
-	EscapedChar:     scuf.Combine(scuf.FgMagenta, scuf.ModBold),
+	StringQuotation: scuf.FgRed + ";" + scuf.ModBold,
+	EscapedChar:     scuf.FgMagenta + ";" + scuf.ModBold,
 	FieldName:       scuf.FgYellow,
-	PointerAdress:   scuf.Combine(scuf.FgBlue, scuf.ModBold),
-	Nil:             scuf.Combine(scuf.FgCyan, scuf.ModBold),
-	Time:            scuf.Combine(scuf.FgBlue, scuf.ModBold),
+	PointerAdress:   scuf.FgBlue + ";" + scuf.ModBold,
+	Nil:             scuf.FgCyan + ";" + scuf.ModBold,
+	Time:            scuf.FgBlue + ";" + scuf.ModBold,
 	StructName:      scuf.FgGreen,
 	ObjectLength:    scuf.FgBlue,
 }
@@ -59,7 +58,7 @@ var (
 
 // Internals
 var (
-	defaultOut          = colorable.NewColorableStdout()
+	defaultOut          = os.Stdout
 	defaultWithLineInfo = false
 )
 
@@ -188,10 +187,8 @@ func (pp *PrettyPrinter) ResetOutput() {
 	pp.out = defaultOut
 }
 
-func or[T interface {
-	scuf.Modifier | []scuf.Modifier
-}](x, y T) T {
-	if x == nil {
+func or(x, y string) string {
+	if x == "" {
 		return y
 	}
 	return x
@@ -300,10 +297,8 @@ func Fatalln(a ...any) {
 // Change Print* functions' output to a given writer.
 // For example, you can limit output by ENV.
 //
-//	func init() {
-//		if os.Getenv("DEBUG") == "" {
-//			pp.SetDefaultOutput(ioutil.Discard)
-//		}
+//	if os.Getenv("DEBUG") == "" {
+//		pp.SetDefaultOutput(ioutil.Discard)
 //	}
 func SetDefaultOutput(o io.Writer) {
 	Default.SetOutput(o)

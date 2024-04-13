@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/rprtr258/fun/iter"
+	"github.com/rprtr258/assert/internal/fun"
 )
 
 type diffLine struct {
@@ -13,27 +13,27 @@ type diffLine struct {
 	expected, actual any
 }
 
-func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
+func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 	etype, atype := reflect.TypeOf(expected), reflect.TypeOf(actual)
 	switch {
 	case etype == nil && atype == nil:
-		return iter.FromNothing[diffLine]()
+		return func(func(diffLine) bool) {}
 	case etype == nil:
-		return iter.FromMany(diffLine{
+		return fun.FromMany(diffLine{
 			selector: selectorPrefix,
 			comment:  "expected nil, actual is not nil",
 			expected: etype,
 			actual:   atype,
 		})
 	case atype == nil:
-		return iter.FromMany(diffLine{
+		return fun.FromMany(diffLine{
 			selector: selectorPrefix,
 			comment:  "expected not nil, actual is nil",
 			expected: etype,
 			actual:   atype,
 		})
 	case etype != atype:
-		return iter.FromMany(diffLine{
+		return fun.FromMany(diffLine{
 			selector: selectorPrefix,
 			comment:  "different types",
 			expected: etype.String(),
@@ -44,10 +44,10 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 
 		switch etype.Kind() {
 		case reflect.Invalid:
-			return iter.FromNothing[diffLine]()
+			return func(f func(diffLine) bool) {}
 		case reflect.Bool:
 			if e, a := expected.(bool), actual.(bool); e != a {
-				return iter.FromMany(diffLine{
+				return fun.FromMany(diffLine{
 					selector: selectorPrefix,
 					comment:  "",
 					expected: e,
@@ -55,10 +55,10 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 				})
 			}
 
-			return iter.FromNothing[diffLine]()
+			return func(f func(diffLine) bool) {}
 		case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 			if e, a := eval.Int(), aval.Int(); e != a {
-				return iter.FromMany(diffLine{
+				return fun.FromMany(diffLine{
 					selector: selectorPrefix,
 					comment:  "",
 					expected: e,
@@ -66,10 +66,10 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 				})
 			}
 
-			return iter.FromNothing[diffLine]()
+			return func(f func(diffLine) bool) {}
 		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 			if e, a := eval.Uint(), aval.Uint(); e != a {
-				return iter.FromMany(diffLine{
+				return fun.FromMany(diffLine{
 					selector: selectorPrefix,
 					comment:  "",
 					expected: e,
@@ -77,10 +77,10 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 				})
 			}
 
-			return iter.FromNothing[diffLine]()
+			return func(f func(diffLine) bool) {}
 		case reflect.Float32, reflect.Float64:
 			if e, a := eval.Float(), aval.Float(); e != a {
-				return iter.FromMany(diffLine{
+				return fun.FromMany(diffLine{
 					selector: selectorPrefix,
 					comment:  "",
 					expected: e,
@@ -88,10 +88,10 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 				})
 			}
 
-			return iter.FromNothing[diffLine]()
+			return func(f func(diffLine) bool) {}
 		case reflect.Complex64, reflect.Complex128:
 			if e, a := eval.Complex(), aval.Complex(); e != a {
-				return iter.FromMany(diffLine{
+				return fun.FromMany(diffLine{
 					selector: selectorPrefix,
 					comment:  "",
 					expected: e,
@@ -99,10 +99,10 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 				})
 			}
 
-			return iter.FromNothing[diffLine]()
+			return func(f func(diffLine) bool) {}
 		case reflect.String:
 			if e, a := eval.String(), aval.String(); e != a {
-				return iter.FromMany(diffLine{
+				return fun.FromMany(diffLine{
 					selector: selectorPrefix,
 					comment:  "",
 					expected: e,
@@ -110,7 +110,7 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 				})
 			}
 
-			return iter.FromNothing[diffLine]()
+			return func(f func(diffLine) bool) {}
 		case reflect.Pointer:
 			return diffImpl(
 				"(*"+selectorPrefix+")",
@@ -121,7 +121,7 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 			lenExpected := eval.Len()
 			lenActual := aval.Len()
 			if lenExpected != lenActual {
-				return iter.FromMany(diffLine{
+				return fun.FromMany(diffLine{
 					selector: selectorPrefix,
 					comment:  fmt.Sprintf("len: %d != %d", lenExpected, lenActual),
 					expected: expected,
@@ -132,7 +132,7 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 			// check if only one is nil
 			if lenExpected == 0 {
 				if (expected == nil) != (actual == nil) {
-					return iter.FromMany(diffLine{
+					return fun.FromMany(diffLine{
 						selector: selectorPrefix,
 						comment:  "one slice is nil, other is not",
 						expected: expected,
@@ -140,12 +140,12 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 					})
 				}
 
-				return iter.FromNothing[diffLine]()
+				return func(f func(diffLine) bool) {}
 			}
 
-			return iter.FlatMap(
-				iter.FromRange(0, lenExpected, 1),
-				func(i int) iter.Seq[diffLine] {
+			return fun.FlatMap(
+				fun.FromRange(0, lenExpected),
+				func(i int) fun.Seq[diffLine] {
 					return diffImpl(
 						fmt.Sprintf("%s[%d]", selectorPrefix, i),
 						eval.Index(i).Interface(),
@@ -156,7 +156,7 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 			lenExpected := etype.Len()
 			lenActual := atype.Len()
 			if lenExpected != lenActual {
-				return iter.FromMany(diffLine{
+				return fun.FromMany(diffLine{
 					selector: selectorPrefix,
 					comment:  fmt.Sprintf("len: %d != %d", lenExpected, lenActual),
 					expected: expected,
@@ -164,9 +164,9 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 				})
 			}
 
-			return iter.FlatMap(
-				iter.FromRange(0, lenExpected, 1),
-				func(i int) iter.Seq[diffLine] {
+			return fun.FlatMap(
+				fun.FromRange(0, lenExpected),
+				func(i int) fun.Seq[diffLine] {
 					return diffImpl(
 						fmt.Sprintf("%s[%d]", selectorPrefix, i),
 						eval.Index(i).Interface(),
@@ -175,16 +175,16 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 				})
 		case reflect.Struct:
 			fields := etype.NumField()
-			return iter.FlatMap(
-				iter.FromRange(0, fields, 1),
+			return fun.FlatMap(
+				fun.FromRange(0, fields),
 				// Filter(func(i int) bool {
 				// 	return compareExported && typ.Field(i).IsExported()
 				// }),
-				func(i int) iter.Seq[diffLine] {
+				func(i int) fun.Seq[diffLine] {
 					ee := valueToInterface(eval.Field(i))
 					aa := valueToInterface(aval.Field(i))
 					if eval.Field(i).Comparable() && ee == aa {
-						return iter.FromNothing[diffLine]()
+						return func(f func(diffLine) bool) {}
 					}
 
 					return diffImpl(
@@ -221,18 +221,18 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 				}
 			}
 
-			return iter.Flatten(iter.FromMany(
-				iter.FlatMap(
-					iter.Keys(iter.FromDict(commonKeys)),
-					func(k any) iter.Seq[diffLine] {
+			return func(yield func(diffLine) bool) {
+				fun.FlatMap(
+					fun.FromDictKeys(commonKeys),
+					func(k any) fun.Seq[diffLine] {
 						return diffImpl(
 							fmt.Sprintf("%s[%v]", selectorPrefix, k),
 							eval.MapIndex(reflect.ValueOf(k)),
 							aval.MapIndex(reflect.ValueOf(k)),
 						)
-					}),
-				iter.Map(
-					iter.Keys(iter.FromDict(expectedOnlyKeys)),
+					})(yield)
+				fun.Map(
+					fun.FromDictKeys(expectedOnlyKeys),
 					func(k any) diffLine {
 						return diffLine{
 							selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
@@ -240,9 +240,9 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 							expected: eval.MapIndex(reflect.ValueOf(k)).Interface(),
 							actual:   nil,
 						}
-					}),
-				iter.Map(
-					iter.Keys(iter.FromDict(actualOnlyKeys)),
+					})(yield)
+				fun.Map(
+					fun.FromDictKeys(actualOnlyKeys),
 					func(k any) diffLine {
 						return diffLine{
 							selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
@@ -250,15 +250,15 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 							expected: nil,
 							actual:   aval.MapIndex(reflect.ValueOf(k)).Interface(),
 						}
-					}),
-			))
+					})(yield)
+			}
 		case reflect.Interface:
 			if expected == nil && actual == nil {
-				return iter.FromNothing[diffLine]()
+				return func(f func(diffLine) bool) {}
 			}
 
 			if expected == nil || actual == nil {
-				return iter.FromMany(diffLine{
+				return fun.FromMany(diffLine{
 					selector: selectorPrefix,
 					comment:  "one is nil, one is not",
 					expected: expected,
@@ -276,6 +276,6 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 
 // diff returns a diff of both values as long as both are of the same type and
 // are a struct, map, slice, array or string. Otherwise it panics.
-func diff[T any](expected, actual T) iter.Seq[diffLine] {
+func diff[T any](expected, actual T) fun.Seq[diffLine] {
 	return diffImpl("", expected, actual)
 }

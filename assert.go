@@ -12,10 +12,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/rprtr258/fun"
-	"github.com/rprtr258/fun/iter"
-	"github.com/rprtr258/scuf"
-
+	"github.com/rprtr258/assert/internal/fun"
+	"github.com/rprtr258/assert/internal/scuf"
 	"github.com/rprtr258/assert/pp"
 	"github.com/rprtr258/assert/q"
 )
@@ -25,7 +23,7 @@ var (
 	_fgActual   = scuf.FgRGB(0xff, 0x40, 0x53)
 )
 
-func mapJoin[T any](seq iter.Seq[T], toString func(T) string, sep string) string {
+func mapJoin[T any](seq fun.Seq[T], toString func(T) string, sep string) string {
 	var sb strings.Builder
 	seq(func(v T) bool {
 		if sb.Len() > 0 {
@@ -53,17 +51,21 @@ func or[T comparable](xs ...T) T {
 // It is a Test (say) if there is a character after Test that is not a lower-case letter.
 // We don't want TesticularCancer.
 func isTest(name string) bool {
-	return fun.Any(func(prefix string) bool {
-		switch {
-		case !strings.HasPrefix(name, prefix):
-			return false
-		case len(name) == len(prefix): // "Test" is ok
-			return true
-		default:
-			r, _ := utf8.DecodeRuneInString(name[len(prefix):])
-			return !unicode.IsLower(r)
+	for _, prefix := range []string{"Test", "Benchmark", "Example"} {
+		if !strings.HasPrefix(name, prefix) {
+			continue
 		}
-	}, "Test", "Benchmark", "Example")
+
+		if len(name) == len(prefix) { // "Test" is ok
+			return true
+		}
+
+		r, _ := utf8.DecodeRuneInString(name[len(prefix):])
+		if unicode.IsUpper(r) {
+			return true
+		}
+	}
+	return false
 }
 
 // caller is necessary because the assert functions use the testing object
@@ -78,7 +80,7 @@ type caller struct {
 // callerInfo returns an array of strings containing the file and line number
 // of each stack frame leading from the current test to the assert call that
 // failed.
-func callerInfo() iter.Seq[caller] {
+func callerInfo() fun.Seq[caller] {
 	return func(yield func(caller) bool) {
 		for i := 0; ; i++ {
 			pc, file, line, ok := runtime.Caller(i)
@@ -186,30 +188,15 @@ func Equal[T any](tb testing.TB, expected, actual T) {
 				actualStr := shorten(actualName, pp.Sprint(line.actual))
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
-					return scuf.NewString(func(b scuf.Buffer) {
-						if line.comment != "" {
-							b.
-								String(line.comment).String(":").NL()
-						}
-						b.
-							String(expectedName+line.selector, _fgExpected).String(" = ").String(expectedStr).NL().
-							String(actualName+line.selector, _fgActual).String(" = ").String(actualStr)
-					})
+					return fun.Ternary(line.comment != "", line.comment+":\n", "") +
+						scuf.String(expectedName+line.selector, _fgExpected) + " = " + expectedStr + "\n" +
+						scuf.String(actualName+line.selector, _fgActual) + " = " + actualStr
 				}
 
-				return scuf.NewString(func(b scuf.Buffer) {
-					b.
-						String(expectedName+line.selector, _fgExpected).
-						String(" != ").
-						String(actualName+line.selector, _fgActual)
-					if line.comment != "" {
-						b.String(", ").String(line.comment)
-					}
-					b.
-						String(":").NL().
-						TAB().String(expectedStr).String(" !=").NL().
-						TAB().String(actualStr)
-				})
+				comment := fun.Ternary(line.comment != "", ", "+line.comment, "")
+				return scuf.String(expectedName+line.selector, _fgExpected) + " != " + scuf.String(actualName+line.selector, _fgActual) + comment + ":\n" +
+					"\t" + expectedStr + " !=\n" +
+					"\t" + actualStr
 			}, "\n\n"),
 		},
 	})
@@ -301,7 +288,7 @@ func Equalf[T any](tb testing.TB, expected, actual T, format string, args ...any
 // }
 
 func fail(tb testing.TB, lines []labeledContent) {
-	tb.Error("\n" + mapJoin(iter.FromMany(lines...), formatLabeledContent, "\n"))
+	tb.Error("\n" + mapJoin(fun.FromMany(lines...), formatLabeledContent, "\n"))
 }
 
 func stacktraceLabeledContent() labeledContent {
@@ -385,23 +372,14 @@ func Zero[T any](tb testing.TB, actual T) {
 				actualStr := shorten(actualName, pp.Sprint(line.actual))
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
-					return scuf.NewString(func(b scuf.Buffer) {
-						b.
-							String(fun.IF(line.comment == "", "", line.comment+":")).NL().
-							String(expectedName+line.selector, _fgExpected).String(" = ").String(expectedStr).NL().
-							String(actualName+line.selector, _fgActual).String(" = ").String(actualStr)
-					})
+					return fun.Ternary(line.comment == "", "", line.comment+":") + "\n" +
+						scuf.String(expectedName+line.selector, _fgExpected) + " = " + expectedStr + "\n" +
+						scuf.String(actualName+line.selector, _fgActual) + " = " + actualStr
 				}
 
-				return scuf.NewString(func(b scuf.Buffer) {
-					b.
-						String(expectedName+line.selector, _fgExpected).
-						String(" != ").
-						String(actualName+line.selector, _fgActual).
-						String(fun.IF(line.comment == "", "", ", "+line.comment)).
-						String(":").NL().
-						TAB().String(expectedStr).String(" != ").String(actualStr)
-				})
+				comment := fun.Ternary(line.comment == "", "", ", "+line.comment)
+				return scuf.String(expectedName+line.selector, _fgExpected) + " != " + scuf.String(actualName+line.selector, _fgActual) + comment + ":\n" +
+					"\t" + expectedStr + " != " + actualStr
 			}, "\n\n"),
 		},
 	})

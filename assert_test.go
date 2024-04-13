@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/rprtr258/assert/internal/ass"
+	"github.com/rprtr258/assert/internal/fun"
 )
 
 type Pass struct {
@@ -22,9 +23,9 @@ func TestDiffImpl(t *testing.T) {
 		{expected: "b", actual: "e", selector: ".pass.Payload"},
 		{expected: "c", actual: "f", selector: ".pass.salt"},
 	}
-	actual := diffImpl("",
+	actual := fun.ToSlice(diffImpl("",
 		User{"a", Pass{"b", "c"}},
 		User{"d", Pass{"e", "f"}},
-	).ToSlice()
+	))
 	ass.Equal(t, expected, actual)
 }
