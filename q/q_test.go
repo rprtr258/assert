@@ -343,19 +343,20 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 // sample text and extract the argument names. For example, if q.q(a, b, c) is
 // in the sample text, argNames() should return []string{"a", "b", "c"}.
 func TestArgNames(t *testing.T) {
-	const filename = "../cmd/main.go"
-	want := []string{
+	const filename = "./cmd/main.go"
+	got, ok := argNames(filename, 24, "main", "dump")
+	ass.True(t, ok)
+	ass.Equal(t, []string{
 		`123`,
 		`"hello world"`,
 		`3.1415926`,
-		"func(n int) bool {\n\treturn n > 0\n}(1)",
+		`func(n int) bool {
+	return n > 0
+}(1)`,
 		`[]int{1, 2, 3}`,
 		`[]byte("goodbye world")`,
 		`e[1:]`,
-	}
-	got, ok := argNames(filename, 161, "main", "dump")
-	ass.True(t, ok)
-	ass.Equal(t, want, got)
+	}, got)
 }
 
 func TestArgNamesBadFilename(t *testing.T) {
