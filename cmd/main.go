@@ -60,11 +60,11 @@ type Circular struct {
 	C *Circular
 }
 
-var c = Circular{}
-
-func init() {
-	c.C = &c
-}
+var c = func() Circular {
+	res := Circular{}
+	res.C = &res
+	return res
+}()
 
 var (
 	tm = time.Date(2015, time.January, 2, 0, 0, 0, 0, time.UTC)

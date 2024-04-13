@@ -297,10 +297,8 @@ func Fatalln(a ...any) {
 // Change Print* functions' output to a given writer.
 // For example, you can limit output by ENV.
 //
-//	func init() {
-//		if os.Getenv("DEBUG") == "" {
-//			pp.SetDefaultOutput(ioutil.Discard)
-//		}
+//	if os.Getenv("DEBUG") == "" {
+//		pp.SetDefaultOutput(ioutil.Discard)
 //	}
 func SetDefaultOutput(o io.Writer) {
 	Default.SetOutput(o)
