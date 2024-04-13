@@ -13,9 +13,10 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"github.com/rprtr258/scuf"
 	"golang.org/x/text/language"
 	"golang.org/x/text/message"
+
+	"github.com/rprtr258/assert/internal/scuf"
 )
 
 const indentWidth = 2
@@ -125,7 +126,7 @@ func (p *printer) indentPrintf(format string, args ...any) {
 	p.indentPrint(fmt.Sprintf(format, args...))
 }
 
-func (p *printer) colorPrint(text string, mod scuf.Modifier) {
+func (p *printer) colorPrint(text string, mod string) {
 	p.print(p.colorize(text, mod))
 }
 
@@ -462,7 +463,7 @@ func (p *printer) nil() string {
 	return p.colorize("nil", p.currentScheme.Nil)
 }
 
-func (p *printer) colorize(text string, mod scuf.Modifier) string {
+func (p *printer) colorize(text string, mod scuf.Mod) string {
 	if p.coloringEnabled {
 		return scuf.String(text, mod)
 	} else {

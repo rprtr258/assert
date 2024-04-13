@@ -12,9 +12,8 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/rprtr258/scuf"
-
 	"github.com/rprtr258/assert/internal/fun"
+	"github.com/rprtr258/assert/internal/scuf"
 	"github.com/rprtr258/assert/pp"
 	"github.com/rprtr258/assert/q"
 )
@@ -189,30 +188,17 @@ func Equal[T any](tb testing.TB, expected, actual T) {
 				actualStr := shorten(actualName, pp.Sprint(line.actual))
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
-					return scuf.NewString(func(b scuf.Buffer) {
-						if line.comment != "" {
-							b.
-								String(line.comment).String(":").NL()
-						}
-						b.
-							String(expectedName+line.selector, _fgExpected).String(" = ").String(expectedStr).NL().
-							String(actualName+line.selector, _fgActual).String(" = ").String(actualStr)
-					})
+					return func() string {
+						return fun.Ternary(line.comment != "", line.comment+":\n", "") +
+							scuf.String(expectedName+line.selector, _fgExpected) + " = " + expectedStr + "\n" +
+							scuf.String(actualName+line.selector, _fgActual) + " = " + actualStr
+					}()
 				}
 
-				return scuf.NewString(func(b scuf.Buffer) {
-					b.
-						String(expectedName+line.selector, _fgExpected).
-						String(" != ").
-						String(actualName+line.selector, _fgActual)
-					if line.comment != "" {
-						b.String(", ").String(line.comment)
-					}
-					b.
-						String(":").NL().
-						TAB().String(expectedStr).String(" !=").NL().
-						TAB().String(actualStr)
-				})
+				comment := fun.Ternary(line.comment != "", ", "+line.comment, "")
+				return scuf.String(expectedName+line.selector, _fgExpected) + " != " + scuf.String(actualName+line.selector, _fgActual) + comment + ":\n" +
+					"\t" + expectedStr + " !=\n" +
+					"\t" + actualStr
 			}, "\n\n"),
 		},
 	})
@@ -388,23 +374,14 @@ func Zero[T any](tb testing.TB, actual T) {
 				actualStr := shorten(actualName, pp.Sprint(line.actual))
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
-					return scuf.NewString(func(b scuf.Buffer) {
-						b.
-							String(fun.Ternary(line.comment == "", "", line.comment+":")).NL().
-							String(expectedName+line.selector, _fgExpected).String(" = ").String(expectedStr).NL().
-							String(actualName+line.selector, _fgActual).String(" = ").String(actualStr)
-					})
+					return fun.Ternary(line.comment == "", "", line.comment+":") + "\n" +
+						scuf.String(expectedName+line.selector, _fgExpected) + " = " + expectedStr + "\n" +
+						scuf.String(actualName+line.selector, _fgActual) + " = " + actualStr
 				}
 
-				return scuf.NewString(func(b scuf.Buffer) {
-					b.
-						String(expectedName+line.selector, _fgExpected).
-						String(" != ").
-						String(actualName+line.selector, _fgActual).
-						String(fun.Ternary(line.comment == "", "", ", "+line.comment)).
-						String(":").NL().
-						TAB().String(expectedStr).String(" != ").String(actualStr)
-				})
+				comment := fun.Ternary(line.comment == "", "", ", "+line.comment)
+				return scuf.String(expectedName+line.selector, _fgExpected) + " != " + scuf.String(actualName+line.selector, _fgActual) + comment + ":\n" +
+					"\t" + expectedStr + " != " + actualStr
 			}, "\n\n"),
 		},
 	})

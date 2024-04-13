@@ -90,10 +90,6 @@ pp.[32mEmptyStruct[0m{}
     },
     [31;1m"[0m[31mfoo[0m[31;1m"[0m: [34;1m10[0m,
 }
--- &pp.Circular{C:(*pp.Circular)(0x6ca188)} --
-&pp.[32mCircular[0m{
-    [33mC[0m: &pp.[32mCircular[0m{...},
-}
 -- []string{} --
 [][32mstring[0m{}
 -- [3]int{0, 0, 0} --
@@ -148,20 +144,6 @@ pp.[32mFoo[0m{
     [33mminInputLen[0m:    [34;1m0[0m,
     [33mlongest[0m:        [36;1mfalse[0m,
 }
--- &pp.Piyo{Field1:map[string]string{"a":"b", "cc":"dd"}, F2:(*pp.Foo)(0xc000028b80), Fie3:128} --
-&pp.[32mPiyo[0m{
-    [33mField1[0m: [32mmap[string]string[0m{
-        [31;1m"[0m[31ma[0m[31;1m"[0m:  [31;1m"[0m[31mb[0m[31;1m"[0m,
-        [31;1m"[0m[31mcc[0m[31;1m"[0m: [31;1m"[0m[31mdd[0m[31;1m"[0m,
-    },
-    [33mF2[0m: &pp.[32mFoo[0m{
-        [33mBar[0m:       [34;1m0[0m,
-        [33mHoge[0m:      [31;1m"[0m[31;1m"[0m,
-        [33mHello[0m:     [32mmap[string]string[0m{},
-        [33mHogeHoges[0m: []pp.[32mHogeHoge[0m([36;1mnil[0m),
-    },
-    [33mFie3[0m: [34;1m128[0m,
-}
 -- []uint64{0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0x0} --
 [][32muint64[0m{
     [34;1m0[0m, [34;1m1[0m, [34;1m2[0m, [34;1m3[0m,
@@ -192,8 +174,6 @@ pp.[32mPrivate[0m{
     [33mWorld[0m: [34;1m0[0m,
     [33mA[0m:     [36;1mnil[0m,
 }
--- (func(string, float32) int)(0x549980) --
-[32mfunc(string, float32) int[0m {...}
 -- []byte{0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9, 0x0, 0x1, 0x2, 0x3, 0x4, 0x5, 0x6, 0x7, 0x8, 0x9} --
 [][32muint8[0m{
     [34;1m0[0m, [34;1m1[0m, [34;1m2[0m, [34;1m3[0m, [34;1m4[0m, [34;1m5[0m, [34;1m6[0m, [34;1m7[0m, [34;1m8[0m, [34;1m9[0m, [34;1m0[0m, [34;1m1[0m, [34;1m2[0m, [34;1m3[0m, [34;1m4[0m, [34;1m5[0m,
