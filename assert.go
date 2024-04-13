@@ -188,11 +188,9 @@ func Equal[T any](tb testing.TB, expected, actual T) {
 				actualStr := shorten(actualName, pp.Sprint(line.actual))
 
 				if strings.ContainsRune(expectedStr, '\n') || strings.ContainsRune(actualStr, '\n') {
-					return func() string {
-						return fun.Ternary(line.comment != "", line.comment+":\n", "") +
-							scuf.String(expectedName+line.selector, _fgExpected) + " = " + expectedStr + "\n" +
-							scuf.String(actualName+line.selector, _fgActual) + " = " + actualStr
-					}()
+					return fun.Ternary(line.comment != "", line.comment+":\n", "") +
+						scuf.String(expectedName+line.selector, _fgExpected) + " = " + expectedStr + "\n" +
+						scuf.String(actualName+line.selector, _fgActual) + " = " + actualStr
 				}
 
 				comment := fun.Ternary(line.comment != "", ", "+line.comment, "")
