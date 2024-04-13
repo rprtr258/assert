@@ -79,6 +79,18 @@ type testCase struct {
 	expect string
 }
 
+func color_bool(s string) string {
+	return scuf.String(s, scuf.FgCyan, scuf.ModBold)
+}
+
+func color_number(s string) string {
+	return scuf.String(s, scuf.FgBlue, scuf.ModBold)
+}
+
+func color_float(s string) string {
+	return scuf.String(s, scuf.FgMagenta, scuf.ModBold)
+}
+
 func TestFormat(t *testing.T) {
 	processTestCases(t, Default, []testCase{
 		{nil, scuf.String("nil", scuf.FgCyan, scuf.ModBold)},
@@ -90,23 +102,23 @@ func TestFormat(t *testing.T) {
 					b.String("nil", scuf.FgCyan, scuf.ModBold)
 				})
 		})},
-		{true, scuf.String("true", scuf.FgCyan, scuf.ModBold)},
-		{false, scuf.String("false", scuf.FgCyan, scuf.ModBold)},
-		{int(4), scuf.String("4", scuf.FgBlue, scuf.ModBold)},
-		{int8(8), scuf.String("8", scuf.FgBlue, scuf.ModBold)},
-		{int16(16), scuf.String("16", scuf.FgBlue, scuf.ModBold)},
-		{int32(32), scuf.String("32", scuf.FgBlue, scuf.ModBold)},
-		{int64(64), scuf.String("64", scuf.FgBlue, scuf.ModBold)},
-		{uint(4), scuf.String("4", scuf.FgBlue, scuf.ModBold)},
-		{uint8(8), scuf.String("8", scuf.FgBlue, scuf.ModBold)},
-		{uint16(16), scuf.String("16", scuf.FgBlue, scuf.ModBold)},
-		{uint32(32), scuf.String("32", scuf.FgBlue, scuf.ModBold)},
-		{uint64(64), scuf.String("64", scuf.FgBlue, scuf.ModBold)},
-		{uintptr(128), scuf.String("128", scuf.FgBlue, scuf.ModBold)},
-		{float32(2.23), scuf.String("2.230000", scuf.FgMagenta, scuf.ModBold)},
-		{float64(3.14), scuf.String("3.140000", scuf.FgMagenta, scuf.ModBold)},
-		{complex64(complex(3, -4)), scuf.String("(3-4i)", scuf.FgBlue, scuf.ModBold)},
-		{complex128(complex(5, 6)), scuf.String("(5+6i)", scuf.FgBlue, scuf.ModBold)},
+		{true, color_bool("true")},
+		{false, color_bool("false")},
+		{int(4), color_number("4")},
+		{int8(8), color_number("8")},
+		{int16(16), color_number("16")},
+		{int32(32), color_number("32")},
+		{int64(64), color_number("64")},
+		{uint(4), color_number("4")},
+		{uint8(8), color_number("8")},
+		{uint16(16), color_number("16")},
+		{uint32(32), color_number("32")},
+		{uint64(64), color_number("64")},
+		{uintptr(128), color_number("128")},
+		{float32(2.23), color_float("2.230000")},
+		{float64(3.14), color_float("3.140000")},
+		{complex64(complex(3, -4)), color_number("(3-4i)")},
+		{complex128(complex(5, 6)), color_number("(5+6i)")},
 		{"string", scuf.NewString(func(b scuf.Buffer) {
 			b.
 				String(`"`, scuf.FgRed, scuf.ModBold).
@@ -196,28 +208,28 @@ func TestFormat(t *testing.T) {
 				InBytePair('{', '}', func(b scuf.Buffer) {
 					b.NL().
 						String(`    `).
-						String(`0`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`1`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`2`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`3`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`4`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`5`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`6`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`7`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`8`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`9`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`0`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`1`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`2`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`3`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`4`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`5`, scuf.FgBlue, scuf.ModBold).String(`,`).
+						String(color_number(`0`) + `, `).
+						String(color_number(`1`) + `, `).
+						String(color_number(`2`) + `, `).
+						String(color_number(`3`) + `, `).
+						String(color_number(`4`) + `, `).
+						String(color_number(`5`) + `, `).
+						String(color_number(`6`) + `, `).
+						String(color_number(`7`) + `, `).
+						String(color_number(`8`) + `, `).
+						String(color_number(`9`) + `, `).
+						String(color_number(`0`) + `, `).
+						String(color_number(`1`) + `, `).
+						String(color_number(`2`) + `, `).
+						String(color_number(`3`) + `, `).
+						String(color_number(`4`) + `, `).
+						String(color_number(`5`) + `,`).
 						NL().
 						String(`    `).
-						String(`6`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`7`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`8`, scuf.FgBlue, scuf.ModBold).String(`, `).
-						String(`9`, scuf.FgBlue, scuf.ModBold).String(`,`).
+						String(color_number(`6`) + `, `).
+						String(color_number(`7`) + `, `).
+						String(color_number(`8`) + `, `).
+						String(color_number(`9`) + `,`).
 						NL()
 				})
 		})},
@@ -225,88 +237,88 @@ func TestFormat(t *testing.T) {
 			scuf.String(`uint16`, scuf.FgGreen) +
 			`{
     ` +
-			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `,` +
+			color_number(`0`) + `, ` +
+			color_number(`1`) + `, ` +
+			color_number(`2`) + `, ` +
+			color_number(`3`) + `, ` +
+			color_number(`4`) + `, ` +
+			color_number(`5`) + `, ` +
+			color_number(`6`) + `, ` +
+			color_number(`7`) + `,` +
 			`
     ` +
-			scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `,` +
+			color_number(`8`) + `, ` +
+			color_number(`9`) + `, ` +
+			color_number(`0`) + `, ` +
+			color_number(`1`) + `, ` +
+			color_number(`2`) + `, ` +
+			color_number(`3`) + `, ` +
+			color_number(`4`) + `, ` +
+			color_number(`5`) + `,` +
 			`
     ` +
-			scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `,` +
+			color_number(`6`) + `, ` +
+			color_number(`7`) + `, ` +
+			color_number(`8`) + `, ` +
+			color_number(`9`) + `,` +
 			`
 }`},
 		{[]uint32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, `[]` + scuf.String(`uint32`, scuf.FgGreen) + `{
     ` +
-			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `,
+			color_number(`0`) + `, ` +
+			color_number(`1`) + `, ` +
+			color_number(`2`) + `, ` +
+			color_number(`3`) + `, ` +
+			color_number(`4`) + `, ` +
+			color_number(`5`) + `, ` +
+			color_number(`6`) + `, ` +
+			color_number(`7`) + `,
     ` +
-			scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `,
+			color_number(`8`) + `, ` +
+			color_number(`9`) + `, ` +
+			color_number(`0`) + `, ` +
+			color_number(`1`) + `, ` +
+			color_number(`2`) + `, ` +
+			color_number(`3`) + `, ` +
+			color_number(`4`) + `, ` +
+			color_number(`5`) + `,
     ` +
-			scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `,
+			color_number(`6`) + `, ` +
+			color_number(`7`) + `, ` +
+			color_number(`8`) + `, ` +
+			color_number(`9`) + `,
 }`},
 		{[]uint64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, `[]` + scuf.String(`uint64`, scuf.FgGreen) + `{
     ` +
-			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `,
+			color_number(`0`) + `, ` +
+			color_number(`1`) + `, ` +
+			color_number(`2`) + `, ` +
+			color_number(`3`) + `,
     ` +
-			scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `,
+			color_number(`4`) + `, ` +
+			color_number(`5`) + `, ` +
+			color_number(`6`) + `, ` +
+			color_number(`7`) + `,
     ` +
-			scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `,
+			color_number(`8`) + `, ` +
+			color_number(`9`) + `, ` +
+			color_number(`0`) + `,
 }`},
 		{[][]byte{{0, 1, 2}, {3, 4}, {255}}, `[]` + scuf.String(`[]uint8`, scuf.FgGreen) + `{
     []` + scuf.String(`uint8`, scuf.FgGreen) + `{
         ` +
-			scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `,
+			color_number(`0`) + `, ` +
+			color_number(`1`) + `, ` +
+			color_number(`2`) + `,
     },
     []` + scuf.String(`uint8`, scuf.FgGreen) + `{
         ` +
-			scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` +
-			scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `,
+			color_number(`3`) + `, ` +
+			color_number(`4`) + `,
     },
     []` + scuf.String(`uint8`, scuf.FgGreen) + `{
         ` +
-			scuf.String(`255`, scuf.FgBlue, scuf.ModBold) +
+			color_number(`255`) +
 			`,
     },
 }`},
@@ -332,6 +344,7 @@ func TestFormat(t *testing.T) {
 			scuf.String(`10`, scuf.FgBlue, scuf.ModBold) +
 			`,
 }`},
+		{Private{b: false, i: 1, u: 2, f: 2.22, c: complex(5, 6)}, ""},
 	})
 }
 
@@ -341,13 +354,13 @@ func TestThousands(t *testing.T) {
 	thousandsPrinter.DecimalUint = true
 
 	processTestCases(t, thousandsPrinter, []testCase{
-		{int(4), scuf.String("4", scuf.FgBlue, scuf.ModBold)},
-		{int(4000), scuf.String("4,000", scuf.FgBlue, scuf.ModBold)},
-		{uint(1000), scuf.String("1,000", scuf.FgBlue, scuf.ModBold)},
-		{uint16(16000), scuf.String("16,000", scuf.FgBlue, scuf.ModBold)},
-		{uint32(32000), scuf.String("32,000", scuf.FgBlue, scuf.ModBold)},
-		{uint64(64000), scuf.String("64,000", scuf.FgBlue, scuf.ModBold)},
-		{float64(3000.14), scuf.String("3,000.140000", scuf.FgMagenta, scuf.ModBold)},
+		{int(4), color_number("4")},
+		{int(4000), color_number("4,000")},
+		{uint(1000), color_number("1,000")},
+		{uint16(16000), color_number("16,000")},
+		{uint32(32000), color_number("32,000")},
+		{uint64(64000), color_number("64,000")},
+		{float64(3000.14), color_float("3,000.140000")},
 	})
 }
 
@@ -362,10 +375,12 @@ func processTestCases(t *testing.T, printer *PrettyPrinter, tests []testCase) {
 			actual := printer.format(test.object)
 			if test.expect != actual {
 				t.Errorf(`
-TestCase: %#v
-Type: %s
-Expect: %s
-Actual: %s
+TestCase: %#[1]v
+Type: %[2]s
+Expect: %[3]q
+      : %[3]s
+Actual: %[4]q
+      : %[4]s
 `,
 					test.object,
 					reflect.ValueOf(test.object).Kind(),
@@ -378,7 +393,6 @@ Actual: %s
 	}
 
 	for _, object := range []any{
-		Private{b: false, i: 1, u: 2, f: 2.22, c: complex(5, 6)},
 		map[string]int{"hell": 23, "world": 34},
 		map[string]map[string]string{"s1": {"v1": "m1", "va1": "me1"}, "si2": {"v2": "m2"}},
 		Foo{Bar: 1, Hoge: "a", Hello: map[string]string{"hel": "world", "a": "b"}, HogeHoges: []HogeHoge{{Hell: "a", World: 1}, {Hell: "bbb", World: 100}}},

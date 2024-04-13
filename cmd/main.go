@@ -7,8 +7,6 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/rprtr258/scuf"
-
 	"github.com/rprtr258/assert/pp"
 	"github.com/rprtr258/assert/q"
 )
@@ -75,120 +73,47 @@ var (
 	bigFloat, _, _ = big.ParseFloat("3.1415926535897932384626433832795028", 10, 10, big.ToZero)
 )
 
-type testCase struct {
-	object any
-	expect string
-}
-
 func TestFormat() {
-	processTestCases(pp.Default, []testCase{
-		{nil, scuf.String("nil", scuf.FgCyan, scuf.ModBold)},
-		{[]int(nil), scuf.NewString(func(b scuf.Buffer) {
-			b.
-				String("[]").
-				String("int", scuf.FgGreen).
-				InBytePair('(', ')', func(b scuf.Buffer) {
-					b.String("nil", scuf.FgCyan, scuf.ModBold)
-				})
-		})},
-		{true, scuf.String("true", scuf.FgCyan, scuf.ModBold)},
-		{false, scuf.String("false", scuf.FgCyan, scuf.ModBold)},
-		{int(4), scuf.String("4", scuf.FgBlue, scuf.ModBold)},
-		{int8(8), scuf.String("8", scuf.FgBlue, scuf.ModBold)},
-		{int16(16), scuf.String("16", scuf.FgBlue, scuf.ModBold)},
-		{int32(32), scuf.String("32", scuf.FgBlue, scuf.ModBold)},
-		{int64(64), scuf.String("64", scuf.FgBlue, scuf.ModBold)},
-		{uint(4), scuf.String("4", scuf.FgBlue, scuf.ModBold)},
-		{uint8(8), scuf.String("8", scuf.FgBlue, scuf.ModBold)},
-		{uint16(16), scuf.String("16", scuf.FgBlue, scuf.ModBold)},
-		{uint32(32), scuf.String("32", scuf.FgBlue, scuf.ModBold)},
-		{uint64(64), scuf.String("64", scuf.FgBlue, scuf.ModBold)},
-		{uintptr(128), scuf.String("128", scuf.FgBlue, scuf.ModBold)},
-		{float32(2.23), scuf.String("2.230000", scuf.FgMagenta, scuf.ModBold)},
-		{float64(3.14), scuf.String("3.140000", scuf.FgMagenta, scuf.ModBold)},
-		{complex64(complex(3, -4)), scuf.String("(3-4i)", scuf.FgBlue, scuf.ModBold)},
-		{complex128(complex(5, 6)), scuf.String("(5+6i)", scuf.FgBlue, scuf.ModBold)},
-		{"string", scuf.String(`"`, scuf.FgRed, scuf.ModBold) + scuf.String("string", scuf.FgRed) + scuf.String(`"`, scuf.FgRed, scuf.ModBold)},
-		{[]string{}, "[]" + scuf.String("string", scuf.FgGreen) + "{}"},
-		{EmptyStruct{}, "pp." + scuf.String("EmptyStruct", scuf.FgGreen) + "{}"},
-		{
-			[]*Piyo{nil, nil}, `[]*pp.` + scuf.String("Piyo", scuf.FgGreen) + `{
-    (*pp.` + scuf.String("Piyo", scuf.FgGreen) + `)(` + scuf.String("nil", scuf.FgCyan, scuf.ModBold) + `),
-    (*pp.` + scuf.String("Piyo", scuf.FgGreen) + `)(` + scuf.String("nil", scuf.FgCyan, scuf.ModBold) + `),
-}`,
-		},
-		{
-			&c, `&pp.` + scuf.String("Circular", scuf.FgGreen) + `{
-    ` + scuf.String("C", scuf.FgYellow) + `: &pp.` + scuf.String("Circular", scuf.FgGreen) + `{...},
-}`,
-		},
-		{
-			"日本\t語\x00",
-			scuf.String(`"`, scuf.FgRed, scuf.ModBold) + `[red]日本[reset]` + scuf.String(`\t`, scuf.FgMagenta, scuf.ModBold) + `[red]語[reset]` + scuf.String(`\x00`, scuf.FgMagenta, scuf.ModBold) + scuf.String(`"`, scuf.FgRed, scuf.ModBold),
-		},
-		{
-			time.Date(2015, time.February, 14, 22, 15, 0, 0, time.UTC),
-			scuf.String(`2015`, scuf.FgBlue, scuf.ModBold) + `-` + scuf.String(`02`, scuf.FgBlue, scuf.ModBold) + `-` + scuf.String(`14`, scuf.FgBlue, scuf.ModBold) + ` ` + scuf.String(`22`, scuf.FgBlue, scuf.ModBold) + `:` + scuf.String(`15`, scuf.FgBlue, scuf.ModBold) + `:` + scuf.String(`00`, scuf.FgBlue, scuf.ModBold) + ` ` + scuf.String(`UTC`, scuf.FgBlue, scuf.ModBold),
-		},
-		{
-			LargeBuffer{}, `pp.[green]LargeBuffer[reset]{
-    [yellow]Buf[reset]: [[blue]1025[reset]][green]uint8[reset]{...},
-}`,
-		},
-		{
-			[]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, `[][green]uint8[reset]{
-			    ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `,
-			    ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `,
-			}`,
-		},
-		{
-			[]uint16{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, `[][green]uint16[reset]{
-			    ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `,
-			    ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `,
-			    ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `,
-			}`,
-		},
-		{
-			[]uint32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9}, `[][green]uint32[reset]{
-			    ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `,
-			    ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `,
-			    ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `,
-			}`,
-		},
-		{
-			[]uint64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0}, `[][green]uint64[reset]{
-			    ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `,
-			    ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`5`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`6`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`7`, scuf.FgBlue, scuf.ModBold) + `,
-			    ` + scuf.String(`8`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`9`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `,
-			}`,
-		},
-		{
-			[][]byte{{0, 1, 2}, {3, 4}, {255}}, `[][green][]uint8[reset]{
-			    [][green]uint8[reset]{
-			        ` + scuf.String(`0`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`1`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`2`, scuf.FgBlue, scuf.ModBold) + `,
-			    },
-			    [][green]uint8[reset]{
-			        ` + scuf.String(`3`, scuf.FgBlue, scuf.ModBold) + `, ` + scuf.String(`4`, scuf.FgBlue, scuf.ModBold) + `,
-			    },
-			    [][green]uint8[reset]{
-			        ` + scuf.String(`255`, scuf.FgBlue, scuf.ModBold) + `,
-			    },
-			}`,
-		},
-		{
-			map[string]any{"foo": 10, "bar": map[int]int{20: 30}}, `[green]map[string]interface {}[reset]{
-			    ` + scuf.String(`"`, scuf.FgRed, scuf.ModBold) + `[red]bar[reset]` + scuf.String(`"`, scuf.FgRed, scuf.ModBold) + `: [green]map[int]int[reset]{
-			        ` + scuf.String(`20`, scuf.FgBlue, scuf.ModBold) + `: ` + scuf.String(`30`, scuf.FgBlue, scuf.ModBold) + `,
-			    },
-			    ` + scuf.String(`"`, scuf.FgRed, scuf.ModBold) + `[red]foo[reset]` + scuf.String(`"`, scuf.FgRed, scuf.ModBold) + `: ` + scuf.String(`10`, scuf.FgBlue, scuf.ModBold) + `,
-			}`,
-		},
+	processTestCases(pp.Default, []any{
+		nil,
+		[]int(nil),
+		true,
+		false,
+		int(4),
+		int8(8),
+		int16(16),
+		int32(32),
+		int64(64),
+		uint(4),
+		uint8(8),
+		uint16(16),
+		uint32(32),
+		uint64(64),
+		uintptr(128),
+		float32(2.23),
+		float64(3.14),
+		complex64(complex(3, -4)),
+		complex128(complex(5, 6)),
+		"string",
+		[]string{},
+		EmptyStruct{},
+		[]*Piyo{nil, nil},
+		&c,
+		"日本\t語\x00",
+		time.Date(2015, time.February, 14, 22, 15, 0, 0, time.UTC),
+		LargeBuffer{},
+		[]byte{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+		[]uint16{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+		[]uint32{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+		[]uint64{0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 0},
+		[][]byte{{0, 1, 2}, {3, 4}, {255}},
+		map[string]any{"foo": 10, "bar": map[int]int{20: 30}},
 	})
 }
 
-func processTestCases(printer *pp.PrettyPrinter, cases []testCase) {
-	for _, test := range cases {
-		fmt.Println(printer.Sprint(test.object))
+func processTestCases(printer *pp.PrettyPrinter, objects []any) {
+	for _, object := range objects {
+		fmt.Println(printer.Sprint(object))
 	}
 
 	for _, object := range []any{
