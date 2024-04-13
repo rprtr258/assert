@@ -7,7 +7,6 @@ import (
 	"regexp"
 	"testing"
 	"time"
-	"unsafe"
 
 	"github.com/rprtr258/scuf"
 )
@@ -42,7 +41,6 @@ type User struct {
 	Name      string
 	CreatedAt time.Time
 	UpdatedAt time.Time
-	deletedAt time.Time
 }
 
 type LargeBuffer struct {
@@ -70,8 +68,9 @@ func init() {
 var (
 	tm = time.Date(2015, time.January, 2, 0, 0, 0, 0, time.UTC)
 
-	bigInt, _      = new(big.Int).SetString("-908f8474ea971baf", 16)
+	bigInt, _      = (&big.Int{}).SetString("-908f8474ea971baf", 16)
 	bigFloat, _, _ = big.ParseFloat("3.1415926535897932384626433832795028", 10, 10, big.ToZero)
+	_MSK, _        = time.LoadLocation("Europe/Moscow")
 )
 
 type testCase struct {
@@ -344,7 +343,27 @@ func TestFormat(t *testing.T) {
 			scuf.String(`10`, scuf.FgBlue, scuf.ModBold) +
 			`,
 }`},
-		{Private{b: false, i: 1, u: 2, f: 2.22, c: complex(5, 6)}, ""},
+		{Private{b: false, i: 1, u: 2, f: 2.22, c: complex(5, 6)}, "pp.\x1b[32mPrivate\x1b[0m{\n    \x1b[33mb\x1b[0m: \x1b[36;1mfalse\x1b[0m,\n    \x1b[33mi\x1b[0m: \x1b[34;1m1\x1b[0m,\n    \x1b[33mu\x1b[0m: \x1b[34;1m2\x1b[0m,\n    \x1b[33mf\x1b[0m: \x1b[35;1m2.220000\x1b[0m,\n    \x1b[33mc\x1b[0m: \x1b[34;1m(5+6i)\x1b[0m,\n}"},
+		{map[string]int{"hell": 23, "world": 34}, "\x1b[32mmap[string]int\x1b[0m{\n    \x1b[31;1m\"\x1b[0m\x1b[31mhell\x1b[0m\x1b[31;1m\"\x1b[0m:  \x1b[34;1m23\x1b[0m,\n    \x1b[31;1m\"\x1b[0m\x1b[31mworld\x1b[0m\x1b[31;1m\"\x1b[0m: \x1b[34;1m34\x1b[0m,\n}"},
+		{map[string]map[string]string{"s1": {"v1": "m1", "va1": "me1"}, "si2": {"v2": "m2"}}, "\x1b[32mmap[string]map[string]string\x1b[0m{\n    \x1b[31;1m\"\x1b[0m\x1b[31ms1\x1b[0m\x1b[31;1m\"\x1b[0m: \x1b[32mmap[string]string\x1b[0m{\n        \x1b[31;1m\"\x1b[0m\x1b[31mv1\x1b[0m\x1b[31;1m\"\x1b[0m:  \x1b[31;1m\"\x1b[0m\x1b[31mm1\x1b[0m\x1b[31;1m\"\x1b[0m,\n        \x1b[31;1m\"\x1b[0m\x1b[31mva1\x1b[0m\x1b[31;1m\"\x1b[0m: \x1b[31;1m\"\x1b[0m\x1b[31mme1\x1b[0m\x1b[31;1m\"\x1b[0m,\n    },\n    \x1b[31;1m\"\x1b[0m\x1b[31msi2\x1b[0m\x1b[31;1m\"\x1b[0m: \x1b[32mmap[string]string\x1b[0m{\n        \x1b[31;1m\"\x1b[0m\x1b[31mv2\x1b[0m\x1b[31;1m\"\x1b[0m: \x1b[31;1m\"\x1b[0m\x1b[31mm2\x1b[0m\x1b[31;1m\"\x1b[0m,\n    },\n}"},
+		{Foo{Bar: 1, Hoge: "a", Hello: map[string]string{"hel": "world", "a": "b"}, HogeHoges: []HogeHoge{{Hell: "a", World: 1}, {Hell: "bbb", World: 100}}}, "pp.\x1b[32mFoo\x1b[0m{\n    \x1b[33mBar\x1b[0m:   \x1b[34;1m1\x1b[0m,\n    \x1b[33mHoge\x1b[0m:  \x1b[31;1m\"\x1b[0m\x1b[31ma\x1b[0m\x1b[31;1m\"\x1b[0m,\n    \x1b[33mHello\x1b[0m: \x1b[32mmap[string]string\x1b[0m{\n        \x1b[31;1m\"\x1b[0m\x1b[31ma\x1b[0m\x1b[31;1m\"\x1b[0m:   \x1b[31;1m\"\x1b[0m\x1b[31mb\x1b[0m\x1b[31;1m\"\x1b[0m,\n        \x1b[31;1m\"\x1b[0m\x1b[31mhel\x1b[0m\x1b[31;1m\"\x1b[0m: \x1b[31;1m\"\x1b[0m\x1b[31mworld\x1b[0m\x1b[31;1m\"\x1b[0m,\n    },\n    \x1b[33mHogeHoges\x1b[0m: []pp.\x1b[32mHogeHoge\x1b[0m{\n        pp.\x1b[32mHogeHoge\x1b[0m{\n            \x1b[33mHell\x1b[0m:  \x1b[31;1m\"\x1b[0m\x1b[31ma\x1b[0m\x1b[31;1m\"\x1b[0m,\n            \x1b[33mWorld\x1b[0m: \x1b[34;1m1\x1b[0m,\n            \x1b[33mA\x1b[0m:     \x1b[36;1mnil\x1b[0m,\n        },\n        pp.\x1b[32mHogeHoge\x1b[0m{\n            \x1b[33mHell\x1b[0m:  \x1b[31;1m\"\x1b[0m\x1b[31mbbb\x1b[0m\x1b[31;1m\"\x1b[0m,\n            \x1b[33mWorld\x1b[0m: \x1b[34;1m100\x1b[0m,\n            \x1b[33mA\x1b[0m:     \x1b[36;1mnil\x1b[0m,\n        },\n    },\n}"},
+		{[3]int{}, "[\x1b[34m3\x1b[0m]\x1b[32mint\x1b[0m{\n    \x1b[34;1m0\x1b[0m,\n    \x1b[34;1m0\x1b[0m,\n    \x1b[34;1m0\x1b[0m,\n}"},
+		{[]string{"aaa", "bbb", "ccc"}, "[]\x1b[32mstring\x1b[0m{\n    \x1b[31;1m\"\x1b[0m\x1b[31maaa\x1b[0m\x1b[31;1m\"\x1b[0m,\n    \x1b[31;1m\"\x1b[0m\x1b[31mbbb\x1b[0m\x1b[31;1m\"\x1b[0m,\n    \x1b[31;1m\"\x1b[0m\x1b[31mccc\x1b[0m\x1b[31;1m\"\x1b[0m,\n}"},
+		{func(a string, b float32) int { return 0 }, "\x1b[32mfunc(string, float32) int\x1b[0m {...}"},
+		{&HogeHoge{}, "&pp.\x1b[32mHogeHoge\x1b[0m{\n    \x1b[33mHell\x1b[0m:  \x1b[31;1m\"\x1b[0m\x1b[31;1m\"\x1b[0m,\n    \x1b[33mWorld\x1b[0m: \x1b[34;1m0\x1b[0m,\n    \x1b[33mA\x1b[0m:     \x1b[36;1mnil\x1b[0m,\n}"},
+		{&Piyo{Field1: map[string]string{"a": "b", "cc": "dd"}, F2: &Foo{}, Fie3: 128}, "&pp.\x1b[32mPiyo\x1b[0m{\n    \x1b[33mField1\x1b[0m: \x1b[32mmap[string]string\x1b[0m{\n        \x1b[31;1m\"\x1b[0m\x1b[31ma\x1b[0m\x1b[31;1m\"\x1b[0m:  \x1b[31;1m\"\x1b[0m\x1b[31mb\x1b[0m\x1b[31;1m\"\x1b[0m,\n        \x1b[31;1m\"\x1b[0m\x1b[31mcc\x1b[0m\x1b[31;1m\"\x1b[0m: \x1b[31;1m\"\x1b[0m\x1b[31mdd\x1b[0m\x1b[31;1m\"\x1b[0m,\n    },\n    \x1b[33mF2\x1b[0m: &pp.\x1b[32mFoo\x1b[0m{\n        \x1b[33mBar\x1b[0m:       \x1b[34;1m0\x1b[0m,\n        \x1b[33mHoge\x1b[0m:      \x1b[31;1m\"\x1b[0m\x1b[31;1m\"\x1b[0m,\n        \x1b[33mHello\x1b[0m:     \x1b[32mmap[string]string\x1b[0m{},\n        \x1b[33mHogeHoges\x1b[0m: []pp.\x1b[32mHogeHoge\x1b[0m(\x1b[36;1mnil\x1b[0m),\n    },\n    \x1b[33mFie3\x1b[0m: \x1b[34;1m128\x1b[0m,\n}"},
+		{[]any{1, 3}, "[]\x1b[32minterface {}\x1b[0m{\n    \x1b[34;1m1\x1b[0m,\n    \x1b[34;1m3\x1b[0m,\n}"},
+		{any(1), "\x1b[34;1m1\x1b[0m"},
+		{HogeHoge{A: "test"}, "pp.\x1b[32mHogeHoge\x1b[0m{\n    \x1b[33mHell\x1b[0m:  \x1b[31;1m\"\x1b[0m\x1b[31;1m\"\x1b[0m,\n    \x1b[33mWorld\x1b[0m: \x1b[34;1m0\x1b[0m,\n    \x1b[33mA\x1b[0m:     \x1b[31;1m\"\x1b[0m\x1b[31mtest\x1b[0m\x1b[31;1m\"\x1b[0m,\n}"},
+		{FooPri{Public: "hello", private: "world"}, "pp.\x1b[32mFooPri\x1b[0m{\n    \x1b[33mPublic\x1b[0m:  \x1b[31;1m\"\x1b[0m\x1b[31mhello\x1b[0m\x1b[31;1m\"\x1b[0m,\n    \x1b[33mprivate\x1b[0m: \x1b[31;1m\"\x1b[0m\x1b[31mworld\x1b[0m\x1b[31;1m\"\x1b[0m,\n}"},
+		{&regexp.Regexp{}, "&regexp.\x1b[32mRegexp\x1b[0m{\n    \x1b[33mexpr\x1b[0m:           \x1b[31;1m\"\x1b[0m\x1b[31;1m\"\x1b[0m,\n    \x1b[33mprog\x1b[0m:           (*syntax.\x1b[32mProg\x1b[0m)(\x1b[36;1mnil\x1b[0m),\n    \x1b[33monepass\x1b[0m:        (*regexp.\x1b[32monePassProg\x1b[0m)(\x1b[36;1mnil\x1b[0m),\n    \x1b[33mnumSubexp\x1b[0m:      \x1b[34;1m0\x1b[0m,\n    \x1b[33mmaxBitStateLen\x1b[0m: \x1b[34;1m0\x1b[0m,\n    \x1b[33msubexpNames\x1b[0m:    []\x1b[32mstring\x1b[0m(\x1b[36;1mnil\x1b[0m),\n    \x1b[33mprefix\x1b[0m:         \x1b[31;1m\"\x1b[0m\x1b[31;1m\"\x1b[0m,\n    \x1b[33mprefixBytes\x1b[0m:    []\x1b[32muint8\x1b[0m(\x1b[36;1mnil\x1b[0m),\n    \x1b[33mprefixRune\x1b[0m:     \x1b[34;1m0\x1b[0m,\n    \x1b[33mprefixEnd\x1b[0m:      \x1b[34;1m0\x1b[0m,\n    \x1b[33mmpool\x1b[0m:          \x1b[34;1m0\x1b[0m,\n    \x1b[33mmatchcap\x1b[0m:       \x1b[34;1m0\x1b[0m,\n    \x1b[33mprefixComplete\x1b[0m: \x1b[36;1mfalse\x1b[0m,\n    \x1b[33mcond\x1b[0m:           \x1b[34;1m0\x1b[0m,\n    \x1b[33mminInputLen\x1b[0m:    \x1b[34;1m0\x1b[0m,\n    \x1b[33mlongest\x1b[0m:        \x1b[36;1mfalse\x1b[0m,\n}"},
+		{"日本\t語\n\000\U00101234a", "\x1b[31;1m\"\x1b[0m\x1b[31m日本\x1b[0m\x1b[35;1m\\t\x1b[0m\x1b[31m語\x1b[0m\x1b[35;1m\\n\x1b[0m\x1b[35;1m\\x00\x1b[0m\x1b[35;1m\\U00101234\x1b[0m\x1b[31ma\x1b[0m\x1b[31;1m\"\x1b[0m"},
+		{bigInt, "&\x1b[34;1m-10416690100818090927\x1b[0m"},
+		{bigFloat, "&\x1b[35;1m3.140625\x1b[0m"},
+		{&tm, "&\x1b[34;1m2015\x1b[0m-\x1b[34;1m01\x1b[0m-\x1b[34;1m02\x1b[0m \x1b[34;1m00\x1b[0m:\x1b[34;1m00\x1b[0m:\x1b[34;1m00\x1b[0m \x1b[34;1mUTC\x1b[0m"},
+		{&User{Name: "k0kubun", CreatedAt: time.Date(2024, 04, 13, 9, 36, 49, 0, time.UTC), UpdatedAt: time.Date(2024, 04, 13, 9, 36, 49, 0, _MSK)}, "&pp.\x1b[32mUser\x1b[0m{\n    \x1b[33mName\x1b[0m:      \x1b[31;1m\"\x1b[0m\x1b[31mk0kubun\x1b[0m\x1b[31;1m\"\x1b[0m,\n    \x1b[33mCreatedAt\x1b[0m: \x1b[34;1m2024\x1b[0m-\x1b[34;1m04\x1b[0m-\x1b[34;1m13\x1b[0m \x1b[34;1m09\x1b[0m:\x1b[34;1m36\x1b[0m:\x1b[34;1m49\x1b[0m \x1b[34;1mUTC\x1b[0m,\n    \x1b[33mUpdatedAt\x1b[0m: \x1b[34;1m2024\x1b[0m-\x1b[34;1m04\x1b[0m-\x1b[34;1m13\x1b[0m \x1b[34;1m09\x1b[0m:\x1b[34;1m36\x1b[0m:\x1b[34;1m49\x1b[0m \x1b[34;1mEurope/Moscow\x1b[0m,\n}"},
+		// {make(chan bool, 10), "(\x1b[32mchan bool\x1b[0m)(\x1b[34;1m0xc000068620\x1b[0m)"}, // TODO: flaky, depends on allocated address
+		// {unsafe.Pointer(&regexp.Regexp{}), "unsafe.\x1b[32mPointer\x1b[0m(\x1b[34;1m0xc000108780\x1b[0m)"}, // TODO: flaky, depends on allocated address
 	})
 }
 
@@ -391,38 +410,4 @@ Actual: %[4]q
 			}
 		})
 	}
-
-	for _, object := range []any{
-		map[string]int{"hell": 23, "world": 34},
-		map[string]map[string]string{"s1": {"v1": "m1", "va1": "me1"}, "si2": {"v2": "m2"}},
-		Foo{Bar: 1, Hoge: "a", Hello: map[string]string{"hel": "world", "a": "b"}, HogeHoges: []HogeHoge{{Hell: "a", World: 1}, {Hell: "bbb", World: 100}}},
-		[3]int{},
-		[]string{"aaa", "bbb", "ccc"},
-		make(chan bool, 10),
-		func(a string, b float32) int { return 0 },
-		&HogeHoge{},
-		&Piyo{Field1: map[string]string{"a": "b", "cc": "dd"}, F2: &Foo{}, Fie3: 128},
-		[]any{1, 3},
-		any(1),
-		HogeHoge{A: "test"},
-		FooPri{Public: "hello", private: "world"},
-		new(regexp.Regexp),
-		unsafe.Pointer(new(regexp.Regexp)),
-		"日本\t語\n\000\U00101234a",
-		bigInt,
-		bigFloat,
-		&tm,
-		&User{Name: "k0kubun", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(), deletedAt: time.Now().UTC()},
-	} {
-		object := object
-		t.Run(fmt.Sprintf("%#v", object), func(t *testing.T) {
-			t.Parallel()
-
-			logResult(t, object, printer.format(object))
-		})
-	}
-}
-
-func logResult(t *testing.T, object any, actual string) {
-	t.Logf("%#v =>\n%s\n\n", object, actual)
 }
