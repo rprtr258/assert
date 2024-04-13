@@ -1,6 +1,7 @@
 package pp
 
 import (
+	"fmt"
 	"math/big"
 	"reflect"
 	"regexp"
@@ -8,7 +9,6 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/kr/pretty"
 	"github.com/rprtr258/scuf"
 )
 
@@ -356,7 +356,7 @@ func processTestCases(t *testing.T, printer *PrettyPrinter, tests []testCase) {
 
 	for _, test := range tests {
 		test := test
-		t.Run(pretty.Sprintf("%#v", test.object), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%#v", test.object), func(t *testing.T) {
 			t.Parallel()
 
 			actual := printer.format(test.object)
@@ -401,7 +401,7 @@ Actual: %s
 		&User{Name: "k0kubun", CreatedAt: time.Now().UTC(), UpdatedAt: time.Now().UTC(), deletedAt: time.Now().UTC()},
 	} {
 		object := object
-		t.Run(pretty.Sprintf("%#v", object), func(t *testing.T) {
+		t.Run(fmt.Sprintf("%#v", object), func(t *testing.T) {
 			t.Parallel()
 
 			logResult(t, object, printer.format(object))
