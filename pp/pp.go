@@ -9,7 +9,6 @@ import (
 	"runtime"
 	"sync"
 
-	colorable "github.com/mattn/go-colorable"
 	"github.com/rprtr258/scuf"
 )
 
@@ -59,7 +58,7 @@ var (
 
 // Internals
 var (
-	defaultOut          = colorable.NewColorableStdout()
+	defaultOut          = os.Stdout
 	defaultWithLineInfo = false
 )
 
