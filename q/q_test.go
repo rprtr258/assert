@@ -353,7 +353,7 @@ func TestArgNames(t *testing.T) {
 		`[]byte("goodbye world")`,
 		`e[1:]`,
 	}
-	got, ok := argNames(filename, 237, "main", "dump")
+	got, ok := argNames(filename, 236, "main", "dump")
 	ass.True(t, ok)
 	ass.Equal(t, want, got)
 }

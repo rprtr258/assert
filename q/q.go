@@ -114,7 +114,6 @@ func argNames(filename string, line int, pkgName, funcName string) ([]string, bo
 
 		return true
 	})
-
 	return names, true
 }
 

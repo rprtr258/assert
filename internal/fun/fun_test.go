@@ -1,80 +1,48 @@
+package fun
+
+import (
+	"sort"
+	"testing"
+
+	"github.com/rprtr258/assert/internal/ass"
+)
+
+func toSlice[T any](seq Seq[T]) []T {
+	var xs []T
+	seq(func(x T) bool {
+		xs = append(xs, x)
+		return true
+	})
+	return xs
+}
+
 func TestFlatMap(t *testing.T) {
- seq := FromMany(1, 2, 3)
- flatMappedSeq := FlatMap(seq, func(n int) Seq[int] {
-  return FromMany(n, n*n)
- })
+	seq := FromMany(1, 2, 3)
 
- var result []int
- flatMappedSeq(func(n int) bool {
-  result = append(result, n)
-  return true
- })
-
- expected := []int{1, 1, 2, 4, 3, 9}
- for i, v := range expected {
-  if result[i] != v {
-   t.Errorf("FlatMap element %d = %d; want %d", i, result[i], v)
-  }
- }
+	ass.Equal(t, []int{1, 1, 2, 4, 3, 9}, toSlice(FlatMap(seq, func(n int) Seq[int] {
+		return FromMany(n, n*n)
+	})))
 }
 
-
-  seq := FromMany(1, 2, 3)
-  mappedSeq := Map(seq, func(n int) int {
-    return n * n
-  })
-
-  var result []int
-  mappedSeq(func(n int) bool {
-    result = append(result, n)
-    return true
-  })
-
-  expected := []int{1, 4, 9}
-  for i, v := range expected {
-    if result[i] != v {
-      t.Errorf("Map element %d = %d; want %d", i, result[i], v)
-    }
-  }
+func TestFromMany(t *testing.T) {
+	ass.Equal(t, []int{1, 2, 3}, toSlice(FromMany(1, 2, 3)))
 }
 
+func TestMap(t *testing.T) {
+	seq := FromMany(1, 2, 3)
 
+	ass.Equal(t, []int{1, 4, 9}, toSlice(Map(seq, func(n int) int {
+		return n * n
+	})))
+}
+
+func TestFromDictKeys(t *testing.T) {
 	dict := map[string]int{"one": 1, "two": 2}
-	var keys []string
-	FromDictKeys(dict)(func(k string) bool {
-		keys = append(keys, k)
-		return true
-	})
-
-	if len(keys) != 2 || !(keys[0] == "one" && keys[1] == "two" || keys[0] == "two" && keys[1] == "one") {
-		t.Errorf("FromDictKeys keys = %v; want ['one', 'two'] or ['two', 'one']", keys)
-	}
+	actual := toSlice(FromDictKeys(dict))
+	sort.Strings(actual)
+	ass.Equal(t, []string{"one", "two"}, actual)
 }
 
-	var result []int
-	FromRange(1, 4)(func(n int) bool {
-		result = append(result, n)
-		return true
-	})
-
-	expected := []int{1, 2, 3}
-	for i, v := range expected {
-		if result[i] != v {
-			t.Errorf("FromRange element %d = %d; want %d", i, result[i], v)
-		}
-	}
-}func TestFromMany(t *testing.T) {
-	var result []int
-	FromMany(1, 2, 3)(func(n int) bool {
-		result = append(result, n)
-		return true
-	})
-
-	expected := []int{1, 2, 3}
-	for i, v := range expected {
-		if result[i] != v {
-			t.Errorf("FromMany element %d = %d; want %d", i, result[i], v)
-		}
-	}
+func TestFromRange(t *testing.T) {
+	ass.Equal(t, []int{1, 2, 3}, toSlice(FromRange(1, 4)))
 }
-
