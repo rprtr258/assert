@@ -112,7 +112,7 @@ func color_float(s string) string {
 }
 
 func TestFormat(t *testing.T) {
-	assertTestCases(t, Default, []testCase{
+	for _, test := range []testCase{
 		{nil, scuf.String("nil", scuf.FgCyan, scuf.ModBold)},
 		{[]int(nil), scuf.NewString(func(b scuf.Buffer) {
 			b.
@@ -394,20 +394,13 @@ func TestFormat(t *testing.T) {
 		// })},
 		// {make(chan bool, 10), "(\x1b[32mchan bool\x1b[0m)(\x1b[34;1m0xc000068620\x1b[0m)"},
 		// {unsafe.Pointer(&regexp.Regexp{}), "unsafe.\x1b[32mPointer\x1b[0m(\x1b[34;1m0xc000108780\x1b[0m)"},
-	})
-}
-
-// TODO: assert only one testcase
-func assertTestCases(t *testing.T, printer *PrettyPrinter, tests []testCase) {
-	t.Helper()
-
-	for _, test := range tests {
+	} {
 		test := test
 		name := fmt.Sprintf("%#v", test.object)
 		t.Run(name, func(t *testing.T) {
 			t.Parallel()
 
-			actual := printer.format(test.object)
+			actual := Default.format(test.object)
 
 			expected, ok := _expectedByObject[name]
 			if !ok {
