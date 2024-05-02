@@ -50,3 +50,9 @@ func UseTempFile(t testing.TB, content []byte) *os.File {
 	})
 	return file
 }
+
+// NOTE: envs are set for whole processes, so all parallel tests will see them
+func UseEnv(t testing.TB, key, value string) {
+	// cleanup is done inside
+	t.Setenv(key, value)
+}
