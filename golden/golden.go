@@ -19,8 +19,7 @@ func Load[T any](b []byte) map[string]T {
 			panic(fmt.Sprintf("duplicate file name: %s", file.Name))
 		}
 
-		// remove trailing \n
-		data := file.Data[:len(file.Data)-1]
+		data := bytes.TrimRight(file.Data, "\n")
 		var testcase T
 		if err := gob.NewDecoder(bytes.NewBuffer(data)).Decode(&testcase); err != nil {
 			panic(fmt.Sprintf("failed to decode %q: %s", file.Name, err.Error()))
