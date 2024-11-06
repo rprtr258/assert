@@ -22,7 +22,7 @@ var _expectedByObject = func() map[string]string {
 	for _, file := range files {
 		// check no object is not saved multiple times
 		if _, ok := tests[file.Name]; ok {
-			panic(fmt.Sprintf("duplicate file name: %s", file.Name))
+			panic("duplicate file name: " + file.Name)
 		}
 
 		// remove trailing \n
@@ -167,7 +167,7 @@ func TestFormat(t *testing.T) {
 		"日本\t語\n\000\U00101234a",
 		bigInt,
 		&tm,
-		&User{Name: "k0kubun", CreatedAt: time.Date(2024, 04, 13, 9, 36, 49, 0, time.UTC), UpdatedAt: time.Date(2024, 04, 13, 9, 36, 49, 0, _MSK)},
+		&User{Name: "k0kubun", CreatedAt: time.Date(2024, 4, 13, 9, 36, 49, 0, time.UTC), UpdatedAt: time.Date(2024, 4, 13, 9, 36, 49, 0, _MSK)},
 		// TODO: flaky, depends on PRINTING HUGE BIG FLOAT AS JUST FUCKING 3.14
 		// bigFloat,
 		// TODO: flaky, depends on allocated address
@@ -199,7 +199,6 @@ func TestFormat(t *testing.T) {
 	}
 	keys := make(map[string]struct{}, len(tests))
 	for _, object := range tests {
-		object := object
 		name := fmt.Sprintf("%#v", object)
 		keys[name] = struct{}{}
 		t.Run(name, func(t *testing.T) {

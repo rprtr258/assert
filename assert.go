@@ -1,11 +1,14 @@
 package assert
 
 import (
+	"cmp"
 	"fmt"
+	"iter"
 	"path/filepath"
 	"reflect"
 	"regexp"
 	"runtime"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -18,33 +21,22 @@ import (
 	"github.com/rprtr258/assert/internal/scuf"
 )
 
+const _shortLimit = 100
+
 var (
-	_fgExpected = scuf.FgRGB(0x96, 0xf7, 0x59)
-	_fgActual   = scuf.FgRGB(0xff, 0x40, 0x53)
+	_fgExpected = scuf.FgRGB(0x96, 0xf7, 0x59) //nolint:mnd
+	_fgActual   = scuf.FgRGB(0xff, 0x40, 0x53) //nolint:mnd
 )
 
-func mapJoin[T any](seq fun.Seq[T], toString func(T) string, sep string) string {
+func mapJoin[T any](seq iter.Seq[T], toString func(T) string, sep string) string {
 	var sb strings.Builder
-	seq(func(v T) bool {
+	for v := range seq {
 		if sb.Len() > 0 {
 			sb.WriteString(sep)
 		}
 		sb.WriteString(toString(v))
-
-		return true
-	})
-	return sb.String()
-}
-
-// or returns the first non-zero value
-func or[T comparable](xs ...T) T {
-	var zero T
-	for _, x := range xs {
-		if x != zero {
-			return x
-		}
 	}
-	return zero
+	return sb.String()
 }
 
 // isTest tells whether name looks like a test or benchmark, according to prefix.
@@ -80,7 +72,7 @@ type caller struct {
 // callerInfo returns an array of strings containing the file and line number
 // of each stack frame leading from the current test to the assert call that
 // failed.
-func callerInfo() fun.Seq[caller] {
+func callerInfo() iter.Seq[caller] {
 	return func(yield func(caller) bool) {
 		for i := 0; ; i++ {
 			pc, file, line, ok := runtime.Caller(i)
@@ -152,14 +144,13 @@ func messageLabeledContent(format string, arg ...any) labeledContent {
 
 func Equal[T any](tb testing.TB, expected, actual T) {
 	tb.Helper()
-
 	if reflect.DeepEqual(expected, actual) {
 		return
 	}
 
 	argNames := q.Q("assert", "Equal")
-	expectedName := or(argNames[1], "Expected")
-	actualName := or(argNames[2], "Actual")
+	expectedName := cmp.Or(argNames[1], "Expected")
+	actualName := cmp.Or(argNames[2], "Actual")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
@@ -177,7 +168,7 @@ func Equal[T any](tb testing.TB, expected, actual T) {
 						",\n    ", ", ",
 						",\n", "",
 					).Replace(s)
-					if len(name)+len(s) < 100 {
+					if len(name)+len(s) < _shortLimit {
 						return short
 					}
 
@@ -204,14 +195,13 @@ func Equal[T any](tb testing.TB, expected, actual T) {
 
 func Equalf[T any](tb testing.TB, expected, actual T, format string, args ...any) {
 	tb.Helper()
-
 	if reflect.DeepEqual(expected, actual) {
 		return
 	}
 
 	argNames := q.Q("assert", "Equal")
-	expectedName := or(argNames[1], "Expected")
-	actualName := or(argNames[2], "Actual")
+	expectedName := cmp.Or(argNames[1], "Expected")
+	actualName := cmp.Or(argNames[2], "Actual")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
@@ -230,7 +220,7 @@ func Equalf[T any](tb testing.TB, expected, actual T, format string, args ...any
 						",\n    ", ", ",
 						",\n", "",
 					).Replace(s)
-					if len(name)+len(s) < 100 {
+					if len(name)+len(s) < _shortLimit {
 						return short
 					}
 
@@ -258,19 +248,14 @@ func Equalf[T any](tb testing.TB, expected, actual T, format string, args ...any
 					comment = ", " + line.comment
 				}
 
-				return strings.Join([]string{
-					fmt.Sprintf(
-						"%s != %s%s:",
-						scuf.String(expectedName+line.selector, _fgExpected),
-						scuf.String(actualName+line.selector, _fgActual),
-						comment,
-					),
-					fmt.Sprintf(
-						"\t%s !=\n\t%s",
-						expectedStr,
-						actualStr,
-					),
-				}, "\n")
+				return fmt.Sprintf(
+					"%s != %s%s:\n\t%s !=\n\t%s",
+					scuf.String(expectedName+line.selector, _fgExpected),
+					scuf.String(actualName+line.selector, _fgActual),
+					comment,
+					expectedStr,
+					actualStr,
+				)
 			}, "\n\n"),
 		},
 	})
@@ -288,7 +273,8 @@ func Equalf[T any](tb testing.TB, expected, actual T, format string, args ...any
 // }
 
 func fail(tb testing.TB, lines []labeledContent) {
-	tb.Error("\n" + mapJoin(fun.FromMany(lines...), formatLabeledContent, "\n"))
+	tb.Helper()
+	tb.Error("\n" + mapJoin(slices.Values(lines), formatLabeledContent, "\n"))
 }
 
 func stacktraceLabeledContent() labeledContent {
@@ -308,34 +294,30 @@ func stacktraceLabeledContent() labeledContent {
 
 func NotEqual[T any](tb testing.TB, expected, actual T) {
 	tb.Helper()
-
 	if !reflect.DeepEqual(expected, actual) {
 		return
 	}
 
 	argNames := q.Q("assert", "NotEqual")
-	expectedName := or(argNames[1], "Expected")
-	actualName := or(argNames[2], "Actual")
+	expectedName := cmp.Or(argNames[1], "Expected")
+	actualName := cmp.Or(argNames[2], "Actual")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
 		{
 			scuf.String("Equal", scuf.FgHiRed),
-			strings.Join([]string{
-				fmt.Sprintf(
-					"%s and %s are equal, asserted not to, value is:",
-					scuf.String(expectedName, _fgExpected),
-					scuf.String(actualName, _fgActual),
-				),
-				"\t" + strings.ReplaceAll(pp.Sprint(expected), "\n", "\n\t"),
-			}, "\n"),
+			fmt.Sprintf(
+				"%s and %s are equal, asserted not to, value is:\n\t%s",
+				scuf.String(expectedName, _fgExpected),
+				scuf.String(actualName, _fgActual),
+				strings.ReplaceAll(pp.Sprint(expected), "\n", "\n\t"),
+			),
 		},
 	})
 }
 
 func Zero[T any](tb testing.TB, actual T) {
 	tb.Helper()
-
 	var zero T
 	if reflect.DeepEqual(zero, actual) {
 		return
@@ -343,7 +325,7 @@ func Zero[T any](tb testing.TB, actual T) {
 
 	argNames := q.Q("assert", "Zero")
 	expectedName := "Zero"
-	actualName := or(argNames[1], "Actual")
+	actualName := cmp.Or(argNames[1], "Actual")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
@@ -361,7 +343,7 @@ func Zero[T any](tb testing.TB, actual T) {
 						",\n    ", ", ",
 						",\n", "",
 					).Replace(s)
-					if len(name)+len(s) < 100 {
+					if len(name)+len(s) < _shortLimit {
 						return short
 					}
 
@@ -387,33 +369,31 @@ func Zero[T any](tb testing.TB, actual T) {
 
 func NotZero[T any](tb testing.TB, actual T) {
 	tb.Helper()
-
 	var zero T
 	if !reflect.DeepEqual(zero, actual) {
 		return
 	}
 
 	argNames := q.Q("assert", "NotZero")
-	actualName := or(argNames[1], "Actual")
+	actualName := cmp.Or(argNames[1], "Actual")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
 		{
 			scuf.String("Value is zero", scuf.FgHiRed),
-			fmt.Sprintf("%s is zero, asserted not to", scuf.String(actualName, _fgActual)),
+			scuf.String(actualName, _fgActual) + " is zero, asserted not to",
 		},
 	})
 }
 
 func True(tb testing.TB, condition bool) {
 	tb.Helper()
-
 	if condition {
 		return
 	}
 
 	argNames := q.Q("assert", "True")
-	conditionName := or(argNames[1], "Condition")
+	conditionName := cmp.Or(argNames[1], "Condition")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
@@ -426,13 +406,12 @@ func True(tb testing.TB, condition bool) {
 
 func Truef(tb testing.TB, condition bool, format string, args ...any) {
 	tb.Helper()
-
 	if condition {
 		return
 	}
 
 	argNames := q.Q("assert", "Truef")
-	conditionName := or(argNames[1], "Condition")
+	conditionName := cmp.Or(argNames[1], "Condition")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
@@ -446,13 +425,12 @@ func Truef(tb testing.TB, condition bool, format string, args ...any) {
 
 func False(tb testing.TB, condition bool) {
 	tb.Helper()
-
 	if !condition {
 		return
 	}
 
 	argNames := q.Q("assert", "False")
-	conditionName := or(argNames[1], "Condition")
+	conditionName := cmp.Or(argNames[1], "Condition")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
@@ -465,13 +443,12 @@ func False(tb testing.TB, condition bool) {
 
 func Falsef(tb testing.TB, condition bool, format string, args ...any) {
 	tb.Helper()
-
 	if condition {
 		return
 	}
 
 	argNames := q.Q("assert", "Falsef")
-	conditionName := or(argNames[1], "Condition")
+	conditionName := cmp.Or(argNames[1], "Condition")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
@@ -485,13 +462,12 @@ func Falsef(tb testing.TB, condition bool, format string, args ...any) {
 
 func NoError(tb testing.TB, err error) {
 	tb.Helper()
-
 	if err == nil {
 		return
 	}
 
 	argNames := q.Q("assert", "NoError")
-	errorName := or(argNames[1], "Error")
+	errorName := cmp.Or(argNames[1], "Error")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
@@ -504,13 +480,12 @@ func NoError(tb testing.TB, err error) {
 
 func NoErrorf(tb testing.TB, err error, format string, args ...any) {
 	tb.Helper()
-
 	if err == nil {
 		return
 	}
 
 	argNames := q.Q("assert", "NoErrorf")
-	errorName := or(argNames[1], "Error")
+	errorName := cmp.Or(argNames[1], "Error")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
@@ -523,6 +498,7 @@ func NoErrorf(tb testing.TB, err error, format string, args ...any) {
 }
 
 func Contains[T comparable](tb testing.TB, slice []T, item T) {
+	tb.Helper()
 	for _, v := range slice {
 		if v == item {
 			return
@@ -530,72 +506,71 @@ func Contains[T comparable](tb testing.TB, slice []T, item T) {
 	}
 
 	argNames := q.Q("assert", "Contains")
-	sliceName := or(argNames[1], "Slice")
-	itemName := or(argNames[2], "Item")
+	sliceName := cmp.Or(argNames[1], "Slice")
+	itemName := cmp.Or(argNames[2], "Item")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
 		{
 			label: "Slice does not contain item",
-			content: strings.Join([]string{
-				sliceName + ": " + pp.Sprint(slice),
+			content: sliceName + ": " + pp.Sprint(slice) + "\n" +
 				itemName + ": " + pp.Sprint(item),
-			}, "\n"),
 		},
 	})
 }
 
 func Substring(tb testing.TB, text, needle string) {
+	tb.Helper()
 	if strings.Contains(text, needle) {
 		return
 	}
 
 	argNames := q.Q("assert", "Substring")
-	textName := or(argNames[1], "Text")
-	needleName := or(argNames[2], "Needle")
+	textName := cmp.Or(argNames[1], "Text")
+	needleName := cmp.Or(argNames[2], "Needle")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
 		{
 			label: "String does not contain substring",
-			content: strings.Join([]string{
-				textName + ": " + pp.Sprint(text),
+			content: textName + ": " + pp.Sprint(text) + "\n" +
 				needleName + ": " + pp.Sprint(needle),
-			}, "\n"),
 		},
 	})
 }
 
-func Substringf(tb testing.TB, text, needle string, format string, args ...any) {
+func Substringf(tb testing.TB, text, needle, format string, args ...any) {
+	tb.Helper()
 	if strings.Contains(text, needle) {
 		return
 	}
 
 	argNames := q.Q("assert", "Substringf")
-	textName := or(argNames[1], "Text")
-	needleName := or(argNames[2], "Needle")
+	textName := cmp.Or(argNames[1], "Text")
+	needleName := cmp.Or(argNames[2], "Needle")
 
 	fail(tb, []labeledContent{
 		stacktraceLabeledContent(),
 		messageLabeledContent(format, args...),
 		{
 			label: "String does not contain substring",
-			content: strings.Join([]string{
-				textName + ": " + pp.Sprint(text),
+			content: textName + ": " + pp.Sprint(text) + "\n" +
 				needleName + ": " + pp.Sprint(needle),
-			}, "\n"),
 		},
 	})
 }
 
 func Regexp(tb testing.TB, re, text string) {
+	tb.Helper()
 	True(tb, regexp.MustCompile(re).MatchString(text))
 }
 
 func EqualError(tb testing.TB, errText string, err error) {
+	tb.Helper()
 	Equal(tb, errText, err.Error())
 }
 
 func Len[T any](tb testing.TB, lenn int, slice []T) {
+	tb.Helper()
 	Equal(tb, lenn, len(slice))
 }

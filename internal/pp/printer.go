@@ -25,7 +25,12 @@ func (pp *PrettyPrinter) format(object any) string {
 	return newPrinter(object, &pp.currentScheme, pp.maxDepth, pp.ColoringEnabled, pp.DecimalUint, pp.ExportedOnly, pp.ThousandsSeparator).String()
 }
 
-func newPrinter(object any, currentScheme *ColorScheme, maxDepth int, coloringEnabled bool, decimalUint bool, exportedOnly bool, thousandsSeparator bool) *printer {
+func newPrinter(
+	object any,
+	currentScheme *ColorScheme,
+	maxDepth int,
+	coloringEnabled, decimalUint, exportedOnly, thousandsSeparator bool,
+) *printer {
 	buffer := &bytes.Buffer{}
 	tw := &tabwriter.Writer{}
 	tw.Init(buffer, indentWidth, 0, 1, ' ', 0)
@@ -126,7 +131,7 @@ func (p *printer) indentPrintf(format string, args ...any) {
 	p.indentPrint(fmt.Sprintf(format, args...))
 }
 
-func (p *printer) colorPrint(text string, mod string) {
+func (p *printer) colorPrint(text, mod string) {
 	p.print(p.colorize(text, mod))
 }
 
@@ -135,10 +140,11 @@ func (p *printer) printString() {
 	quoted = quoted[1 : len(quoted)-1]
 
 	p.colorPrint(`"`, p.currentScheme.StringQuotation)
-	for len(quoted) > 0 {
+	for quoted != "" {
 		pos := strings.IndexByte(quoted, '\\')
 		if pos == -1 {
 			p.colorPrint(quoted, p.currentScheme.String)
+
 			break
 		}
 		if pos != 0 {
@@ -164,24 +170,24 @@ func (p *printer) printString() {
 
 func (p *printer) printMap() {
 	if p.value.Len() == 0 {
-		p.printf(p.colorizeType(p.value.Type()) + "{}")
+		p.print(p.colorizeType(p.value.Type()) + "{}")
 		return
 	}
 
 	if p.visited[p.value.Pointer()] {
-		p.printf(p.colorizeType(p.value.Type()) + "{...}")
+		p.print(p.colorizeType(p.value.Type()) + "{...}")
 		return
 	}
 	p.visited[p.value.Pointer()] = true
 
 	if PrintMapTypes {
-		p.printf(p.colorizeType(p.value.Type()) + "{\n")
+		p.print(p.colorizeType(p.value.Type()) + "{\n")
 	} else {
 		p.println("{")
 	}
 	p.indented(func() {
 		value := sortMap(p.value)
-		for i := 0; i < value.Len(); i++ {
+		for i := range value.Len() {
 			p.indentPrintf(
 				"%s:\t%s,\n",
 				p.format(value.keys[i]),
@@ -211,8 +217,8 @@ func (p *printer) printStruct() {
 		}
 	}
 
-	var fields []int
-	for i := 0; i < p.value.NumField(); i++ {
+	fields := make([]int, 0, p.value.NumField())
+	for i := range p.value.NumField() {
 		field := typ.Field(i)
 		// ignore unexported if needed
 		if p.exportedOnly && field.PkgPath != "" {
@@ -275,7 +281,7 @@ func (p *printer) printTime() {
 
 func (p *printer) printSlice() {
 	if p.value.IsNil() {
-		p.printf(p.colorizeType(p.value.Type()) + "(" + p.nil() + ")")
+		p.print(p.colorizeType(p.value.Type()) + "(" + p.nil() + ")")
 		return
 	}
 
@@ -284,14 +290,14 @@ func (p *printer) printSlice() {
 
 func (p *printer) printArray() {
 	if p.value.Len() == 0 {
-		p.printf(p.colorizeType(p.value.Type()) + "{}")
+		p.print(p.colorizeType(p.value.Type()) + "{}")
 		return
 	}
 
 	if p.value.Kind() == reflect.Slice {
 		if p.visited[p.value.Pointer()] {
 			// Stop travarsing cyclic reference
-			p.printf(p.colorizeType(p.value.Type()) + "{...}")
+			p.print(p.colorizeType(p.value.Type()) + "{...}")
 			return
 		}
 		p.visited[p.value.Pointer()] = true
@@ -299,7 +305,7 @@ func (p *printer) printArray() {
 
 	// Fold a large buffer
 	if p.value.Len() > BufferFoldThreshold {
-		p.printf(p.colorizeType(p.value.Type()) + "{...}")
+		p.print(p.colorizeType(p.value.Type()) + "{...}")
 		return
 	}
 
@@ -328,8 +334,8 @@ func (p *printer) printArray() {
 				p.print("\n")
 			}
 		} else {
-			for i := 0; i < p.value.Len(); i++ {
-				p.indentPrintf(p.format(p.value.Index(i)) + ",\n")
+			for i := range p.value.Len() {
+				p.indentPrint(p.format(p.value.Index(i)) + ",\n")
 			}
 		}
 	})
@@ -370,7 +376,7 @@ func (p *printer) pointerAddr() string {
 var (
 	_reTypeSlice  = regexp.MustCompile(`^\[\].`)
 	_reTypeArray  = regexp.MustCompile(`^\[\d+\].`)
-	_reTypeStruct = regexp.MustCompile(`^[^\.]+\.[^\.]+$`)
+	_reTypeStruct = regexp.MustCompile(`^[^.]+\.[^.]+$`)
 )
 
 func (p *printer) colorizeType(typ reflect.Type) string {
@@ -428,7 +434,7 @@ func (p *printer) raw() string {
 		}
 	case reflect.Uint8:
 		if p.decimalUint {
-			return fmt.Sprintf("%d", p.value.Uint())
+			return strconv.FormatUint(p.value.Uint(), 10)
 		} else {
 			return fmt.Sprintf("0x%02x", p.value.Uint())
 		}
@@ -464,11 +470,10 @@ func (p *printer) nil() string {
 }
 
 func (p *printer) colorize(text string, mod scuf.Mod) string {
-	if p.coloringEnabled {
-		return scuf.String(text, mod)
-	} else {
+	if !p.coloringEnabled {
 		return text
 	}
+	return scuf.String(text, mod)
 }
 
 func (p *printer) format(object any) string {
@@ -512,7 +517,7 @@ func valueIsZero(v reflect.Value) bool {
 		c := v.Complex()
 		return math.Float64bits(real(c)) == 0 && math.Float64bits(imag(c)) == 0
 	case reflect.Array:
-		for i := 0; i < v.Len(); i++ {
+		for i := range v.Len() {
 			if !valueIsZero(v.Index(i)) {
 				return false
 			}
@@ -523,7 +528,7 @@ func valueIsZero(v reflect.Value) bool {
 	case reflect.String:
 		return v.Len() == 0
 	case reflect.Struct:
-		for i := 0; i < v.NumField(); i++ {
+		for i := range v.NumField() {
 			if !valueIsZero(v.Field(i)) {
 				return false
 			}

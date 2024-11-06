@@ -2,6 +2,8 @@ package assert
 
 import (
 	"fmt"
+	"iter"
+	"maps"
 	"reflect"
 
 	"github.com/rprtr258/assert/internal/fun"
@@ -13,7 +15,7 @@ type diffLine struct {
 	expected, actual any
 }
 
-func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
+func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 	etype, atype := reflect.TypeOf(expected), reflect.TypeOf(actual)
 	switch {
 	case etype == nil && atype == nil:
@@ -44,9 +46,9 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 
 		switch etype.Kind() {
 		case reflect.Invalid:
-			return func(f func(diffLine) bool) {}
+			return func(func(diffLine) bool) {}
 		case reflect.Bool:
-			if e, a := expected.(bool), actual.(bool); e != a {
+			if e, a := expected.(bool), actual.(bool); e != a { //nolint:forcetypeassert
 				return fun.FromMany(diffLine{
 					selector: selectorPrefix,
 					comment:  "",
@@ -55,7 +57,7 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 				})
 			}
 
-			return func(f func(diffLine) bool) {}
+			return func(func(diffLine) bool) {}
 		case reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64, reflect.Int:
 			if e, a := eval.Int(), aval.Int(); e != a {
 				return fun.FromMany(diffLine{
@@ -66,7 +68,7 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 				})
 			}
 
-			return func(f func(diffLine) bool) {}
+			return func(func(diffLine) bool) {}
 		case reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uint:
 			if e, a := eval.Uint(), aval.Uint(); e != a {
 				return fun.FromMany(diffLine{
@@ -77,7 +79,7 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 				})
 			}
 
-			return func(f func(diffLine) bool) {}
+			return func(func(diffLine) bool) {}
 		case reflect.Float32, reflect.Float64:
 			if e, a := eval.Float(), aval.Float(); e != a {
 				return fun.FromMany(diffLine{
@@ -88,7 +90,7 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 				})
 			}
 
-			return func(f func(diffLine) bool) {}
+			return func(func(diffLine) bool) {}
 		case reflect.Complex64, reflect.Complex128:
 			if e, a := eval.Complex(), aval.Complex(); e != a {
 				return fun.FromMany(diffLine{
@@ -99,7 +101,7 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 				})
 			}
 
-			return func(f func(diffLine) bool) {}
+			return func(func(diffLine) bool) {}
 		case reflect.String:
 			if e, a := eval.String(), aval.String(); e != a {
 				return fun.FromMany(diffLine{
@@ -110,7 +112,7 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 				})
 			}
 
-			return func(f func(diffLine) bool) {}
+			return func(func(diffLine) bool) {}
 		case reflect.Pointer:
 			return diffImpl(
 				"(*"+selectorPrefix+")",
@@ -140,12 +142,12 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 					})
 				}
 
-				return func(f func(diffLine) bool) {}
+				return func(func(diffLine) bool) {}
 			}
 
 			return fun.FlatMap(
 				fun.FromRange(0, lenExpected),
-				func(i int) fun.Seq[diffLine] {
+				func(i int) iter.Seq[diffLine] {
 					return diffImpl(
 						fmt.Sprintf("%s[%d]", selectorPrefix, i),
 						eval.Index(i).Interface(),
@@ -166,7 +168,7 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 
 			return fun.FlatMap(
 				fun.FromRange(0, lenExpected),
-				func(i int) fun.Seq[diffLine] {
+				func(i int) iter.Seq[diffLine] {
 					return diffImpl(
 						fmt.Sprintf("%s[%d]", selectorPrefix, i),
 						eval.Index(i).Interface(),
@@ -177,14 +179,11 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 			fields := etype.NumField()
 			return fun.FlatMap(
 				fun.FromRange(0, fields),
-				// Filter(func(i int) bool {
-				// 	return compareExported && typ.Field(i).IsExported()
-				// }),
-				func(i int) fun.Seq[diffLine] {
+				func(i int) iter.Seq[diffLine] {
 					ee := valueToInterface(eval.Field(i))
 					aa := valueToInterface(aval.Field(i))
 					if eval.Field(i).Comparable() && ee == aa {
-						return func(f func(diffLine) bool) {}
+						return func(func(diffLine) bool) {}
 					}
 
 					return diffImpl(
@@ -223,8 +222,8 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 
 			return func(yield func(diffLine) bool) {
 				fun.FlatMap(
-					fun.FromDictKeys(commonKeys),
-					func(k any) fun.Seq[diffLine] {
+					maps.Keys(commonKeys),
+					func(k any) iter.Seq[diffLine] {
 						return diffImpl(
 							fmt.Sprintf("%s[%v]", selectorPrefix, k),
 							eval.MapIndex(reflect.ValueOf(k)),
@@ -232,7 +231,7 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 						)
 					})(yield)
 				fun.Map(
-					fun.FromDictKeys(expectedOnlyKeys),
+					maps.Keys(expectedOnlyKeys),
 					func(k any) diffLine {
 						return diffLine{
 							selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
@@ -242,7 +241,7 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 						}
 					})(yield)
 				fun.Map(
-					fun.FromDictKeys(actualOnlyKeys),
+					maps.Keys(actualOnlyKeys),
 					func(k any) diffLine {
 						return diffLine{
 							selector: fmt.Sprintf("%s[%v]", selectorPrefix, k),
@@ -254,7 +253,7 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 			}
 		case reflect.Interface:
 			if expected == nil && actual == nil {
-				return func(f func(diffLine) bool) {}
+				return func(func(diffLine) bool) {}
 			}
 
 			if expected == nil || actual == nil {
@@ -276,6 +275,6 @@ func diffImpl(selectorPrefix string, expected, actual any) fun.Seq[diffLine] {
 
 // diff returns a diff of both values as long as both are of the same type and
 // are a struct, map, slice, array or string. Otherwise it panics.
-func diff[T any](expected, actual T) fun.Seq[diffLine] {
+func diff[T any](expected, actual T) iter.Seq[diffLine] {
 	return diffImpl("", expected, actual)
 }

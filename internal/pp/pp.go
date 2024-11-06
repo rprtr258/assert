@@ -45,7 +45,7 @@ var defaultScheme = ColorScheme{
 // Global variable API
 var (
 	// Default pretty printer. It's public so that you can modify config globally.
-	Default = newPrettyPrinter(3) // pp.* => PrettyPrinter.* => formatAll
+	Default = newPrettyPrinter(3) //nolint:mnd // pp.* => PrettyPrinter.* => formatAll
 	// If the length of array or slice is larger than this,
 	// the buffer will be shorten as {...}.
 	BufferFoldThreshold = 1024
@@ -82,7 +82,7 @@ type PrettyPrinter struct {
 
 // New creates a new PrettyPrinter that can be used to pretty print values
 func New() *PrettyPrinter {
-	return newPrettyPrinter(2) // PrettyPrinter.* => formatAll
+	return newPrettyPrinter(2) //nolint:mnd // PrettyPrinter.* => formatAll
 }
 
 func newPrettyPrinter(callerLevel int) *PrettyPrinter {
@@ -99,48 +99,48 @@ func newPrettyPrinter(callerLevel int) *PrettyPrinter {
 }
 
 // Print prints given arguments.
-func (pp *PrettyPrinter) Print(a ...any) (n int, err error) {
-	return fmt.Fprint(pp.out, pp.formatAll(a)...)
+func (pp *PrettyPrinter) Print(a ...any) {
+	fmt.Fprint(pp.out, pp.formatAll(a)...)
 }
 
 // Printf prints a given format.
-func (pp *PrettyPrinter) Printf(format string, a ...any) (n int, err error) {
-	return fmt.Fprintf(pp.out, format, pp.formatAll(a)...)
+func (pp *PrettyPrinter) Printf(format string, a ...any) {
+	fmt.Fprintf(pp.out, format, pp.formatAll(a)...)
 }
 
 // Println prints given arguments with newline.
-func (pp *PrettyPrinter) Println(a ...any) (n int, err error) {
-	return fmt.Fprintln(pp.out, pp.formatAll(a)...)
+func (pp *PrettyPrinter) Println(a ...any) {
+	fmt.Fprintln(pp.out, pp.formatAll(a)...)
 }
 
 // Sprint formats given arguments and returns the result as string.
 func (pp *PrettyPrinter) Sprint(a ...any) string {
-	return fmt.Sprint(pp.formatAll(a)...)
+	return fmt.Sprint(pp.formatAll(a)...) //nolint:wrapcheck
 }
 
 // Sprintf formats with pretty print and returns the result as string.
 func (pp *PrettyPrinter) Sprintf(format string, a ...any) string {
-	return fmt.Sprintf(format, pp.formatAll(a)...)
+	return fmt.Sprintf(format, pp.formatAll(a)...) //nolint:wrapcheck
 }
 
 // Sprintln formats given arguments with newline and returns the result as string.
 func (pp *PrettyPrinter) Sprintln(a ...any) string {
-	return fmt.Sprintln(pp.formatAll(a)...)
+	return fmt.Sprintln(pp.formatAll(a)...) //nolint:wrapcheck
 }
 
 // Fprint prints given arguments to a given writer.
 func (pp *PrettyPrinter) Fprint(w io.Writer, a ...any) (n int, err error) {
-	return fmt.Fprint(w, pp.formatAll(a)...)
+	return fmt.Fprint(w, pp.formatAll(a)...) //nolint:wrapcheck
 }
 
 // Fprintf prints format to a given writer.
 func (pp *PrettyPrinter) Fprintf(w io.Writer, format string, a ...any) (n int, err error) {
-	return fmt.Fprintf(w, format, pp.formatAll(a)...)
+	return fmt.Fprintf(w, format, pp.formatAll(a)...) //nolint:wrapcheck
 }
 
 // Fprintln prints given arguments to a given writer with newline.
 func (pp *PrettyPrinter) Fprintln(w io.Writer, a ...any) (n int, err error) {
-	return fmt.Fprintln(w, pp.formatAll(a)...)
+	return fmt.Fprintln(w, pp.formatAll(a)...) //nolint:wrapcheck
 }
 
 // Errorf formats given arguments and returns it as error type.
@@ -230,18 +230,18 @@ func (pp *PrettyPrinter) formatAll(objects []any) []any {
 }
 
 // Print prints given arguments.
-func Print(a ...any) (n int, err error) {
-	return Default.Print(a...)
+func Print(a ...any) {
+	Default.Print(a...)
 }
 
 // Printf prints a given format.
-func Printf(format string, a ...any) (n int, err error) {
-	return Default.Printf(format, a...)
+func Printf(format string, a ...any) {
+	Default.Printf(format, a...)
 }
 
 // Println prints given arguments with newline.
-func Println(a ...any) (n int, err error) {
-	return Default.Println(a...)
+func Println(a ...any) {
+	Default.Println(a...)
 }
 
 // Sprint formats given arguments and returns the result as string.

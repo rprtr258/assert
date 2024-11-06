@@ -2,30 +2,46 @@ run:
   tests: true
   timeout: 1m
 
+issues:
+  exclude-rules:
+    - path: pa/private.go
+      linters: [revive]
+    - path: pa/pa_test.go
+      linters: [staticcheck, gocritic]
+    - path: internal/q/q_test.go
+      linters: [funlen, lll]
+    - path: internal/q/cmd/main.go
+      linters: [mnd]
+
 linters:
   enable-all: true
   disable:
-    - deadcode # deprecated
-    - exhaustivestruct
     - exhaustruct
     - forbidigo # we need to use fmt.Print*()
-    - golint # deprecated
     - gomnd
-    - ifshort # deprecated
-    - interfacer # deprecated
-    - maligned # deprecated
     - nolintlint
     - nonamedreturns
-    - nosnakecase # deprecated
     - paralleltest # tests only take 2.5s to run. no need to parallelize
-    - scopelint # deprecated
-    - structcheck # deprecated
     - testpackage
-    - varcheck # deprecated
     - varnamelen # makes bad suggestions
     - wsl
+    - gochecknoglobals # why the fuck i am not allowed to use globals
+    - ireturn # i know better
+    - godot
+    - nlreturn
+    - depguard
+    - err113
+    - gocyclo
+    - cyclop
+    - gocognit
+    - funlen
 
 linters-settings:
+  gci:
+    sections:
+      - standard
+      - default
+      - localmodule
   gocritic:
     enabled-tags:
       - diagnostic

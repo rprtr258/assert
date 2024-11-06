@@ -1,10 +1,10 @@
 package assert
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/rprtr258/assert/internal/ass"
-	"github.com/rprtr258/assert/internal/fun"
 )
 
 type Pass struct {
@@ -23,7 +23,7 @@ func TestDiffImpl(t *testing.T) {
 		{expected: "b", actual: "e", selector: ".pass.Payload"},
 		{expected: "c", actual: "f", selector: ".pass.salt"},
 	}
-	actual := fun.ToSlice(diffImpl("",
+	actual := slices.Collect(diffImpl("",
 		User{"a", Pass{"b", "c"}},
 		User{"d", Pass{"e", "f"}},
 	))

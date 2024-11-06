@@ -3,6 +3,7 @@ package q
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"testing"
 
 	"github.com/rprtr258/assert/internal/ass"
@@ -65,7 +66,7 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 					NamePos: 30,
 					Name:    "foo",
 					Obj: &ast.Object{
-						Kind: 5,
+						Kind: ast.Fun,
 						Name: "foo",
 						Decl: &ast.FuncDecl{
 							Doc:  nil,
@@ -106,7 +107,7 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 									&ast.ReturnStmt{
 										Return: 57,
 										Results: []ast.Expr{
-											&ast.BasicLit{ValuePos: 64, Kind: 5, Value: "123"},
+											&ast.BasicLit{ValuePos: 64, Kind: token.INT, Value: "123"},
 										},
 									},
 								},

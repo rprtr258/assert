@@ -16,7 +16,7 @@ func Load[T any](b []byte) map[string]T {
 	for _, file := range files {
 		// check no object is not saved multiple times
 		if _, ok := tests[file.Name]; ok {
-			panic(fmt.Sprintf("duplicate file name: %s", file.Name))
+			panic("duplicate file name: " + file.Name)
 		}
 
 		data := bytes.TrimRight(file.Data, "\n")
@@ -48,7 +48,7 @@ func Save[T any](
 	if err := os.WriteFile(filename, txtar.Format(&txtar.Archive{
 		Comment: nil,
 		Files:   files,
-	}), 0644); err != nil {
+	}), 0o644); err != nil {
 		panic(fmt.Sprintf("failed to write file %q: %s", filename, err.Error()))
 	}
 }
