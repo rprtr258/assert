@@ -58,11 +58,12 @@ func ZZZAdd[T any](a *assertData, position int, value T) T {
 	return value
 }
 
-func assert(tb testing.TB, assertData *assertData, cond bool, fn string) {
+func assert(tb testing.TB, assertData *assertData, cond bool, fn string, onfail func()) {
 	tb.Helper()
 	if cond {
 		return
 	}
+	defer onfail()
 
 	slices.SortFunc(assertData.exprs, func(a, b expr) int {
 		return a.position - b.position
@@ -98,14 +99,12 @@ func assert(tb testing.TB, assertData *assertData, cond bool, fn string) {
 
 func ZZZAssert(tb testing.TB, assertData *assertData, cond bool) {
 	tb.Helper()
-	assert(tb, assertData, cond, "assert")
-	tb.Fail()
+	assert(tb, assertData, cond, "assert", tb.Fail)
 }
 
 func ZZZRequire(tb testing.TB, assertData *assertData, cond bool) {
 	tb.Helper()
-	assert(tb, assertData, cond, "require")
-	tb.FailNow()
+	assert(tb, assertData, cond, "require", tb.FailNow)
 }
 
 const debug = false // TODO: make configurable, default to false
@@ -337,8 +336,6 @@ func run() error {
 				continue
 			}
 
-			fun.Name.Name += "ZZZ"
-
 			astutil.Apply(fun.Body, nil, func(c *astutil.Cursor) bool {
 				n := c.Node()
 
@@ -421,7 +418,8 @@ func run() error {
 		}
 	}
 
-	cmd := exec.Command("go", append([]string{"test"}, os.Args[1:]...)...)
+	// TODO: pass args
+	cmd := exec.Command("go", "test", "./...")
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

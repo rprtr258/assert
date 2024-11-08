@@ -5,7 +5,7 @@ import (
 	"testing"
 )
 
-// Fuse - call in TestMain before using Assert
+// TODO: fuse once
 func fuse(tb testing.TB) {
 	tb.Helper()
 	if err := run(); err != nil {
