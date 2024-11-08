@@ -1,4 +1,6 @@
-package pa
+package assert
+
+// BEHOLD: api for generated code, do not use
 
 import (
 	"bytes"
@@ -24,7 +26,7 @@ import (
 	"github.com/rprtr258/assert/internal/pp"
 )
 
-// BEHOLD: api for generated code, do not use
+var pkg = ast.NewIdent("assert")
 
 func ZZZPtr[T any](v T) *T {
 	return &v
@@ -105,7 +107,7 @@ func ZZZRequire(tb testing.TB, assertData *assertData, cond bool) {
 	tb.FailNow()
 }
 
-const debug = true // TODO: make configurable, default to false
+const debug = false // TODO: make configurable, default to false
 
 func debugf(format string, args ...any) {
 	if !debug {
@@ -123,7 +125,7 @@ func sprintCode(n ast.Node) string {
 func dumpExpr(n ast.Expr, pos token.Pos) ast.Expr {
 	return &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
-			X:   ast.NewIdent("pa"),
+			X:   pkg,
 			Sel: ast.NewIdent("ZZZAdd"),
 		},
 		Args: []ast.Expr{
@@ -184,7 +186,7 @@ func rewriteExpr(n ast.Expr, offset token.Pos) ast.Expr {
 			// TODO: actually invalid, see &s == &s example, which fails due to taking address of copies of s
 			return &ast.CallExpr{
 				Fun: &ast.Ident{
-					Name: "pa.ZZZPtr",
+					Name: pkg.Name + ".ZZZPtr",
 				},
 				Args: []ast.Expr{
 					n.X,
@@ -233,7 +235,7 @@ func run() error {
 	}
 	debugf("module dir %s", moduleDir)
 
-	tmpDir, err := os.MkdirTemp("", "pa.*")
+	tmpDir, err := os.MkdirTemp("", "assert.*")
 	if err != nil {
 		return fmt.Errorf("create temp dir: %w", err)
 	}
@@ -286,8 +288,8 @@ func run() error {
 
 		found := false
 		// TODO: survive package aliasing
-		// TODO: detect pa.Assert symbol usage which is not call, refuse it
-		// TODO: detect pa.Fuse symbol usage which is not call/outside of TestMain, refuse it
+		// TODO: detect Assert symbol usage which is not call, refuse it
+		// TODO: detect Fuse symbol usage which is not call/outside of TestMain, refuse it
 		for _, decl := range root.Decls {
 			// first, find Test<Name>(*testing.T) functions
 			fun, ok := decl.(*ast.FuncDecl)
@@ -307,7 +309,7 @@ func run() error {
 					}
 
 					selector, ok := call.Fun.(*ast.SelectorExpr)
-					if !ok || sprintCode(selector) != "pa.Fuse" {
+					if !ok || sprintCode(selector) != pkg.Name+".Fuse" {
 						return true
 					}
 
@@ -334,7 +336,7 @@ func run() error {
 					return true
 				}
 
-				// second, find pa.Assert(t, <predicate>) calls
+				// second, find Assert(t, <predicate>) calls
 				call, ok := nes.X.(*ast.CallExpr)
 				if !ok {
 					return true
@@ -346,14 +348,14 @@ func run() error {
 				}
 				var finalCall *ast.SelectorExpr
 				switch sprintCode(selector) {
-				case "pa.Assert":
+				case pkg.Name + ".Assert":
 					finalCall = &ast.SelectorExpr{
-						X:   ast.NewIdent("pa"),
+						X:   pkg,
 						Sel: ast.NewIdent("ZZZAssert"),
 					}
-				case "pa.Require":
+				case pkg.Name + ".Require":
 					finalCall = &ast.SelectorExpr{
-						X:   ast.NewIdent("pa"),
+						X:   pkg,
 						Sel: ast.NewIdent("ZZZRequire"),
 					}
 				default:
@@ -364,13 +366,13 @@ func run() error {
 
 				c.Replace(&ast.BlockStmt{
 					List: []ast.Stmt{
-						&ast.AssignStmt{ // zzz := pa.ZZZNew("2+2 == 5")
+						&ast.AssignStmt{ // zzz := assert.ZZZNew("2+2 == 5")
 							Tok: token.DEFINE,
 							Lhs: []ast.Expr{&ast.Ident{Name: "zzz"}},
 							Rhs: []ast.Expr{
 								&ast.CallExpr{
 									Fun: &ast.SelectorExpr{
-										X:   ast.NewIdent("pa"),
+										X:   pkg,
 										Sel: ast.NewIdent("ZZZNew"),
 									},
 									Args: []ast.Expr{
@@ -382,7 +384,7 @@ func run() error {
 								},
 							},
 						},
-						&ast.ExprStmt{ // pa.ZZZAssert(t, zzz, <fused predicate expression>)
+						&ast.ExprStmt{ // assert.ZZZAssert(t, zzz, <fused predicate expression>)
 							X: &ast.CallExpr{
 								Fun: finalCall,
 								Args: []ast.Expr{

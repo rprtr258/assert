@@ -1,4 +1,4 @@
-package pa
+package assert
 
 import (
 	"log"
