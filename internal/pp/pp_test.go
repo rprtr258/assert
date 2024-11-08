@@ -108,7 +108,6 @@ func TestStructPrintingWithTags(t *testing.T) {
 			fullIsPresent:        false,
 		},
 	} {
-		test := test
 		t.Run(name, func(t *testing.T) {
 			output := &bytes.Buffer{}
 			pp := New()

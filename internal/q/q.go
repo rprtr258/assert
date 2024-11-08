@@ -9,17 +9,6 @@ import (
 	"strings"
 )
 
-type color string
-
-const (
-	// ANSI color escape codes.
-	_csiBold  color = "\033[1m"
-	_csiCyan  color = "\033[36m"
-	_csiReset color = "\033[0m" // "reset everything"
-
-	_maxLineWidth = 80
-)
-
 // exprToString returns the source text underlying the given ast.Expr.
 func exprToString(arg ast.Expr) string {
 	var b strings.Builder
@@ -36,51 +25,41 @@ func exprToString(arg ast.Expr) string {
 // an expression. If the argument is something else, like a literal, argName
 // returns an empty string.
 func argName(arg ast.Expr) string {
-	switch a := arg.(type) {
-	case *ast.Ident:
-		switch {
-		case a.Obj == nil:
-			return a.Name
-		case a.Obj.Kind == ast.Var,
-			a.Obj.Kind == ast.Con:
-			return a.Obj.Name
-		default:
-			return ""
-		}
-	case *ast.BinaryExpr,
-		*ast.CallExpr,
-		*ast.IndexExpr,
-		*ast.KeyValueExpr,
-		*ast.ParenExpr,
-		*ast.SelectorExpr,
-		*ast.SliceExpr,
-		*ast.TypeAssertExpr,
-		*ast.UnaryExpr:
+	a, ok := arg.(*ast.Ident)
+	if !ok {
 		return exprToString(arg)
+	}
+
+	switch {
+	case a.Obj == nil:
+		return a.Name
+	case a.Obj.Kind == ast.Var,
+		a.Obj.Kind == ast.Con:
+		return a.Obj.Name
 	default:
-		return exprToString(arg)
+		return ""
 	}
 }
 
 // isPackage returns true if the given function call expression is in the packageName package.
 func isPackage(n *ast.CallExpr, packageName string) bool {
-	switch sel := n.Fun.(type) {
-	case *ast.SelectorExpr: // SelectorExpr example: a.B()
-		switch ident := sel.X.(type) { // sel.X is the part that precedes the .
-		case *ast.Ident:
-			return ident.Name == packageName
-		}
+	sel, ok := n.Fun.(*ast.SelectorExpr) // SelectorExpr example: a.B()
+	if !ok {
+		return false
 	}
-	return false
+
+	ident, ok := sel.X.(*ast.Ident) // sel.X is the part that precedes the .
+	if !ok {
+		return false
+	}
+
+	return ident.Name == packageName
 }
 
 // isBareFunction returns true if the given function call expression is <funcName>().
 func isBareFunction(n *ast.CallExpr, funcName string) bool {
-	switch ident := n.Fun.(type) {
-	case *ast.Ident:
-		return ident.Name == funcName
-	}
-	return false
+	ident, ok := n.Fun.(*ast.Ident)
+	return ok && ident.Name == funcName
 }
 
 // isFuncCall returns true if the given function call expression is

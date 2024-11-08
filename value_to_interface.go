@@ -2,7 +2,7 @@ package assert
 
 import (
 	"reflect"
-	_ "unsafe"
+	_ "unsafe" // to use go:linkname
 )
 
 //go:linkname valueInterface reflect.valueInterface

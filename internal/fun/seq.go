@@ -1,18 +1,15 @@
 package fun
 
-type Seq[T any] func(func(T) bool)
+import (
+	"iter"
+	"slices"
+)
 
-func FromMany[T any](xs ...T) Seq[T] {
-	return func(yield func(T) bool) {
-		for _, x := range xs {
-			if !yield(x) {
-				return
-			}
-		}
-	}
+func FromMany[T any](xs ...T) iter.Seq[T] {
+	return slices.Values(xs)
 }
 
-func FromRange(from, to int) Seq[int] {
+func FromRange(from, to int) iter.Seq[int] {
 	return func(yield func(int) bool) {
 		for i := from; i < to; i++ {
 			if !yield(i) {
@@ -22,44 +19,24 @@ func FromRange(from, to int) Seq[int] {
 	}
 }
 
-func FromDictKeys[K comparable, V any](m map[K]V) Seq[K] {
-	return func(yield func(K) bool) {
-		for k := range m {
-			if !yield(k) {
+func Map[T, R any](seq iter.Seq[T], f func(T) R) iter.Seq[R] {
+	return func(yield func(R) bool) {
+		for x := range seq {
+			if !yield(f(x)) {
 				return
 			}
 		}
 	}
 }
 
-func Map[T, R any](seq Seq[T], f func(T) R) Seq[R] {
+func FlatMap[T, R any](seq iter.Seq[T], f func(T) iter.Seq[R]) iter.Seq[R] {
 	return func(yield func(R) bool) {
-		seq(func(x T) bool {
-			return yield(f(x))
-		})
-	}
-}
-
-func FlatMap[T, R any](seq Seq[T], f func(T) Seq[R]) Seq[R] {
-	return func(yield func(R) bool) {
-		seq(func(x T) bool {
-			cont := true
-			f(x)(func(y R) bool {
+		for x := range seq {
+			for y := range f(x) {
 				if !yield(y) {
-					cont = false
+					return
 				}
-				return cont
-			})
-			return cont
-		})
+			}
+		}
 	}
-}
-
-func ToSlice[T any](seq Seq[T]) []T {
-	var xs []T
-	seq(func(x T) bool {
-		xs = append(xs, x)
-		return true
-	})
-	return xs
 }
