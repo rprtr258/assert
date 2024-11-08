@@ -16,6 +16,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"slices"
 	"strconv"
 	"strings"
@@ -218,21 +219,31 @@ func rewriteExpr(n ast.Expr, offset token.Pos) ast.Expr {
 	panic("unreachable")
 }
 
-func run() error {
-	// find module root
-	moduleDir, err := os.Getwd()
-	if err != nil {
-		return fmt.Errorf("get working dir: %w", err)
+func getModuleDir() (string, error) {
+	// os.Getwd does not cut it, since tests are being run from a temp dir using temporary executable
+	// so we have to do caller getting trickery and extract module path the hard way
+	_, file, _, ok := runtime.Caller(4) // Assert/Require -> fuse -> run -> getModuleDir
+	if !ok {
+		return "", errors.New("could not get caller, check sources are available")
 	}
+
+	dir := filepath.Dir(file)
 	for {
-		if _, err := os.Stat(filepath.Join(moduleDir, "go.mod")); err == nil {
+		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
 			break
 		}
-		if moduleDir == "/" {
-			return errors.New("module directory not found")
+
+		if dir == "/" {
+			return "", errors.New("module directory not found")
 		}
-		moduleDir = filepath.Dir(moduleDir)
+
+		dir = filepath.Dir(dir)
 	}
+	return dir, nil
+}
+
+func run() error {
+	moduleDir, err := getModuleDir()
 	debugf("module dir %s", moduleDir)
 
 	tmpDir, err := os.MkdirTemp("", "assert.*")
