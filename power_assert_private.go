@@ -410,8 +410,7 @@ func run() error {
 		}
 	}
 
-	// TODO: pass flags
-	cmd := exec.Command("go", "test", "./...")
+	cmd := exec.Command("go", append([]string{"test"}, os.Args[1:]...)...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {

@@ -1,17 +1,11 @@
 package assert_test
 
 import (
-	"os"
 	"reflect"
 	"testing"
 
 	"github.com/rprtr258/assert"
 )
-
-func TestMain(m *testing.M) {
-	assert.Fuse()
-	os.Exit(m.Run())
-}
 
 func TestExample(t *testing.T) {
 	assert.Assert(t, 2+2 == 5)
