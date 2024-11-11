@@ -29,10 +29,6 @@ import (
 
 var pkg = ast.NewIdent("assert")
 
-func ZZZPtr[T any](v T) *T {
-	return &v
-}
-
 type expr struct {
 	valueStr string
 	position int
@@ -181,18 +177,12 @@ func rewriteExpr(n ast.Expr, offset token.Pos) ast.Expr {
 		n.X = rewriteExpr(n.X, offset)
 		return dumpExpr(n, n.Lbrack-offset)
 	case *ast.UnaryExpr:
-		n.X = rewriteExpr(n.X, offset)
 		if n.Op == token.AND {
 			// TODO: actually invalid, see &s == &s example, which fails due to taking address of copies of s
-			return &ast.CallExpr{
-				Fun: &ast.Ident{
-					Name: pkg.Name + ".ZZZPtr",
-				},
-				Args: []ast.Expr{
-					n.X,
-				},
-			}
+			// needs testing
+			return dumpExpr(n, n.OpPos-offset)
 		}
+		n.X = rewriteExpr(n.X, offset)
 		return dumpExpr(n, n.OpPos-offset)
 	case *ast.BinaryExpr:
 		n.X = rewriteExpr(n.X, offset)
