@@ -20,9 +20,9 @@ func Use[E any](t T, f func() (E, error)) E {
 	return res
 }
 
-func UseJSON[E any](t T, data []byte) T {
+func UseJSON[E any](t T, data []byte) E {
 	t.Helper()
-	var res T
+	var res E
 	NoError(t, json.Unmarshal(data, &res))
 	return res
 }
