@@ -346,10 +346,8 @@ func NoError(t T, err error) {
 
 func SliceContains[E comparable](t T, slice []E, item E) {
 	t.Helper()
-	for _, v := range slice {
-		if v == item {
-			return
-		}
+	if slices.Contains(slice, item) {
+		return
 	}
 
 	argNames := q.Q("assert", "SliceContains")
