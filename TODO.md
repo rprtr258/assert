@@ -24,7 +24,7 @@ The design intends a one-time `Fuse()` (the rewriter strips `pa.Fuse()` calls at
 
 ## PRs (keep separate)
 
-### PR1 — Fix `os.Chdir` race with `t.Parallel` (correctness)
+### PR1 — Fix `os.Chdir` race with `t.Parallel` (correctness) — DONE
 
 `os.Chdir(tmpDir)` (`power_assert_private.go:~262`) mutates process-global state while
 parallel tests run. Latent race; also causes bogus interleaved SKIP output in `-v` logs
