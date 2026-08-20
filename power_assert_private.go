@@ -235,59 +235,90 @@ func rewriteExpr(n ast.Expr, offset token.Pos) ast.Expr {
 	panic("unreachable")
 }
 
-func getModuleDir() (string, error) {
+func getModuleDir() (string, string, error) {
 	// On the second (rewritten) pass we run from a temp copy of the module, so
 	// runtime.Caller would point at the copy. The first pass records the real
 	// module dir in ASSERT_MODULE_DIR; prefer it when set.
 	if dir := os.Getenv("ASSERT_MODULE_DIR"); dir != "" {
-		return dir, nil
+		return dir, "", nil
 	}
 	// os.Getwd does not cut it, since tests are being run from a temp dir using temporary executable
 	// so we have to do caller getting trickery and extract module path the hard way
-	_, file, _, ok := runtime.Caller(4) // Assert/Require -> fuse -> run -> getModuleDir
+	_, file, _, ok := runtime.Caller(3) // TestMain -> Fuse -> run -> getModuleDir
 	if !ok {
-		return "", errors.New("could not get caller, check sources are available")
+		return "", "", errors.New("could not get caller, check sources are available")
 	}
+	callerDir := filepath.Dir(file)
 
-	dir := filepath.Dir(file)
+	dir := callerDir
 	for {
 		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
 			break
 		}
 
 		if dir == "/" {
-			return "", errors.New("module directory not found")
+			return "", "", errors.New("module directory not found")
 		}
 
 		dir = filepath.Dir(dir)
 	}
-	return dir, nil
+	pkgRelDir, err := filepath.Rel(dir, callerDir)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve package dir: %w", err)
+	}
+	return dir, pkgRelDir, nil
 }
 
-func run() error {
-	moduleDir, err := getModuleDir()
-	debugf("module dir %s", moduleDir)
+func run() (int, error) {
+	moduleDir, pkgRelDir, err := getModuleDir()
+	debugf("module dir %s, package dir %s", moduleDir, pkgRelDir)
 
 	tmpDir, err := os.MkdirTemp("", "assert.*")
 	if err != nil {
-		return fmt.Errorf("create temp dir: %w", err)
+		return 0, fmt.Errorf("create temp dir: %w", err)
 	}
 	if !debug {
 		defer os.RemoveAll(tmpDir)
 	}
 	debugf("temp dir %s created", tmpDir)
 
-	// TODO: copy _test.go files, link everything besides
-	if err := os.CopyFS(tmpDir, os.DirFS(moduleDir)); err != nil {
-		return fmt.Errorf("copy project to temp dir: %w", err)
+	// Link non-test files (falling back to a copy across devices); copy
+	// _test.go files so rewrites never mutate the originals. Skip VCS and
+	// vendor dirs that contribute nothing to the build.
+	// ponytail: skip-list is VCS+vendor only; add build-output dirs if a
+	// project grows one large enough to matter.
+	skipDirs := map[string]bool{
+		".git": true, ".jj": true, ".hg": true, ".svn": true,
+		"vendor": true, "node_modules": true,
 	}
-
-	if err := os.Chdir(tmpDir); err != nil {
-		return fmt.Errorf("chdir to temp dir: %w", err)
+	if err := filepath.WalkDir(moduleDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(moduleDir, path)
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			if rel != "." && skipDirs[d.Name()] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		dst := filepath.Join(tmpDir, rel)
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			return err
+		}
+		if strings.HasSuffix(rel, "_test.go") {
+			return copyFile(path, dst)
+		}
+		return linkFile(path, dst)
+	}); err != nil {
+		return 0, fmt.Errorf("copy project to temp dir: %w", err)
 	}
 
 	testfiles := []string{}
-	if err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
+	if err := filepath.WalkDir(tmpDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(path, "_test.go") {
 			return err
 		}
@@ -296,27 +327,32 @@ func run() error {
 
 		return nil
 	}); err != nil {
-		return fmt.Errorf("collect test files: %w", err)
+		return 0, fmt.Errorf("collect test files: %w", err)
 	}
 
 	for _, fileRelPath := range testfiles {
 		ff, err := os.Open(fileRelPath)
 		if err != nil {
-			return fmt.Errorf("open test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("open test file %s: %w", fileRelPath, err)
 		}
 		stat, err := ff.Stat()
 		if err != nil {
-			return fmt.Errorf("stat test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("stat test file %s: %w", fileRelPath, err)
 		}
 		f, err := io.ReadAll(ff)
 		if err != nil {
-			return fmt.Errorf("read test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("read test file %s: %w", fileRelPath, err)
 		}
 		ff.Close()
 
+		// Pre-scan: skip files with no power-assert targets before parsing.
+		if !bytes.Contains(f, []byte("assert.Assert")) && !bytes.Contains(f, []byte("assert.Require")) {
+			continue
+		}
+
 		root, err := parser.ParseFile(token.NewFileSet(), fileRelPath, f, 0)
 		if err != nil {
-			return fmt.Errorf("parse test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("parse test file %s: %w", fileRelPath, err)
 		}
 
 		found := false
@@ -437,18 +473,57 @@ func run() error {
 
 		debugf("rewriting %s", fileRelPath)
 		if err := os.WriteFile(fileRelPath, []byte(sprintCode(root)), stat.Mode()); err != nil {
-			return fmt.Errorf("write rewritten file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("write rewritten file %s: %w", fileRelPath, err)
 		}
 	}
 
-	// TODO: pass args
-	cmd := exec.Command("go", "test", "./...")
+	// Re-exec only the current package instead of the whole module.
+	pkgArg := "./" + filepath.ToSlash(pkgRelDir)
+	if pkgRelDir == "." {
+		pkgArg = "."
+	}
+	cmd := exec.Command("go", "test", pkgArg)
 	cmd.Env = append(os.Environ(), "ASSERT_MODULE_DIR="+moduleDir)
+	cmd.Dir = tmpDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	var exitErr *exec.ExitError
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("run tests: %w", err)
+		if errors.As(err, &exitErr) {
+			return exitErr.ExitCode(), nil
+		}
+		return 1, fmt.Errorf("run tests: %w", err)
 	}
 
-	return nil
+	return 0, nil
+}
+
+// linkFile hard-links src into dst; when a hard link is impossible (cross-
+// device, unsupported fs) it falls back to a full copy.
+func linkFile(src, dst string) error {
+	if err := os.Link(src, dst); err == nil {
+		return nil
+	}
+	return copyFile(src, dst)
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	if _, err := io.Copy(out, in); err != nil {
+		return err
+	}
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(dst, info.Mode())
 }

@@ -15,6 +15,11 @@ import (
 	"golang.org/x/tools/txtar"
 )
 
+func TestMain(m *testing.M) {
+	assert.Fuse(m)
+	os.Exit(m.Run())
+}
+
 // TestExample exercises power-assert diagram rendering. Every assertion below
 // is intentionally false so its diagram is produced; instead of failing the
 // suite, the diagrams are captured and compared against a golden txtar
