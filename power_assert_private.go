@@ -27,15 +27,39 @@ import (
 	"github.com/rprtr258/assert/internal/pp"
 )
 
-var pkg = ast.NewIdent("assert")
-
-// Snapshot mode: instead of failing the test, Assert/Require collect their
-// failure diagrams into ZZZCapturedSnapshots. Used by tests that exercise the power-assert
-// output without failing the suite.
 var (
+	pkg     = ast.NewIdent("assert")
+	pkgRoot = &ast.SelectorExpr{
+		X:   pkg,
+		Sel: ast.NewIdent("SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__"),
+	}
+)
+
+type shit struct {
+	// Snapshot mode: instead of failing the test, Assert/Require collect their
+	// failure diagrams into ZZZCapturedSnapshots. Used by tests that exercise the power-assert
+	// output without failing the suite.
 	ZZZSnapshot          bool
 	ZZZCapturedSnapshots []string
-)
+
+	ZZZNew     func(exprStr string) *assertData
+}
+
+var SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__ = shit{
+	ZZZNew: func(exprStr string) *assertData {
+		return &assertData{exprStr: exprStr}
+	},
+}
+
+func (shit) ZZZAssert(tb testing.TB, assertData *assertData, cond bool) {
+	tb.Helper()
+	assert(tb, assertData, cond, "assert", tb.Fail)
+}
+
+func (shit) ZZZRequire(tb testing.TB, assertData *assertData, cond bool) {
+	tb.Helper()
+	assert(tb, assertData, cond, "require", tb.FailNow)
+}
 
 type expr struct {
 	valueStr string
@@ -47,11 +71,7 @@ type assertData struct {
 	exprStr string
 }
 
-func ZZZNew(exprStr string) *assertData {
-	return &assertData{exprStr: exprStr}
-}
-
-func ZZZAdd[T any](a *assertData, position int, value T) T {
+func (shit) ZZZAdd[T any](a *assertData, position int, value T) T {
 	// TODO: pretty print in one line, no trailing commas
 	s := pp.Sprint(value)
 	s = strings.ReplaceAll(s, "\n    ", "")
@@ -100,24 +120,14 @@ func assert(tb testing.TB, assertData *assertData, cond bool, fn string, onfail 
 	}
 
 	out := fn + " failed:\n" + s.String()
-	if ZZZSnapshot {
-		ZZZCapturedSnapshots = append(ZZZCapturedSnapshots, out)
+	if SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZSnapshot {
+		SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZCapturedSnapshots = append(SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZCapturedSnapshots, out)
 		return
 	}
 	defer onfail()
 
 	// TODO: reports wrong line number, fix it
 	tb.Errorf("%s", out)
-}
-
-func ZZZAssert(tb testing.TB, assertData *assertData, cond bool) {
-	tb.Helper()
-	assert(tb, assertData, cond, "assert", tb.Fail)
-}
-
-func ZZZRequire(tb testing.TB, assertData *assertData, cond bool) {
-	tb.Helper()
-	assert(tb, assertData, cond, "require", tb.FailNow)
 }
 
 const debug = false // TODO: make configurable, default to false
@@ -138,7 +148,7 @@ func sprintCode(n ast.Node) string {
 func dumpExpr(n ast.Expr, pos token.Pos) ast.Expr {
 	return &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
-			X:   pkg,
+			X:   pkgRoot,
 			Sel: ast.NewIdent("ZZZAdd"),
 		},
 		Args: []ast.Expr{
@@ -371,12 +381,12 @@ func run() error {
 				switch sprintCode(selector) {
 				case pkg.Name + ".Assert":
 					finalCall = &ast.SelectorExpr{
-						X:   pkg,
+						X:   pkgRoot,
 						Sel: ast.NewIdent("ZZZAssert"),
 					}
 				case pkg.Name + ".Require":
 					finalCall = &ast.SelectorExpr{
-						X:   pkg,
+						X:   pkgRoot,
 						Sel: ast.NewIdent("ZZZRequire"),
 					}
 				default:
@@ -387,13 +397,13 @@ func run() error {
 
 				c.Replace(&ast.BlockStmt{
 					List: []ast.Stmt{
-						&ast.AssignStmt{ // zzz := assert.ZZZNew("2+2 == 5")
+						&ast.AssignStmt{ // zzz := assert.SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZNew("2+2 == 5")
 							Tok: token.DEFINE,
 							Lhs: []ast.Expr{&ast.Ident{Name: "zzz"}},
 							Rhs: []ast.Expr{
 								&ast.CallExpr{
 									Fun: &ast.SelectorExpr{
-										X:   pkg,
+										X:   pkgRoot,
 										Sel: ast.NewIdent("ZZZNew"),
 									},
 									Args: []ast.Expr{

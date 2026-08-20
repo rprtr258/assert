@@ -1,6 +1,6 @@
 module github.com/rprtr258/assert
 
-go 1.25.0
+go 1.27.0
 
 require (
 	golang.org/x/text v0.41.0

@@ -24,8 +24,8 @@ import (
 //
 //	ASSERT_UPDATE_SNAPSHOT=1 go test ./...
 func TestExample(t *testing.T) {
-	assert.ZZZSnapshot = true
-	assert.ZZZCapturedSnapshots = nil
+	assert.SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZSnapshot = true
+	assert.SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZCapturedSnapshots = nil
 
 	assert.Assert(t, 2+2 == 5)
 
@@ -69,7 +69,7 @@ func TestExample(t *testing.T) {
 	moduleDir := cmp.Or(os.Getenv("ASSERT_MODULE_DIR"), ".")
 	goldenPath := filepath.Join(moduleDir, "testdata", "power_assert.txtar")
 
-	got := assert.ZZZCapturedSnapshots
+	got := assert.SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZCapturedSnapshots
 
 	if os.Getenv("ASSERT_UPDATE_SNAPSHOT") == "1" {
 		files := make([]txtar.File, len(got))
