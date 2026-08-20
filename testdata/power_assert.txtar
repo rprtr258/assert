@@ -1,0 +1,111 @@
+-- 0 --
+assert failed:
+2+2 == 5
+ ^  ^
+ |  [36;1mfalse[0m
+ [34;1m4[0m
+-- 1 --
+assert failed:
+two+2 == 5
+^  ^  ^
+|  |  [36;1mfalse[0m
+|  [34;1m4[0m
+[34;1m2[0m
+-- 2 --
+assert failed:
+reflect.DeepEqual(append(xs, 3), []int{1, 2, 4})
+^                 ^      ^       ^
+|                 |      |       [][32mint[0m{[34;1m1[0m,[34;1m2[0m,[34;1m4[0m}
+|                 |      [][32mint[0m{[34;1m1[0m,[34;1m2[0m}
+|                 [][32mint[0m{[34;1m1[0m,[34;1m2[0m,[34;1m3[0m}
+[36;1mfalse[0m
+-- 3 --
+assert failed:
+reflect.DeepEqual(append(xs, 3)[1:], []int{2, 4})
+^                 ^      ^     ^     ^
+|                 |      |     |     [][32mint[0m{[34;1m2[0m,[34;1m4[0m}
+|                 |      |     [][32mint[0m{[34;1m2[0m,[34;1m3[0m}
+|                 |      [][32mint[0m{[34;1m1[0m,[34;1m2[0m}
+|                 [][32mint[0m{[34;1m1[0m,[34;1m2[0m,[34;1m3[0m}
+[36;1mfalse[0m
+-- 4 --
+assert failed:
+factorial(5) == 60
+^            ^
+|            [36;1mfalse[0m
+[34;1m120[0m
+-- 5 --
+assert failed:
+xs[1] == 1
+^ ^   ^
+| |   [36;1mfalse[0m
+| [34;1m2[0m
+[][32mint[0m{[34;1m1[0m,[34;1m2[0m}
+-- 6 --
+assert failed:
+-1 == 1
+^  ^
+|  [36;1mfalse[0m
+[34;1m-1[0m
+-- 7 --
+assert failed:
+(1 + 1) == 1
+^ ^   ^
+| |   [36;1mfalse[0m
+| [34;1m2[0m
+[34;1m2[0m
+-- 8 --
+assert failed:
+&s == nil
+^  ^
+|  [36;1mfalse[0m
+&[32mstruct { x struct { y int } }[0m{[33mx[0m: [32mstruct { y int }[0m{    [33my[0m: [34;1m0[0m}}
+-- 9 --
+assert failed:
+s.x.y != 0
+^ ^ ^ ^
+| | | [36;1mfalse[0m
+| | [34;1m0[0m
+| [32mstruct { y int }[0m{[33my[0m: [34;1m0[0m}
+[32mstruct { x struct { y int } }[0m{[33mx[0m: [32mstruct { y int }[0m{    [33my[0m: [34;1m0[0m}}
+-- 10 --
+assert failed:
+(*int)(nil) != nil
+^           ^
+|           [36;1mfalse[0m
+([32m*int[0m)([36;1mnil[0m)
+-- 11 --
+assert failed:
+len(make([]int, 0)) == 1
+^   ^               ^
+|   |               [36;1mfalse[0m
+|   [][32mint[0m{}
+[34;1m0[0m
+-- 12 --
+assert failed:
+new(struct{}) == nil
+^             ^
+|             [36;1mfalse[0m
+&[32mstruct {}[0m{}
+-- 13 --
+assert failed:
+*new(int) == 1
+^^        ^
+||        [36;1mfalse[0m
+|&[34;1m0[0m
+[34;1m0[0m
+-- 14 --
+assert failed:
+len(map[int]int{1: two}) == 0
+^   ^              ^     ^
+|   |              |     [36;1mfalse[0m
+|   |              [34;1m2[0m
+|   [32mmap[int]int[0m{[34;1m1[0m: [34;1m2[0m}
+[34;1m1[0m
+-- 15 --
+require failed:
+two != 1+1
+^   ^   ^
+|   |   [34;1m2[0m
+|   [36;1mfalse[0m
+[34;1m2[0m

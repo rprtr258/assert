@@ -30,3 +30,17 @@
 |golden files support|:white_check_mark:|:x:|:x:|:x:|
 
 [^1]: temp file and port only
+
+# Development
+
+## Snapshot tests
+
+Power-assert diagram output (`TestExample`) is compared against a golden
+snapshot in `testdata/power_assert.txtar`. When the output intentionally
+changes, regenerate it:
+
+```sh
+ASSERT_UPDATE_SNAPSHOT=1 go test ./...
+```
+
+Commit the updated snapshot alongside the change that required it.

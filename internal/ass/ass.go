@@ -97,3 +97,11 @@ func SContainsIs(t *testing.T, shouldContain bool, needle, haystack string) {
 		SContainsNot(t, needle, haystack)
 	}
 }
+
+func NoError(t *testing.T, err error) {
+	t.Helper()
+
+	if err != nil {
+		t.Errorf("Expected no error, got:\n%v", err)
+	}
+}

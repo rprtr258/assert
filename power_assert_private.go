@@ -29,6 +29,14 @@ import (
 
 var pkg = ast.NewIdent("assert")
 
+// Snapshot mode: instead of failing the test, Assert/Require collect their
+// failure diagrams into ZZZCapturedSnapshots. Used by tests that exercise the power-assert
+// output without failing the suite.
+var (
+	ZZZSnapshot          bool
+	ZZZCapturedSnapshots []string
+)
+
 type expr struct {
 	valueStr string
 	position int
@@ -59,38 +67,47 @@ func assert(tb testing.TB, assertData *assertData, cond bool, fn string, onfail 
 	if cond {
 		return
 	}
-	defer onfail()
 
 	slices.SortFunc(assertData.exprs, func(a, b expr) int {
 		return a.position - b.position
 	})
 
-	s := assertData.exprStr + "\n"
+	var s strings.Builder
+	s.WriteString(assertData.exprStr)
+	s.WriteString("\n")
 	for i, expr := range assertData.exprs {
 		n := expr.position
 		if i > 0 {
 			n -= assertData.exprs[i-1].position + 1
 		}
-		s += strings.Repeat(" ", n) + "^"
+		s.WriteString(strings.Repeat(" ", n))
+		s.WriteString("^")
 	}
 	for i, e := range slices.Backward(assertData.exprs) {
-		s += "\n"
+		s.WriteString("\n")
 		for j := 0; j <= i; j++ {
 			n := assertData.exprs[j].position
 			if j > 0 {
 				n -= assertData.exprs[j-1].position + 1
 			}
-			s += strings.Repeat(" ", n)
+			s.WriteString(strings.Repeat(" ", n))
 			if j < i {
-				s += "|"
+				s.WriteString("|")
 			} else {
-				s += e.valueStr
+				s.WriteString(e.valueStr)
 			}
 		}
 	}
 
+	out := fn + " failed:\n" + s.String()
+	if ZZZSnapshot {
+		ZZZCapturedSnapshots = append(ZZZCapturedSnapshots, out)
+		return
+	}
+	defer onfail()
+
 	// TODO: reports wrong line number, fix it
-	tb.Errorf("%s failed:\n%s", fn, s)
+	tb.Errorf("%s", out)
 }
 
 func ZZZAssert(tb testing.TB, assertData *assertData, cond bool) {
@@ -209,6 +226,12 @@ func rewriteExpr(n ast.Expr, offset token.Pos) ast.Expr {
 }
 
 func getModuleDir() (string, error) {
+	// On the second (rewritten) pass we run from a temp copy of the module, so
+	// runtime.Caller would point at the copy. The first pass records the real
+	// module dir in ASSERT_MODULE_DIR; prefer it when set.
+	if dir := os.Getenv("ASSERT_MODULE_DIR"); dir != "" {
+		return dir, nil
+	}
 	// os.Getwd does not cut it, since tests are being run from a temp dir using temporary executable
 	// so we have to do caller getting trickery and extract module path the hard way
 	_, file, _, ok := runtime.Caller(4) // Assert/Require -> fuse -> run -> getModuleDir
@@ -410,6 +433,7 @@ func run() error {
 
 	// TODO: pass args
 	cmd := exec.Command("go", "test", "./...")
+	cmd.Env = append(os.Environ(), "ASSERT_MODULE_DIR="+moduleDir)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
