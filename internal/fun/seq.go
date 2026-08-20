@@ -2,12 +2,7 @@ package fun
 
 import (
 	"iter"
-	"slices"
 )
-
-func FromMany[T any](xs ...T) iter.Seq[T] {
-	return slices.Values(xs)
-}
 
 func FromRange(from, to int) iter.Seq[int] {
 	return func(yield func(int) bool) {

@@ -4,6 +4,7 @@ package assert
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"go/ast"
@@ -79,11 +80,13 @@ func (shit) ZZZAdd[T any](a *assertData, position int, value T) T {
 	s = strings.ReplaceAll(s, ",}", "}")
 
 	a.exprs = append(a.exprs, expr{s, position})
+
 	return value
 }
 
 func assert(tb testing.TB, assertData *assertData, cond bool, fn string, onfail func()) {
 	tb.Helper()
+
 	if cond {
 		return
 	}
@@ -95,22 +98,28 @@ func assert(tb testing.TB, assertData *assertData, cond bool, fn string, onfail 
 	var s strings.Builder
 	s.WriteString(assertData.exprStr)
 	s.WriteString("\n")
+
 	for i, expr := range assertData.exprs {
 		n := expr.position
 		if i > 0 {
 			n -= assertData.exprs[i-1].position + 1
 		}
+
 		s.WriteString(strings.Repeat(" ", n))
 		s.WriteString("^")
 	}
+
 	for i, e := range slices.Backward(assertData.exprs) {
 		s.WriteString("\n")
+
 		for j := 0; j <= i; j++ {
 			n := assertData.exprs[j].position
 			if j > 0 {
 				n -= assertData.exprs[j-1].position + 1
 			}
+
 			s.WriteString(strings.Repeat(" ", n))
+
 			if j < i {
 				s.WriteString("|")
 			} else {
@@ -121,7 +130,11 @@ func assert(tb testing.TB, assertData *assertData, cond bool, fn string, onfail 
 
 	out := fn + " failed:\n" + s.String()
 	if SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZSnapshot {
-		SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZCapturedSnapshots = append(SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZCapturedSnapshots, out)
+		SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZCapturedSnapshots = append(
+			SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZCapturedSnapshots,
+			out,
+		)
+
 		return
 	}
 	defer onfail()
@@ -136,12 +149,14 @@ func debugf(format string, args ...any) {
 	if !debug {
 		return
 	}
+
 	log.Printf("[DEBUG] "+format, args...)
 }
 
 func sprintCode(n ast.Node) string {
 	buf := &bytes.Buffer{}
 	_ = printer.Fprint(buf, token.NewFileSet(), n)
+
 	return buf.String()
 }
 
@@ -186,6 +201,7 @@ func rewriteExpr(n ast.Expr, offset token.Pos) ast.Expr {
 		for i, e := range n.Elts {
 			n.Elts[i] = rewriteExpr(e, offset)
 		}
+
 		return dumpExpr(n, n.Pos()-offset)
 	case *ast.SelectorExpr:
 		n.X = rewriteExpr(n.X, offset)
@@ -198,10 +214,12 @@ func rewriteExpr(n ast.Expr, offset token.Pos) ast.Expr {
 		n.High = rewriteExpr(n.High, offset)
 		n.Max = rewriteExpr(n.Max, offset)
 		n.X = rewriteExpr(n.X, offset)
+
 		return dumpExpr(n, n.Lbrack-offset)
 	case *ast.IndexExpr:
 		n.Index = rewriteExpr(n.Index, offset)
 		n.X = rewriteExpr(n.X, offset)
+
 		return dumpExpr(n, n.Lbrack-offset)
 	case *ast.UnaryExpr:
 		if n.Op == token.AND {
@@ -209,16 +227,20 @@ func rewriteExpr(n ast.Expr, offset token.Pos) ast.Expr {
 			// needs testing
 			return dumpExpr(n, n.OpPos-offset)
 		}
+
 		n.X = rewriteExpr(n.X, offset)
+
 		return dumpExpr(n, n.OpPos-offset)
 	case *ast.BinaryExpr:
 		n.X = rewriteExpr(n.X, offset)
 		n.Y = rewriteExpr(n.Y, offset)
+
 		return dumpExpr(n, n.OpPos-offset)
 	case *ast.CallExpr:
 		for i, e := range n.Args {
 			n.Args[i] = rewriteExpr(e, offset)
 		}
+
 		return dumpExpr(n, n.Pos()-offset)
 	case *ast.StarExpr:
 		n.X = rewriteExpr(n.X, offset)
@@ -228,12 +250,19 @@ func rewriteExpr(n ast.Expr, offset token.Pos) ast.Expr {
 	case *ast.KeyValueExpr:
 		n.Key = rewriteExpr(n.Key, offset)
 		n.Value = rewriteExpr(n.Value, offset)
+
 		return n
 	default:
 		log.Fatalf("unsupported expr type %T", n)
 	}
+
 	panic("unreachable")
 }
+
+var (
+	errGetCaller         = errors.New("could not get caller, check sources are available")
+	errModuleDirNotFound = errors.New("module directory not found")
+)
 
 func getModuleDir() (string, error) {
 	// On the second (rewritten) pass we run from a temp copy of the module, so
@@ -246,7 +275,7 @@ func getModuleDir() (string, error) {
 	// so we have to do caller getting trickery and extract module path the hard way
 	_, file, _, ok := runtime.Caller(4) // Assert/Require -> fuse -> run -> getModuleDir
 	if !ok {
-		return "", errors.New("could not get caller, check sources are available")
+		return "", errGetCaller
 	}
 
 	dir := filepath.Dir(file)
@@ -256,28 +285,33 @@ func getModuleDir() (string, error) {
 		}
 
 		if dir == "/" {
-			return "", errors.New("module directory not found")
+			return "", errModuleDirNotFound
 		}
 
 		dir = filepath.Dir(dir)
 	}
+
 	return dir, nil
 }
 
+//nolint:maintidx
 func run() error {
 	moduleDir, err := getModuleDir()
 	if err != nil {
 		return fmt.Errorf("get module dir: %w", err)
 	}
+
 	debugf("module dir %s", moduleDir)
 
 	tmpDir, err := os.MkdirTemp("", "assert.*")
 	if err != nil {
 		return fmt.Errorf("create temp dir: %w", err)
 	}
+
 	if !debug {
 		defer os.RemoveAll(tmpDir)
 	}
+
 	debugf("temp dir %s created", tmpDir)
 
 	// TODO: copy _test.go files, link everything besides
@@ -290,6 +324,7 @@ func run() error {
 	}
 
 	testfiles := []string{}
+
 	if err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(path, "_test.go") {
 			return err
@@ -307,14 +342,17 @@ func run() error {
 		if err != nil {
 			return fmt.Errorf("open test file %s: %w", fileRelPath, err)
 		}
+
 		stat, err := ff.Stat()
 		if err != nil {
 			return fmt.Errorf("stat test file %s: %w", fileRelPath, err)
 		}
+
 		f, err := io.ReadAll(ff)
 		if err != nil {
 			return fmt.Errorf("read test file %s: %w", fileRelPath, err)
 		}
+
 		ff.Close()
 
 		root, err := parser.ParseFile(token.NewFileSet(), fileRelPath, f, 0)
@@ -358,6 +396,7 @@ func run() error {
 
 				continue
 			}
+
 			if argTypeStr != "*testing.T" {
 				continue
 			}
@@ -380,7 +419,9 @@ func run() error {
 				if !ok {
 					return true
 				}
+
 				var finalCall *ast.SelectorExpr
+
 				switch sprintCode(selector) {
 				case pkg.Name + ".Assert":
 					finalCall = &ast.SelectorExpr{
@@ -398,56 +439,61 @@ func run() error {
 
 				found = true
 
-				c.Replace(&ast.BlockStmt{
-					List: []ast.Stmt{
-						&ast.AssignStmt{ // zzz := assert.SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZNew("2+2 == 5")
-							Tok: token.DEFINE,
-							Lhs: []ast.Expr{&ast.Ident{Name: "zzz"}},
-							Rhs: []ast.Expr{
-								&ast.CallExpr{
-									Fun: &ast.SelectorExpr{
-										X:   pkgRoot,
-										Sel: ast.NewIdent("ZZZNew"),
-									},
-									Args: []ast.Expr{
-										&ast.BasicLit{
-											Kind:  token.STRING,
-											Value: strconv.Quote(sprintCode(call.Args[1])),
-										},
-									},
+				c.Replace(&ast.BlockStmt{List: []ast.Stmt{
+					//nolint:gocritic // commentedOutCode: comment documents the code this AST block generates
+					// zzz := assert.SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZNew("2+2 == 5")
+					&ast.AssignStmt{
+						Tok: token.DEFINE,
+						Lhs: []ast.Expr{ast.NewIdent("zzz")},
+						Rhs: []ast.Expr{
+							&ast.CallExpr{
+								Fun: &ast.SelectorExpr{
+									X:   pkgRoot,
+									Sel: ast.NewIdent("ZZZNew"),
 								},
-							},
-						},
-						&ast.ExprStmt{ // assert.ZZZAssert(t, zzz, <fused predicate expression>)
-							X: &ast.CallExpr{
-								Fun: finalCall,
 								Args: []ast.Expr{
-									ast.NewIdent("t"),
-									ast.NewIdent("zzz"),
-									rewriteExpr(call.Args[1], call.Args[1].Pos()),
+									&ast.BasicLit{
+										Kind:  token.STRING,
+										Value: strconv.Quote(sprintCode(call.Args[1])),
+									},
 								},
 							},
 						},
 					},
-				})
+					// assert.ZZZAssert(t, zzz, <fused predicate expression>)
+					&ast.ExprStmt{
+						X: &ast.CallExpr{
+							Fun: finalCall,
+							Args: []ast.Expr{
+								ast.NewIdent("t"),
+								ast.NewIdent("zzz"),
+								rewriteExpr(call.Args[1], call.Args[1].Pos()),
+							},
+						},
+					},
+				}})
 
 				return true
 			})
 		}
+
 		if !found {
 			continue
 		}
 
 		debugf("rewriting %s", fileRelPath)
+
 		if err := os.WriteFile(fileRelPath, []byte(sprintCode(root)), stat.Mode()); err != nil {
 			return fmt.Errorf("write rewritten file %s: %w", fileRelPath, err)
 		}
 	}
 
 	// TODO: pass args
-	cmd := exec.Command("go", "test", "./...")
+	cmd := exec.CommandContext(context.Background(), "go", "test", "./...")
+
 	cmd.Env = append(os.Environ(), "ASSERT_MODULE_DIR="+moduleDir)
 	cmd.Stdout = os.Stdout
+
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("run tests: %w", err)

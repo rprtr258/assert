@@ -6,56 +6,124 @@ issues:
 linters:
   default: all
   enable:
+    - arangolint
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - clickhouselint
+    - containedctx
+    - contextcheck
+    - copyloopvar
+    - decorder
+    - dogsled
+    - dupl
+    - dupword
+    - durationcheck
+    - embeddedstructfieldcheck
+    - err113
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - exhaustive
+    - exptostd
+    - fatcontext
+    - forbidigo
+    - forcetypeassert
+    - funcorder
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecknoinits
+    - gochecksumtype
+    - goconst
+    - gocritic
+    - godoclint
+    - goheader
+    - gomoddirectives
     - gomodguard_v2
+    - gomodguard_v2
+    - goprintffuncname
+    - gosec
+    # - gosimple
+    - govet
+    - grouper
+    - iface
+    - importas
+    - inamedparam
+    - ineffassign
+    - interfacebloat
+    - intrange
+    - iotamixing
+    - lll
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    - modernize
+    - musttag
+    - nakedret
+    - nestif
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - noctx
     - nolintlint
+    - nosprintfhostport
+    - perfsprint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - recvcheck
+    - rowserrcheck
+    - sloglint
+    - sqlclosecheck
+    - staticcheck
+    # - stylecheck
+    - tagalign
+    - tagliatelle
+    - testableexamples
+    - testifylint
+    - thelper
+    - unconvert
+    - unparam
+    - usestdlibvars
+    - usetesting
+    - wastedassign
+    - whitespace
+    - wrapcheck
+    - wsl_v5
+    # - zerologlint
   disable:
+    - cyclop
+    - depguard
     - exhaustruct
     - exhaustruct_v5
-    - forbidigo # we need to use fmt.Print*()
     - funlen
     - gochecknoglobals # why the fuck i am not allowed to use globals
     - gocognit
     - gocyclo
-    - godot
+    - godot # comments should not end in period
     - godox # TODO: remove
-    - gomodguard
+    - gomodguard # replaced by gomodguard_v2
     - gosmopolitan
-    - ireturn # i know better
-    - mnd
-    - nlreturn
-    - noinlineerr
-    - nonamedreturns
-    - testpackage
+    - ireturn # cool banner + hates generics
+    - mnd # no magic here
+    - nlreturn # too strict
+    - noinlineerr # i want to control this shit at least with inline if
+    - nonamedreturns # no
+    - testpackage # too strict, disallows testing private symbols
     - varnamelen # makes bad suggestions
-    - wsl
-    - wsl_v5
+    - wsl # replaced by wsl_v5
     # TODO: remove
-    - cyclop
-    - depguard
-    - embeddedstructfieldcheck
-    - err113
-    - errcheck
-    - exhaustive
-    - forcetypeassert
-    - gocritic
-    - godoclint
-    - gosec
-    - govet
-    - inamedparam
-    - ineffassign
-    - intrange
-    - lll
-    - maintidx
-    - modernize
-    - nestif
-    - noctx
     - paralleltest
-    - recvcheck
     - revive
-    - staticcheck
     - tparallel
     - unused
-    - wrapcheck
   settings:
     gocritic:
       disabled-checks:

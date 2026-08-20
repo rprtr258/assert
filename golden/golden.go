@@ -23,8 +23,10 @@ func Load[T any](b []byte) map[string]T {
 		if err := gob.NewDecoder(bytes.NewBuffer(file.Data)).Decode(&testcase); err != nil {
 			panic(fmt.Sprintf("failed to decode %q: %s", file.Name, err.Error()))
 		}
+
 		tests[file.Name] = testcase
 	}
+
 	return tests
 }
 
@@ -38,6 +40,7 @@ func Save[T any](
 		if err := gob.NewEncoder(&bb).Encode(testcase); err != nil {
 			panic(fmt.Sprintf("failed to encode %q: %s", name, err.Error()))
 		}
+
 		files = append(files, txtar.File{
 			Name: name,
 			Data: bb.Bytes(),
@@ -47,7 +50,7 @@ func Save[T any](
 	if err := os.WriteFile(filename, txtar.Format(&txtar.Archive{
 		Comment: nil,
 		Files:   files,
-	}), 0o644); err != nil {
+	}), 0o600); err != nil {
 		panic(fmt.Sprintf("failed to write file %q: %s", filename, err.Error()))
 	}
 }

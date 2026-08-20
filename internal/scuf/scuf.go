@@ -6,6 +6,7 @@ type Mod = string
 
 const (
 	// Foreground colors
+
 	FgBlack   = "30"
 	FgRed     = "31"
 	FgGreen   = "32"
@@ -14,7 +15,9 @@ const (
 	FgMagenta = "35"
 	FgCyan    = "36"
 	FgWhite   = "37"
+
 	// Foreground bright colors
+
 	FgHiBlack   = "90"
 	FgHiRed     = "91"
 	FgHiGreen   = "92"
@@ -25,6 +28,7 @@ const (
 	FgHiWhite   = "97"
 
 	// Background colors
+
 	BgBlack   = "40"
 	BgRed     = "41"
 	BgGreen   = "42"
@@ -33,7 +37,9 @@ const (
 	BgMagenta = "45"
 	BgCyan    = "46"
 	BgWhite   = "47"
+
 	// Background bright colors
+
 	BgHiBlack   = "100"
 	BgHiRed     = "101"
 	BgHiGreen   = "102"
@@ -59,7 +65,7 @@ const (
 	ModOverline            = "53"
 )
 
-// r,g,b are 0-255
+// FgRGB returns a foreground RGB color mod, r,g,b are 0-255
 func FgRGB(r, g, b uint8) Mod {
 	return fmt.Sprintf("38;2;%d;%d;%d", r, g, b)
 }
