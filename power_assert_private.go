@@ -319,13 +319,9 @@ func run() error {
 		return fmt.Errorf("copy project to temp dir: %w", err)
 	}
 
-	if err := os.Chdir(tmpDir); err != nil {
-		return fmt.Errorf("chdir to temp dir: %w", err)
-	}
-
 	testfiles := []string{}
 
-	if err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
+	if err := filepath.WalkDir(tmpDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil || d.IsDir() || !strings.HasSuffix(path, "_test.go") {
 			return err
 		}
@@ -492,6 +488,7 @@ func run() error {
 	cmd := exec.CommandContext(context.Background(), "go", "test", "./...")
 
 	cmd.Env = append(os.Environ(), "ASSERT_MODULE_DIR="+moduleDir)
+	cmd.Dir = tmpDir
 	cmd.Stdout = os.Stdout
 
 	cmd.Stderr = os.Stderr
