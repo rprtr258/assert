@@ -1,56 +1,82 @@
+version: "2"
 run:
   tests: true
-  timeout: 1m
-
-issues:
-  exclude-rules:
-    - path: pa/private.go
-      linters: [revive]
-    - path: pa/pa_test.go
-      linters: [staticcheck, gocritic]
-    - path: internal/q/q_test.go
-      linters: [funlen, lll]
-    - path: internal/q/cmd/main.go
-      linters: [mnd]
-
 linters:
-  enable-all: true
+  default: all
   disable:
-    - exhaustruct
-    - forbidigo # we need to use fmt.Print*()
-    - gomnd
-    - nolintlint
-    - nonamedreturns
-    - paralleltest # tests only take 2.5s to run. no need to parallelize
-    - testpackage
-    - varnamelen # makes bad suggestions
-    - wsl
-    - gochecknoglobals # why the fuck i am not allowed to use globals
-    - ireturn # i know better
-    - godot
-    - nlreturn
+    - cyclop
     - depguard
     - err113
-    - gocyclo
-    - cyclop
-    - gocognit
+    - exhaustruct
+    - forbidigo
     - funlen
-
-linters-settings:
-  gci:
-    sections:
-      - standard
-      - default
-      - localmodule
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - opinionated
-      - performance
-      - style
-    disabled-checks:
-      - whyNoLint
-  gocyclo:
-    min-complexity: 10
-  gofumpt:
-    extra-rules: true
+    - gochecknoglobals
+    - gocognit
+    - gocyclo
+    - godot
+    - ireturn
+    - mnd
+    - nlreturn
+    - nolintlint
+    - nonamedreturns
+    - paralleltest
+    - testpackage
+    - varnamelen
+    - wsl
+  settings:
+    gocritic:
+      disabled-checks:
+        - whyNoLint
+      enabled-tags:
+        - diagnostic
+        - opinionated
+        - performance
+        - style
+    gocyclo:
+      min-complexity: 10
+  exclusions:
+    generated: lax
+    presets:
+      - comments
+      - common-false-positives
+      - legacy
+      - std-error-handling
+    rules:
+      - linters:
+          - revive
+        path: pa/private.go
+      - linters:
+          - gocritic
+          - staticcheck
+        path: pa/pa_test.go
+      - linters:
+          - funlen
+          - lll
+        path: internal/q/q_test.go
+      - linters:
+          - mnd
+        path: internal/q/cmd/main.go
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
+formatters:
+  enable:
+    - gci
+    - gofmt
+    - gofumpt
+    - goimports
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - localmodule
+    gofumpt:
+      extra-rules: true
+  exclusions:
+    generated: lax
+    paths:
+      - third_party$
+      - builtin$
+      - examples$
