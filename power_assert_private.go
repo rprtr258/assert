@@ -235,38 +235,43 @@ func rewriteExpr(n ast.Expr, offset token.Pos) ast.Expr {
 	panic("unreachable")
 }
 
-func getModuleDir() (string, error) {
+func getModuleDir() (string, string, error) {
 	// On the second (rewritten) pass we run from a temp copy of the module, so
 	// runtime.Caller would point at the copy. The first pass records the real
 	// module dir in ASSERT_MODULE_DIR; prefer it when set.
 	if dir := os.Getenv("ASSERT_MODULE_DIR"); dir != "" {
-		return dir, nil
+		return dir, "", nil
 	}
 	// os.Getwd does not cut it, since tests are being run from a temp dir using temporary executable
 	// so we have to do caller getting trickery and extract module path the hard way
 	_, file, _, ok := runtime.Caller(4) // Assert/Require -> fuse -> run -> getModuleDir
 	if !ok {
-		return "", errors.New("could not get caller, check sources are available")
+		return "", "", errors.New("could not get caller, check sources are available")
 	}
+	callerDir := filepath.Dir(file)
 
-	dir := filepath.Dir(file)
+	dir := callerDir
 	for {
 		if _, err := os.Stat(filepath.Join(dir, "go.mod")); err == nil {
 			break
 		}
 
 		if dir == "/" {
-			return "", errors.New("module directory not found")
+			return "", "", errors.New("module directory not found")
 		}
 
 		dir = filepath.Dir(dir)
 	}
-	return dir, nil
+	pkgRelDir, err := filepath.Rel(dir, callerDir)
+	if err != nil {
+		return "", "", fmt.Errorf("resolve package dir: %w", err)
+	}
+	return dir, pkgRelDir, nil
 }
 
 func run() error {
-	moduleDir, err := getModuleDir()
-	debugf("module dir %s", moduleDir)
+	moduleDir, pkgRelDir, err := getModuleDir()
+	debugf("module dir %s, package dir %s", moduleDir, pkgRelDir)
 
 	tmpDir, err := os.MkdirTemp("", "assert.*")
 	if err != nil {
@@ -437,8 +442,12 @@ func run() error {
 		}
 	}
 
-	// TODO: pass args
-	cmd := exec.Command("go", "test", "./...")
+	// Re-exec only the current package instead of the whole module.
+	pkgArg := "./" + filepath.ToSlash(pkgRelDir)
+	if pkgRelDir == "." {
+		pkgArg = "."
+	}
+	cmd := exec.Command("go", "test", pkgArg)
 	cmd.Env = append(os.Environ(), "ASSERT_MODULE_DIR="+moduleDir)
 	cmd.Dir = tmpDir
 	cmd.Stdout = os.Stdout

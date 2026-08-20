@@ -36,7 +36,7 @@ Replace parent-side chdir with `cmd.Dir = tmpDir` on the `exec.Command` at
 Verify: run `go test -v -count=1 -race ./...` on a package using `assert.Assert` under
 `t.Parallel()`; confirm no `-race` failure and clean `-v` output.
 
-### PR2 — Scope re-exec to the current package
+### PR2 — Scope re-exec to the current package — DONE
 
 `exec.Command("go", "test", "./...")` (`power_assert_private.go:~397`) re-runs the whole
 module. The `// TODO: pass args` acknowledges this.
