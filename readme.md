@@ -18,6 +18,24 @@
 - pretty and colourful test output
 - no `Expect(ACTUAL).To(Equal(EXPECTED))` [nonsense](https://github.com/onsi/gomega) rewriting of simple `ACTUAL == EXPECTED`, just use `assert.Equal(t, ACTUAL, EXPECTED)` or `assert.Assert(t, ACTUAL == EXPECTED)` and see values used in case of failure (dark magic inside)
 
+## Power assert
+
+`assert.Assert`/`assert.Require` are source-rewritten into direct power-assert
+checks. The rewrite runs once per package and is driven by `assert.Fuse` from
+`TestMain`:
+
+```go
+func TestMain(m *testing.M) {
+	assert.Fuse(m)
+	os.Exit(m.Run())
+}
+```
+
+`Fuse` rewrites the package's `_test.go` files and re-execs them as a
+subprocess in which `assert.Assert`/`assert.Require` have been replaced by
+inline diagram-producing checks. Reaching `assert.Assert` at runtime means
+`Fuse` was not wired in; it fails the test with an actionable message.
+
 ## Comparison with other libraries
 |features|[rprtr258/assert](https://github.com/rprtr258/assert)|[stretchr/testify](https://github.com/stretchr/testify)|[shoenig/test](https://github.com/shoenig/test)|[alecthomas/assert](https://github.com/alecthomas/assert)|
 |-|-|-|-|-|

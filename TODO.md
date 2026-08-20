@@ -60,7 +60,7 @@ Verify: timing of a single `assert.Assert` call drops from "whole module test" t
 Verify: temp dir size and parse time drop; rewritten output unchanged for a sample
 test file.
 
-### PR4 — Fuse once per package, not per-call (structural, API change)
+### PR4 — Fuse once per package, not per-call (structural, API change) — DONE
 
 Make `Assert`/`Require` plain runtime checks against pre-rewritten code, driven by a
 single `assert.Fuse(m)` in `TestMain(m *testing.M)`. `Fuse` does the copy+rewrite+reexec

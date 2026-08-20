@@ -244,7 +244,7 @@ func getModuleDir() (string, string, error) {
 	}
 	// os.Getwd does not cut it, since tests are being run from a temp dir using temporary executable
 	// so we have to do caller getting trickery and extract module path the hard way
-	_, file, _, ok := runtime.Caller(4) // Assert/Require -> fuse -> run -> getModuleDir
+	_, file, _, ok := runtime.Caller(3) // TestMain -> Fuse -> run -> getModuleDir
 	if !ok {
 		return "", "", errors.New("could not get caller, check sources are available")
 	}
@@ -269,13 +269,13 @@ func getModuleDir() (string, string, error) {
 	return dir, pkgRelDir, nil
 }
 
-func run() error {
+func run() (int, error) {
 	moduleDir, pkgRelDir, err := getModuleDir()
 	debugf("module dir %s, package dir %s", moduleDir, pkgRelDir)
 
 	tmpDir, err := os.MkdirTemp("", "assert.*")
 	if err != nil {
-		return fmt.Errorf("create temp dir: %w", err)
+		return 0, fmt.Errorf("create temp dir: %w", err)
 	}
 	if !debug {
 		defer os.RemoveAll(tmpDir)
@@ -314,7 +314,7 @@ func run() error {
 		}
 		return linkFile(path, dst)
 	}); err != nil {
-		return fmt.Errorf("copy project to temp dir: %w", err)
+		return 0, fmt.Errorf("copy project to temp dir: %w", err)
 	}
 
 	testfiles := []string{}
@@ -327,21 +327,21 @@ func run() error {
 
 		return nil
 	}); err != nil {
-		return fmt.Errorf("collect test files: %w", err)
+		return 0, fmt.Errorf("collect test files: %w", err)
 	}
 
 	for _, fileRelPath := range testfiles {
 		ff, err := os.Open(fileRelPath)
 		if err != nil {
-			return fmt.Errorf("open test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("open test file %s: %w", fileRelPath, err)
 		}
 		stat, err := ff.Stat()
 		if err != nil {
-			return fmt.Errorf("stat test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("stat test file %s: %w", fileRelPath, err)
 		}
 		f, err := io.ReadAll(ff)
 		if err != nil {
-			return fmt.Errorf("read test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("read test file %s: %w", fileRelPath, err)
 		}
 		ff.Close()
 
@@ -352,7 +352,7 @@ func run() error {
 
 		root, err := parser.ParseFile(token.NewFileSet(), fileRelPath, f, 0)
 		if err != nil {
-			return fmt.Errorf("parse test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("parse test file %s: %w", fileRelPath, err)
 		}
 
 		found := false
@@ -473,7 +473,7 @@ func run() error {
 
 		debugf("rewriting %s", fileRelPath)
 		if err := os.WriteFile(fileRelPath, []byte(sprintCode(root)), stat.Mode()); err != nil {
-			return fmt.Errorf("write rewritten file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("write rewritten file %s: %w", fileRelPath, err)
 		}
 	}
 
@@ -487,11 +487,15 @@ func run() error {
 	cmd.Dir = tmpDir
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
+	var exitErr *exec.ExitError
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("run tests: %w", err)
+		if errors.As(err, &exitErr) {
+			return exitErr.ExitCode(), nil
+		}
+		return 1, fmt.Errorf("run tests: %w", err)
 	}
 
-	return nil
+	return 0, nil
 }
 
 // linkFile hard-links src into dst; when a hard link is impossible (cross-
