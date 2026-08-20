@@ -233,20 +233,20 @@ func TestIsQCall(t *testing.T) {
 	}{
 		1: {
 			expr: &ast.CallExpr{
-				Fun: &ast.Ident{Name: "Q"},
+				Fun: ast.NewIdent("Q"),
 			},
 			want: true,
 		},
 		2: {
 			expr: &ast.CallExpr{
-				Fun: &ast.Ident{Name: "R"},
+				Fun: ast.NewIdent("R"),
 			},
 			want: false,
 		},
 		3: {
 			expr: &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
-					X: &ast.Ident{Name: "q"},
+					X: ast.NewIdent("q"),
 				},
 			},
 			want: true,
@@ -254,7 +254,7 @@ func TestIsQCall(t *testing.T) {
 		4: {
 			expr: &ast.CallExpr{
 				Fun: &ast.SelectorExpr{
-					X: &ast.Ident{Name: "Q"},
+					X: ast.NewIdent("Q"),
 				},
 			},
 			want: false,
@@ -269,7 +269,7 @@ func TestIsQCall(t *testing.T) {
 		},
 		6: {
 			expr: &ast.CallExpr{
-				Fun: &ast.Ident{Name: "q"},
+				Fun: ast.NewIdent("q"),
 			},
 			want: false,
 		},
