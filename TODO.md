@@ -47,7 +47,7 @@ module-wide one.
 Verify: timing of a single `assert.Assert` call drops from "whole module test" to
 "one package test".
 
-### PR3 — Link instead of copy; skip non-source dirs; pre-scan before parse
+### PR3 — Link instead of copy; skip non-source dirs; pre-scan before parse — DONE
 
 `os.CopyFS(tmpDir, os.DirFS(moduleDir))` duplicates the entire tree including `.git`,
 `vendor`, build dirs. The existing TODO: "copy _test.go files, link everything besides".

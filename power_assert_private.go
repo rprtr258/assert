@@ -282,8 +282,38 @@ func run() error {
 	}
 	debugf("temp dir %s created", tmpDir)
 
-	// TODO: copy _test.go files, link everything besides
-	if err := os.CopyFS(tmpDir, os.DirFS(moduleDir)); err != nil {
+	// Link non-test files (falling back to a copy across devices); copy
+	// _test.go files so rewrites never mutate the originals. Skip VCS and
+	// vendor dirs that contribute nothing to the build.
+	// ponytail: skip-list is VCS+vendor only; add build-output dirs if a
+	// project grows one large enough to matter.
+	skipDirs := map[string]bool{
+		".git": true, ".jj": true, ".hg": true, ".svn": true,
+		"vendor": true, "node_modules": true,
+	}
+	if err := filepath.WalkDir(moduleDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+		rel, err := filepath.Rel(moduleDir, path)
+		if err != nil {
+			return err
+		}
+		if d.IsDir() {
+			if rel != "." && skipDirs[d.Name()] {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		dst := filepath.Join(tmpDir, rel)
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			return err
+		}
+		if strings.HasSuffix(rel, "_test.go") {
+			return copyFile(path, dst)
+		}
+		return linkFile(path, dst)
+	}); err != nil {
 		return fmt.Errorf("copy project to temp dir: %w", err)
 	}
 
@@ -314,6 +344,11 @@ func run() error {
 			return fmt.Errorf("read test file %s: %w", fileRelPath, err)
 		}
 		ff.Close()
+
+		// Pre-scan: skip files with no power-assert targets before parsing.
+		if !bytes.Contains(f, []byte("assert.Assert")) && !bytes.Contains(f, []byte("assert.Require")) {
+			continue
+		}
 
 		root, err := parser.ParseFile(token.NewFileSet(), fileRelPath, f, 0)
 		if err != nil {
@@ -457,4 +492,34 @@ func run() error {
 	}
 
 	return nil
+}
+
+// linkFile hard-links src into dst; when a hard link is impossible (cross-
+// device, unsupported fs) it falls back to a full copy.
+func linkFile(src, dst string) error {
+	if err := os.Link(src, dst); err == nil {
+		return nil
+	}
+	return copyFile(src, dst)
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.Create(dst)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	if _, err := io.Copy(out, in); err != nil {
+		return err
+	}
+	info, err := os.Stat(src)
+	if err != nil {
+		return err
+	}
+	return os.Chmod(dst, info.Mode())
 }
