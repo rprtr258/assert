@@ -44,12 +44,12 @@ func TestWithLineInfo(t *testing.T) {
 func TestWithLineInfoBackwardsCompatible(t *testing.T) {
 	// Test that the global accessible field `WithLineInfo` does not mutate other instances
 
-	outputWithLineInfo := new(bytes.Buffer)
+	outputWithLineInfo := &bytes.Buffer{}
 	SetDefaultOutput(outputWithLineInfo)
 	WithLineInfo = true
 	Print("abcde")
 
-	outputWithoutLineInfo := new(bytes.Buffer)
+	outputWithoutLineInfo := &bytes.Buffer{}
 	pp := New()
 	pp.SetOutput(outputWithoutLineInfo)
 	pp.Print("abcde")
@@ -60,6 +60,8 @@ func TestWithLineInfoBackwardsCompatible(t *testing.T) {
 }
 
 func TestStructPrintingWithTags(t *testing.T) {
+	t.Parallel()
+
 	type Foo struct {
 		IgnoreMe     any    `pp:"-"`
 		ChangeMyName string `pp:"NewName"`
@@ -109,6 +111,8 @@ func TestStructPrintingWithTags(t *testing.T) {
 		},
 	} {
 		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+
 			output := &bytes.Buffer{}
 			pp := New()
 			pp.SetOutput(output)

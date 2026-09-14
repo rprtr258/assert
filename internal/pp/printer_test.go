@@ -113,6 +113,8 @@ var (
 )
 
 func TestFormat(t *testing.T) {
+	t.Parallel()
+
 	tests := []any{
 		nil,
 		[]int(nil),

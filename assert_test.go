@@ -17,6 +17,7 @@ type User struct {
 }
 
 func TestDiffImpl(t *testing.T) {
+	t.Parallel()
 	// must not panic on comparing structs in private field User.pass
 	expected := []diffLine{
 		{expected: "a", actual: "d", selector: ".Login"},

@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
+	"golang.org/x/tools/txtar"
+
 	"github.com/rprtr258/assert"
 	"github.com/rprtr258/assert/internal/ass"
-
-	"golang.org/x/tools/txtar"
 )
 
 // TestExample exercises power-assert diagram rendering. Every assertion below
@@ -24,6 +24,8 @@ import (
 //
 //	ASSERT_UPDATE_SNAPSHOT=1 go test ./...
 func TestExample(t *testing.T) {
+	t.Parallel()
+
 	assert.SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZSnapshot = true
 	assert.SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__.ZZZCapturedSnapshots = nil
 

@@ -132,7 +132,7 @@ func UsePanic(t T, f func()) (res any) {
 		}
 	}()
 	f()
-	return
+	return res
 }
 
 func UseTcpPort(t T, address string) int {

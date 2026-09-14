@@ -13,6 +13,8 @@ import (
 // arg able to extract the text of the arguments passed to q.Q().
 // For example, q.Q(myVar) should return "myVar".
 func TestExtractingArgsFromSourceText(t *testing.T) {
+	t.Parallel()
+
 	for _, test := range []struct {
 		arg  ast.Expr
 		want string
@@ -327,6 +329,8 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("exprToString(%T)", test.arg), func(t *testing.T) {
+			t.Parallel()
+
 			if _, ok := test.arg.(*ast.Ident); ok {
 				return
 			}
@@ -335,6 +339,8 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 		})
 
 		t.Run(fmt.Sprintf("argName(%T)", test.arg), func(t *testing.T) {
+			t.Parallel()
+
 			ass.Equal(t, test.want, argName(test.arg))
 		})
 	}
@@ -344,6 +350,8 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 // sample text and extract the argument names. For example, if q.q(a, b, c) is
 // in the sample text, argNames() should return []string{"a", "b", "c"}.
 func TestArgNames(t *testing.T) {
+	t.Parallel()
+
 	const filename = "./cmd/main.go"
 	got, ok := argNames(filename, 24, "main", "dump")
 	ass.True(t, ok)
@@ -361,11 +369,15 @@ func TestArgNames(t *testing.T) {
 }
 
 func TestArgNamesBadFilename(t *testing.T) {
+	t.Parallel()
+
 	_, ok := argNames("BAD FILENAME", 0, "", "")
 	ass.False(t, ok)
 }
 
 func TestIsQCall(t *testing.T) {
+	t.Parallel()
+
 	for id, test := range map[int]struct {
 		expr *ast.CallExpr
 		want bool
@@ -414,6 +426,7 @@ func TestIsQCall(t *testing.T) {
 		},
 	} {
 		t.Run(fmt.Sprintf("TEST %d", id), func(t *testing.T) {
+			t.Parallel()
 			ass.Equal(t, test.want, isFuncCall(test.expr, "q", "Q"))
 		})
 	}
