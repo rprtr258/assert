@@ -48,6 +48,7 @@ func Contains[T any](t *testing.T, elem T, collection ...T) {
 			return
 		}
 	}
+
 	t.Errorf("Not contains\nElement: %v\nCollection: %v", elem, collection)
 }
 

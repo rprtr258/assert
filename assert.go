@@ -35,8 +35,10 @@ func mapJoin[T any](seq iter.Seq[T], toString func(T) string, sep string) string
 		if sb.Len() > 0 {
 			sb.WriteString(sep)
 		}
+
 		sb.WriteString(toString(v))
 	}
+
 	return sb.String()
 }
 
@@ -58,6 +60,7 @@ func isTest(name string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -92,6 +95,7 @@ func callerInfo() iter.Seq[caller] {
 			if f == nil {
 				break
 			}
+
 			name := f.Name()
 
 			// testing.tRunner is the standard library function that calls
@@ -104,6 +108,7 @@ func callerInfo() iter.Seq[caller] {
 			}
 
 			parts := strings.Split(file, "/")
+
 			file = parts[len(parts)-1]
 			if len(parts) > 1 {
 				dir := parts[len(parts)-2]
@@ -117,6 +122,7 @@ func callerInfo() iter.Seq[caller] {
 
 			// Drop the package
 			segments := strings.Split(name, ".")
+
 			name = segments[len(segments)-1]
 			if isTest(name) {
 				break
@@ -131,6 +137,7 @@ type labeledContent struct {
 
 func Equal[E any](t T, expected, actual E) {
 	t.Helper()
+
 	if reflect.DeepEqual(expected, actual) {
 		return
 	}
@@ -171,7 +178,9 @@ func Equal[E any](t T, expected, actual E) {
 				}
 
 				comment := fun.Ternary(line.comment != "", ", "+line.comment, "")
-				return scuf.String(expectedName+line.selector, _fgExpected) + " != " + scuf.String(actualName+line.selector, _fgActual) + comment + ":\n" +
+
+				return scuf.String(expectedName+line.selector, _fgExpected) + " != " +
+					scuf.String(actualName+line.selector, _fgActual) + comment + ":\n" +
 					"\t" + expectedStr + " !=\n" +
 					"\t" + actualStr
 			}, "\n\n"),
@@ -187,6 +196,7 @@ func fail(t T, lines []labeledContent) {
 		mapJoin(callerInfo(), func(v caller) string {
 			j := strings.LastIndexByte(v.funcName, '/')
 			shortFuncName := v.funcName[j+1:]
+
 			return scuf.String(v.file, scuf.FgHiWhite) +
 				":" +
 				scuf.String(strconv.Itoa(v.line), scuf.FgGreen) +
@@ -204,6 +214,7 @@ func fail(t T, lines []labeledContent) {
 
 func NotEqual[E any](t T, expected, actual E) {
 	t.Helper()
+
 	if !reflect.DeepEqual(expected, actual) {
 		return
 	}
@@ -227,6 +238,7 @@ func NotEqual[E any](t T, expected, actual E) {
 
 func Zero[E any](t T, actual E) {
 	t.Helper()
+
 	var zero E
 	if reflect.DeepEqual(zero, actual) {
 		return
@@ -268,7 +280,9 @@ func Zero[E any](t T, actual E) {
 				}
 
 				comment := fun.Ternary(line.comment == "", "", ", "+line.comment)
-				return scuf.String(expectedName+line.selector, _fgExpected) + " != " + scuf.String(actualName+line.selector, _fgActual) + comment + ":\n" +
+
+				return scuf.String(expectedName+line.selector, _fgExpected) + " != " +
+					scuf.String(actualName+line.selector, _fgActual) + comment + ":\n" +
 					"\t" + expectedStr + " != " + actualStr
 			}, "\n\n"),
 		},
@@ -277,6 +291,7 @@ func Zero[E any](t T, actual E) {
 
 func NotZero[E any](t T, actual E) {
 	t.Helper()
+
 	var zero E
 	if !reflect.DeepEqual(zero, actual) {
 		return
@@ -295,6 +310,7 @@ func NotZero[E any](t T, actual E) {
 
 func True(t T, condition bool) {
 	t.Helper()
+
 	if condition {
 		return
 	}
@@ -312,6 +328,7 @@ func True(t T, condition bool) {
 
 func False(t T, condition bool) {
 	t.Helper()
+
 	if !condition {
 		return
 	}
@@ -329,6 +346,7 @@ func False(t T, condition bool) {
 
 func NoError(t T, err error) {
 	t.Helper()
+
 	if err == nil {
 		return
 	}
@@ -346,6 +364,7 @@ func NoError(t T, err error) {
 
 func SliceContains[E comparable](t T, slice []E, item E) {
 	t.Helper()
+
 	if slices.Contains(slice, item) {
 		return
 	}
@@ -365,6 +384,7 @@ func SliceContains[E comparable](t T, slice []E, item E) {
 
 func MapContainsValue[K, V comparable](t T, m map[K]V, item V) {
 	t.Helper()
+
 	for _, v := range m {
 		if v == item {
 			return
@@ -386,6 +406,7 @@ func MapContainsValue[K, V comparable](t T, m map[K]V, item V) {
 
 func MapContainsKey[K comparable, V any](t T, m map[K]V, item K) {
 	t.Helper()
+
 	for k := range m {
 		if k == item {
 			return
@@ -407,6 +428,7 @@ func MapContainsKey[K comparable, V any](t T, m map[K]V, item K) {
 
 func Substring(t T, text, substr string) {
 	t.Helper()
+
 	if strings.Contains(text, substr) {
 		return
 	}
@@ -456,8 +478,10 @@ func AssertWaitUntil(t T, f func() bool, cfg WaitUntilConfig) {
 
 	timeouter := time.NewTimer(cfg.Timeout)
 	defer timeouter.Stop()
+
 	ticker := time.NewTicker(cfg.CheckPeriod)
 	defer ticker.Stop()
+
 	for range cfg.Attempts {
 		if f() {
 			return

@@ -13,22 +13,16 @@ import (
 func TestFlatMap(t *testing.T) {
 	t.Parallel()
 
-	seq := FromMany(1, 2, 3)
+	seq := slices.Values([]int{1, 2, 3})
 	ass.Equal(t, []int{1, 1, 2, 4, 3, 9}, slices.Collect(FlatMap(seq, func(n int) iter.Seq[int] {
-		return FromMany(n, n*n)
+		return slices.Values([]int{n, n * n})
 	})))
-}
-
-func TestFromMany(t *testing.T) {
-	t.Parallel()
-
-	ass.Equal(t, []int{1, 2, 3}, slices.Collect(FromMany(1, 2, 3)))
 }
 
 func TestMap(t *testing.T) {
 	t.Parallel()
 
-	seq := FromMany(1, 2, 3)
+	seq := slices.Values([]int{1, 2, 3})
 	ass.Equal(t, []int{1, 4, 9}, slices.Collect(Map(seq, func(n int) int {
 		return n * n
 	})))

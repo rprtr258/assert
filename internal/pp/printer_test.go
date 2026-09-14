@@ -29,6 +29,7 @@ var _expectedByObject = func() map[string]string {
 		data := file.Data[:len(file.Data)-1]
 		tests[file.Name] = string(data)
 	}
+
 	return tests
 }()
 
@@ -83,6 +84,7 @@ type Circular struct {
 var c = func() Circular {
 	res := Circular{}
 	res.C = &res
+
 	return res
 }()
 
@@ -94,6 +96,7 @@ var (
 		if !ok {
 			panic("failed to set bigInt")
 		}
+
 		return res
 	}()
 	bigFloat = func() *big.Float {
@@ -101,6 +104,7 @@ var (
 		if err != nil {
 			panic(err.Error())
 		}
+
 		return res
 	}()
 	_MSK = func() *time.Location {
@@ -108,6 +112,7 @@ var (
 		if err != nil {
 			panic(err.Error())
 		}
+
 		return res
 	}()
 )
@@ -157,7 +162,12 @@ func TestFormat(t *testing.T) {
 		Private{b: false, i: 1, u: 2, f: 2.22, c: complex(5, 6)},
 		map[string]int{"hell": 23, "world": 34},
 		map[string]map[string]string{"s1": {"v1": "m1", "va1": "me1"}, "si2": {"v2": "m2"}},
-		Foo{Bar: 1, Hoge: "a", Hello: map[string]string{"hel": "world", "a": "b"}, HogeHoges: []HogeHoge{{Hell: "a", World: 1}, {Hell: "bbb", World: 100}}},
+		Foo{
+			Bar:       1,
+			Hoge:      "a",
+			Hello:     map[string]string{"hel": "world", "a": "b"},
+			HogeHoges: []HogeHoge{{Hell: "a", World: 1}, {Hell: "bbb", World: 100}},
+		},
 		[3]int{},
 		[]string{"aaa", "bbb", "ccc"},
 		&HogeHoge{},
@@ -169,7 +179,11 @@ func TestFormat(t *testing.T) {
 		"日本\t語\n\000\U00101234a",
 		bigInt,
 		&tm,
-		&User{Name: "k0kubun", CreatedAt: time.Date(2024, 4, 13, 9, 36, 49, 0, time.UTC), UpdatedAt: time.Date(2024, 4, 13, 9, 36, 49, 0, _MSK)},
+		&User{
+			Name:      "k0kubun",
+			CreatedAt: time.Date(2024, 4, 13, 9, 36, 49, 0, time.UTC),
+			UpdatedAt: time.Date(2024, 4, 13, 9, 36, 49, 0, _MSK),
+		},
 		// TODO: flaky, depends on PRINTING HUGE BIG FLOAT AS JUST FUCKING 3.14
 		// bigFloat,
 		// TODO: flaky, depends on allocated address
@@ -199,6 +213,7 @@ func TestFormat(t *testing.T) {
 		// make(chan bool, 10),
 		// unsafe.Pointer(&regexp.Regexp{}),
 	}
+
 	keys := make(map[string]struct{}, len(tests))
 	for _, object := range tests {
 		name := fmt.Sprintf("%#v", object)

@@ -43,6 +43,7 @@ func TestExample(t *testing.T) {
 		for i := 2; i <= n; i++ {
 			res *= i
 		}
+
 		return res
 	}
 	assert.Assert(t, factorial(5) == 60)
@@ -81,7 +82,10 @@ func TestExample(t *testing.T) {
 				Data: []byte(diagram + "\n"),
 			}
 		}
-		ass.NoError(t, os.WriteFile(goldenPath, txtar.Format(&txtar.Archive{Files: files}), 0o644))
+
+		txtarData := txtar.Format(&txtar.Archive{Files: files})
+		ass.NoError(t, os.WriteFile(goldenPath, txtarData, 0o600)) //nolint:gosec // path is derived from test names
+
 		return
 	}
 

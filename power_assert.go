@@ -8,18 +8,20 @@ import (
 // TODO: fuse once
 func fuse(tb testing.TB) {
 	tb.Helper()
+
 	if err := run(); err != nil {
 		log.Fatalln(err.Error())
 	}
+
 	tb.SkipNow()
 }
 
-func Assert(tb testing.TB, cond bool) {
+func Assert(tb testing.TB, _ bool) {
 	tb.Helper()
 	fuse(tb)
 }
 
-func Require(tb testing.TB, cond bool) {
+func Require(tb testing.TB, _ bool) {
 	tb.Helper()
 	fuse(tb)
 }

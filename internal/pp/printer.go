@@ -1,4 +1,5 @@
 // The actual pretty print implementation. Everything in this file should be private.
+
 package pp
 
 import (
@@ -22,7 +23,10 @@ import (
 const indentWidth = 2
 
 func (pp *PrettyPrinter) format(object any) string {
-	return newPrinter(object, &pp.currentScheme, pp.maxDepth, pp.ColoringEnabled, pp.DecimalUint, pp.ExportedOnly, pp.ThousandsSeparator).String()
+	return newPrinter(
+		object, &pp.currentScheme, pp.maxDepth, pp.ColoringEnabled,
+		pp.DecimalUint, pp.ExportedOnly, pp.ThousandsSeparator,
+	).String()
 }
 
 func newPrinter(
@@ -58,6 +62,7 @@ func newPrinter(
 
 type printer struct {
 	*bytes.Buffer
+
 	tw                 *tabwriter.Writer
 	depth              int
 	maxDepth           int
@@ -95,7 +100,7 @@ func (p *printer) String() string {
 		p.printf("(%s)(%s)", p.colorizeType(p.value.Type()), p.pointerAddr())
 	case reflect.Interface:
 		p.printInterface()
-	case reflect.Ptr:
+	case reflect.Pointer:
 		p.printPtr()
 	case reflect.Func:
 		p.print(p.colorizeType(p.value.Type()) + " {...}")
@@ -108,6 +113,7 @@ func (p *printer) String() string {
 	}
 
 	p.tw.Flush()
+
 	return p.Buffer.String()
 }
 
@@ -140,6 +146,7 @@ func (p *printer) printString() {
 	quoted = quoted[1 : len(quoted)-1]
 
 	p.colorPrint(`"`, p.currentScheme.StringQuotation)
+
 	for quoted != "" {
 		pos := strings.IndexByte(quoted, '\\')
 		if pos == -1 {
@@ -147,11 +154,13 @@ func (p *printer) printString() {
 
 			break
 		}
+
 		if pos != 0 {
 			p.colorPrint(quoted[0:pos], p.currentScheme.String)
 		}
 
 		n := 1
+
 		switch quoted[pos+1] {
 		case 'x': // "\x00"
 			n = 3
@@ -162,9 +171,11 @@ func (p *printer) printString() {
 		case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9': // "\000"
 			n = 3
 		}
+
 		p.colorPrint(quoted[pos:pos+n+1], p.currentScheme.EscapedChar)
 		quoted = quoted[pos+n+1:]
 	}
+
 	p.colorPrint(`"`, p.currentScheme.StringQuotation)
 }
 
@@ -178,6 +189,7 @@ func (p *printer) printMap() {
 		p.print(p.colorizeType(p.value.Type()) + "{...}")
 		return
 	}
+
 	p.visited[p.value.Pointer()] = true
 
 	if PrintMapTypes {
@@ -185,6 +197,7 @@ func (p *printer) printMap() {
 	} else {
 		p.println("{")
 	}
+
 	p.indented(func() {
 		value := sortMap(p.value)
 		for i := range value.Len() {
@@ -204,15 +217,28 @@ func (p *printer) printStruct() {
 	if p.value.CanInterface() {
 		switch {
 		case typ.String() == "time.Time" && typ.PkgPath() == "time":
-			p.printTime()
+			tm, _ := reflect.TypeAssert[time.Time](p.value)
+			p.printf(
+				"%s-%s-%s %s:%s:%s %s",
+				p.colorize(strconv.Itoa(tm.Year()), p.currentScheme.Time),
+				p.colorize(fmt.Sprintf("%02d", tm.Month()), p.currentScheme.Time),
+				p.colorize(fmt.Sprintf("%02d", tm.Day()), p.currentScheme.Time),
+				p.colorize(fmt.Sprintf("%02d", tm.Hour()), p.currentScheme.Time),
+				p.colorize(fmt.Sprintf("%02d", tm.Minute()), p.currentScheme.Time),
+				p.colorize(fmt.Sprintf("%02d", tm.Second()), p.currentScheme.Time),
+				p.colorize(tm.Location().String(), p.currentScheme.Time),
+			)
+
 			return
 		case typ.String() == "big.Int":
-			bigInt := p.value.Interface().(big.Int)
+			bigInt, _ := reflect.TypeAssert[big.Int](p.value)
 			p.print(p.colorize(bigInt.String(), p.currentScheme.Integer))
+
 			return
 		case typ.String() == "big.Float":
-			bigFloat := p.value.Interface().(big.Float)
+			bigFloat, _ := reflect.TypeAssert[big.Float](p.value)
 			p.print(p.colorize(bigFloat.String(), p.currentScheme.Float))
+
 			return
 		}
 	}
@@ -231,12 +257,15 @@ func (p *printer) printStruct() {
 			if len(parts) == 2 && parts[1] == "omitempty" && valueIsZero(p.value.Field(i)) {
 				continue
 			}
+
 			if parts[0] == "-" {
 				continue
 			}
 		}
+
 		fields = append(fields, i)
 	}
+
 	if len(fields) == 0 {
 		p.print(p.colorizeType(p.value.Type()) + "{}")
 		return
@@ -265,20 +294,6 @@ func (p *printer) printStruct() {
 	p.indentPrint("}")
 }
 
-func (p *printer) printTime() {
-	tm := p.value.Interface().(time.Time)
-	p.printf(
-		"%s-%s-%s %s:%s:%s %s",
-		p.colorize(strconv.Itoa(tm.Year()), p.currentScheme.Time),
-		p.colorize(fmt.Sprintf("%02d", tm.Month()), p.currentScheme.Time),
-		p.colorize(fmt.Sprintf("%02d", tm.Day()), p.currentScheme.Time),
-		p.colorize(fmt.Sprintf("%02d", tm.Hour()), p.currentScheme.Time),
-		p.colorize(fmt.Sprintf("%02d", tm.Minute()), p.currentScheme.Time),
-		p.colorize(fmt.Sprintf("%02d", tm.Second()), p.currentScheme.Time),
-		p.colorize(tm.Location().String(), p.currentScheme.Time),
-	)
-}
-
 func (p *printer) printSlice() {
 	if p.value.IsNil() {
 		p.print(p.colorizeType(p.value.Type()) + "(" + p.nil() + ")")
@@ -300,6 +315,7 @@ func (p *printer) printArray() {
 			p.print(p.colorizeType(p.value.Type()) + "{...}")
 			return
 		}
+
 		p.visited[p.value.Pointer()] = true
 	}
 
@@ -312,6 +328,7 @@ func (p *printer) printArray() {
 	p.println(p.colorizeType(p.value.Type()) + "{")
 	p.indented(func() {
 		var groupsize int
+
 		switch p.value.Type().Elem().Kind() {
 		case reflect.Uint8:
 			groupsize = 16
@@ -319,18 +336,23 @@ func (p *printer) printArray() {
 			groupsize = 8
 		case reflect.Uint64:
 			groupsize = 4
+		default:
+			// no grouping for other kinds
 		}
 
 		if groupsize > 0 {
 			// TODO: iter by batches
 			for i := 0; i < p.value.Len(); i += groupsize {
 				p.print(p.indent())
+
 				for j := 0; j < groupsize && i+j < p.value.Len(); j++ {
 					p.print(p.format(p.value.Index(i+j)) + ",")
+
 					if j+1 < groupsize && i+j+1 < p.value.Len() {
 						p.print(" ")
 					}
 				}
+
 				p.print("\n")
 			}
 		} else {
@@ -358,6 +380,7 @@ func (p *printer) printPtr() {
 		p.printf("&%s{...}", p.colorizeType(p.value.Elem().Type()))
 		return
 	}
+
 	if p.value.Pointer() != 0 {
 		p.visited[p.value.Pointer()] = true
 	}
@@ -400,6 +423,7 @@ func (p *printer) colorizeType(typ reflect.Type) string {
 	} else {
 		typeStr = p.colorize(typeStr, p.currentScheme.StructName)
 	}
+
 	return prefix + typeStr
 }
 
@@ -408,6 +432,7 @@ func (p *printer) indented(proc func()) {
 	if p.maxDepth == -1 || p.depth <= p.maxDepth {
 		proc()
 	}
+
 	p.depth--
 }
 
@@ -473,6 +498,7 @@ func (p *printer) colorize(text string, mod scuf.Mod) string {
 	if !p.coloringEnabled {
 		return text
 	}
+
 	return scuf.String(text, mod)
 }
 
@@ -487,10 +513,12 @@ func (p *printer) format(object any) string {
 		p.thousandsSeparator,
 	)
 	pp.depth = p.depth
+
 	pp.visited = p.visited
 	if value, ok := object.(reflect.Value); ok {
 		pp.value = value
 	}
+
 	return pp.String()
 }
 
@@ -500,7 +528,8 @@ func (p *printer) indent() string {
 
 // valueIsZero reports whether v is the zero value for its type.
 // It returns false if the argument is invalid.
-// This is a copy paste of reflect#IsZero from go1.15. It is not present before go1.13 (source: https://golang.org/doc/go1.13#library)
+// This is a copy paste of reflect#IsZero from go1.15.
+// It is not present before go1.13 (source: https://golang.org/doc/go1.13#library)
 // source: https://golang.org/src/reflect/value.go?s=34297:34325#L1090
 // This will need to be updated for new types or the decision should be made to drop support for Go version pre go1.13
 func valueIsZero(v reflect.Value) bool {
@@ -522,17 +551,20 @@ func valueIsZero(v reflect.Value) bool {
 				return false
 			}
 		}
+
 		return true
-	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map, reflect.Ptr, reflect.Slice, reflect.UnsafePointer:
+	case reflect.Chan, reflect.Func, reflect.Interface, reflect.Map,
+		reflect.Pointer, reflect.Slice, reflect.UnsafePointer:
 		return v.IsNil()
 	case reflect.String:
 		return v.Len() == 0
 	case reflect.Struct:
-		for i := range v.NumField() {
-			if !valueIsZero(v.Field(i)) {
+		for _, field := range v.Fields() {
+			if !valueIsZero(field) {
 				return false
 			}
 		}
+
 		return true
 	default:
 		// this is the only difference between stdlib reflect#IsZero and this function. We're not going to

@@ -24,7 +24,7 @@ func TestDiffImpl(t *testing.T) {
 		{expected: "b", actual: "e", selector: ".pass.Payload"},
 		{expected: "c", actual: "f", selector: ".pass.salt"},
 	}
-	actual := slices.Collect(diffImpl("",
+	actual := slices.Collect(diff(
 		User{"a", Pass{"b", "c"}},
 		User{"d", Pass{"e", "f"}},
 	))

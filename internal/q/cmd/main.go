@@ -21,6 +21,7 @@ func dump(
 func main() {
 	e := []int{1, 2, 3}
 
+	//nolint:forbidigo
 	fmt.Println(dump(
 		123,
 		"hello world",

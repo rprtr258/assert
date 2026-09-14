@@ -10,44 +10,47 @@ import (
 
 func TestDefaultOutput(t *testing.T) {
 	testOutput := &bytes.Buffer{}
-	init := GetDefaultOutput()
-	SetDefaultOutput(testOutput)
-	ass.Equal[io.Writer](t, testOutput, GetDefaultOutput())
+	init := Default.GetOutput()
+	Default.SetOutput(testOutput)
+	ass.Equal[io.Writer](t, testOutput, Default.GetOutput())
 	ass.Equal(t, "", testOutput.String())
-	Print("abcde")
+	Default.Print("abcde")
 	ass.NotEqual(t, "", testOutput.String())
-	ass.NotEqual(t, init, GetDefaultOutput())
-	ResetDefaultOutput()
-	ass.Equal(t, init, GetDefaultOutput())
+	ass.NotEqual(t, init, Default.GetOutput())
+	Default.ResetOutput()
+	ass.Equal(t, init, Default.GetOutput())
 }
 
 func TestColorScheme(t *testing.T) {
-	SetColorScheme(ColorScheme{})
+	Default.currentScheme = defaultScheme
 	ass.NotEqual(t, 0, len(Default.currentScheme.FieldName))
 }
 
 func TestWithLineInfo(t *testing.T) {
 	outputWithoutLineInfo := &bytes.Buffer{}
-	SetDefaultOutput(outputWithoutLineInfo)
-	Print("abcde")
+	Default.SetOutput(outputWithoutLineInfo)
+	Default.Print("abcde")
 
 	outputWithLineInfo := &bytes.Buffer{}
-	SetDefaultOutput(outputWithLineInfo)
-	WithLineInfo = true
-	Print("abcde")
+	Default.SetOutput(outputWithLineInfo)
 
-	ResetDefaultOutput()
+	WithLineInfo = true
+
+	Default.Print("abcde")
+
+	Default.ResetOutput()
 
 	ass.NotEqual(t, outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes())
 }
 
 func TestWithLineInfoBackwardsCompatible(t *testing.T) {
 	// Test that the global accessible field `WithLineInfo` does not mutate other instances
-
 	outputWithLineInfo := &bytes.Buffer{}
-	SetDefaultOutput(outputWithLineInfo)
+	Default.SetOutput(outputWithLineInfo)
+
 	WithLineInfo = true
-	Print("abcde")
+
+	Default.Print("abcde")
 
 	outputWithoutLineInfo := &bytes.Buffer{}
 	pp := New()
@@ -56,7 +59,7 @@ func TestWithLineInfoBackwardsCompatible(t *testing.T) {
 
 	ass.NotEqual(t, outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes())
 
-	ResetDefaultOutput()
+	Default.ResetOutput()
 }
 
 func TestStructPrintingWithTags(t *testing.T) {

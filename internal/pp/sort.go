@@ -1,4 +1,5 @@
 // Implementation for sorting map keys
+
 package pp
 
 import (
@@ -39,10 +40,11 @@ func (s *sortedMap) Less(i, j int) bool {
 		if a.Float() != a.Float() || b.Float() != b.Float() {
 			return false // NaN
 		}
+
 		return a.Float() < b.Float()
 	case reflect.Bool:
 		return !a.Bool() && b.Bool()
-	case reflect.Ptr:
+	case reflect.Pointer:
 		return a.Pointer() < b.Pointer()
 	case reflect.Struct:
 		return a.NumField() < b.NumField()
@@ -70,5 +72,6 @@ func sortMap(value reflect.Value) *sortedMap {
 		values: values,
 	}
 	sort.Stable(sorted)
+
 	return sorted
 }

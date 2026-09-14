@@ -75,15 +75,16 @@ func isFuncCall(n *ast.CallExpr, pkgName, funcName string) bool {
 // argNames returns an error if the source text cannot be parsed.
 func argNames(filename string, line int, pkgName, funcName string) ([]string, bool) {
 	fset := token.NewFileSet()
+
 	f, err := parser.ParseFile(fset, filename, nil, 0)
 	if err != nil {
 		return nil, false
 	}
 
 	var names []string
+
 	ast.Inspect(f, func(n ast.Node) bool {
-		switch call := n.(type) {
-		case *ast.CallExpr:
+		if call, ok := n.(*ast.CallExpr); ok {
 			if fset.Position(call.Pos()).Line == line && isFuncCall(call, pkgName, funcName) {
 				for _, arg := range call.Args {
 					names = append(names, argName(arg))
@@ -93,14 +94,14 @@ func argNames(filename string, line int, pkgName, funcName string) ([]string, bo
 
 		return true
 	})
+
 	return names, true
 }
 
-// assert.* -> Q >> runtime.Caller
+// CallDepth for: assert.* -> Q -> runtime.Caller
 const CallDepth = 2
 
-// TODO: check not pkgName, but full package name, as it might be aliased
-func Q(pkgName, funcName string) []string {
+func Q(pkgName, funcName string) []string { // TODO: check not pkgName, but full package name, as it might be aliased
 	_, file, line, ok := runtime.Caller(CallDepth)
 	if !ok {
 		return nil

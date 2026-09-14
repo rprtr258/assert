@@ -3,7 +3,6 @@ package q
 import (
 	"fmt"
 	"go/ast"
-	"go/token"
 	"testing"
 
 	"github.com/rprtr258/assert/internal/ass"
@@ -67,58 +66,7 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 				Fun: &ast.Ident{
 					NamePos: 30,
 					Name:    "foo",
-					Obj: &ast.Object{
-						Kind: ast.Fun,
-						Name: "foo",
-						Decl: &ast.FuncDecl{
-							Doc:  nil,
-							Recv: nil,
-							Name: &ast.Ident{
-								NamePos: 44,
-								Name:    "foo",
-								Obj:     &ast.Object{},
-							},
-							Type: &ast.FuncType{
-								Func: 39,
-								Params: &ast.FieldList{
-									Opening: 47,
-									List:    nil,
-									Closing: 48,
-								},
-								Results: &ast.FieldList{
-									Opening: 0,
-									List: []*ast.Field{
-										{
-											Doc:   nil,
-											Names: nil,
-											Type: &ast.Ident{
-												NamePos: 50,
-												Name:    "int",
-												Obj:     nil,
-											},
-											Tag:     nil,
-											Comment: nil,
-										},
-									},
-									Closing: 0,
-								},
-							},
-							Body: &ast.BlockStmt{
-								Lbrace: 54,
-								List: []ast.Stmt{
-									&ast.ReturnStmt{
-										Return: 57,
-										Results: []ast.Expr{
-											&ast.BasicLit{ValuePos: 64, Kind: token.INT, Value: "123"},
-										},
-									},
-								},
-								Rbrace: 68,
-							},
-						},
-						Data: nil,
-						Type: nil,
-					},
+					Obj:     ast.NewObj(ast.Fun, "foo"),
 				},
 				Lparen:   33,
 				Args:     nil,
@@ -132,43 +80,7 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 				X: &ast.Ident{
 					NamePos: 51,
 					Name:    "a",
-					Obj: &ast.Object{
-						Kind: 4,
-						Name: "a",
-						Decl: &ast.AssignStmt{
-							Lhs: []ast.Expr{
-								&ast.Ident{
-									NamePos: 30,
-									Name:    "a",
-									Obj:     &ast.Object{},
-								},
-							},
-							TokPos: 32,
-							Tok:    47,
-							Rhs: []ast.Expr{
-								&ast.CompositeLit{
-									Type: &ast.ArrayType{
-										Lbrack: 35,
-										Len:    nil,
-										Elt: &ast.Ident{
-											NamePos: 37,
-											Name:    "int",
-											Obj:     nil,
-										},
-									},
-									Lbrace: 40,
-									Elts: []ast.Expr{
-										&ast.BasicLit{ValuePos: 41, Kind: 5, Value: "1"},
-										&ast.BasicLit{ValuePos: 44, Kind: 5, Value: "2"},
-										&ast.BasicLit{ValuePos: 47, Kind: 5, Value: "3"},
-									},
-									Rbrace: 48,
-								},
-							},
-						},
-						Data: nil,
-						Type: nil,
-					},
+					Obj:     ast.NewObj(ast.Var, "a"),
 				},
 				Lbrack: 52,
 				Index:  &ast.BasicLit{ValuePos: 53, Kind: 5, Value: "1"},
@@ -221,43 +133,7 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 				X: &ast.Ident{
 					NamePos: 51,
 					Name:    "a",
-					Obj: &ast.Object{
-						Kind: 4,
-						Name: "a",
-						Decl: &ast.AssignStmt{
-							Lhs: []ast.Expr{
-								&ast.Ident{
-									NamePos: 30,
-									Name:    "a",
-									Obj:     &ast.Object{},
-								},
-							},
-							TokPos: 32,
-							Tok:    47,
-							Rhs: []ast.Expr{
-								&ast.CompositeLit{
-									Type: &ast.ArrayType{
-										Lbrack: 35,
-										Len:    nil,
-										Elt: &ast.Ident{
-											NamePos: 37,
-											Name:    "int",
-											Obj:     (*ast.Object)(nil),
-										},
-									},
-									Lbrace: 40,
-									Elts: []ast.Expr{
-										&ast.BasicLit{ValuePos: 41, Kind: 5, Value: "1"},
-										&ast.BasicLit{ValuePos: 44, Kind: 5, Value: "2"},
-										&ast.BasicLit{ValuePos: 47, Kind: 5, Value: "3"},
-									},
-									Rbrace: 48,
-								},
-							},
-						},
-						Data: nil,
-						Type: nil,
-					},
+					Obj:     ast.NewObj(ast.Var, "a"),
 				},
 				Lbrack: 52,
 				Low:    &ast.BasicLit{ValuePos: 53, Kind: 5, Value: "0"},
@@ -273,33 +149,7 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 				X: &ast.Ident{
 					NamePos: 62,
 					Name:    "a",
-					Obj: &ast.Object{
-						Kind: 4,
-						Name: "a",
-						Decl: &ast.ValueSpec{
-							Doc: nil,
-							Names: []*ast.Ident{
-								{
-									NamePos: 34,
-									Name:    "a",
-									Obj:     &ast.Object{},
-								},
-							},
-							Type: &ast.InterfaceType{
-								Interface: 36,
-								Methods: &ast.FieldList{
-									Opening: 45,
-									List:    nil,
-									Closing: 46,
-								},
-								Incomplete: false,
-							},
-							Values:  nil,
-							Comment: nil,
-						},
-						Data: int(0),
-						Type: nil,
-					},
+					Obj:     ast.NewObj(ast.Var, "a"),
 				},
 				Lparen: 64,
 				Type: &ast.Ident{
@@ -352,8 +202,7 @@ func TestExtractingArgsFromSourceText(t *testing.T) {
 func TestArgNames(t *testing.T) {
 	t.Parallel()
 
-	const filename = "./cmd/main.go"
-	got, ok := argNames(filename, 24, "main", "dump")
+	got, ok := argNames("./cmd/main.go", 25, "main", "dump")
 	ass.True(t, ok)
 	ass.Equal(t, []string{
 		`123`,
