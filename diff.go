@@ -153,7 +153,8 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 						eval.Index(i).Interface(),
 						aval.Index(i).Interface(),
 					)
-				})
+				},
+			)
 		case reflect.Array:
 			lenExpected := etype.Len()
 			lenActual := atype.Len()
@@ -174,7 +175,8 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 						eval.Index(i).Interface(),
 						aval.Index(i).Interface(),
 					)
-				})
+				},
+			)
 		case reflect.Struct:
 			fields := etype.NumField()
 			return fun.FlatMap(
@@ -191,7 +193,8 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 						ee,
 						aa,
 					)
-				})
+				},
+			)
 		case reflect.Map:
 			expectedKeys := map[any]struct{}{}
 			for _, k := range eval.MapKeys() {
@@ -229,7 +232,8 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 							eval.MapIndex(reflect.ValueOf(k)),
 							aval.MapIndex(reflect.ValueOf(k)),
 						)
-					})(yield)
+					},
+				)(yield)
 				fun.Map(
 					maps.Keys(expectedOnlyKeys),
 					func(k any) diffLine {
@@ -239,7 +243,8 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 							expected: eval.MapIndex(reflect.ValueOf(k)).Interface(),
 							actual:   nil,
 						}
-					})(yield)
+					},
+				)(yield)
 				fun.Map(
 					maps.Keys(actualOnlyKeys),
 					func(k any) diffLine {
@@ -249,7 +254,8 @@ func diffImpl(selectorPrefix string, expected, actual any) iter.Seq[diffLine] {
 							expected: nil,
 							actual:   aval.MapIndex(reflect.ValueOf(k)).Interface(),
 						}
-					})(yield)
+					},
+				)(yield)
 			}
 		case reflect.Interface:
 			if expected == nil && actual == nil {

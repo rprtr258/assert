@@ -42,7 +42,7 @@ type shit struct {
 	ZZZSnapshot          bool
 	ZZZCapturedSnapshots []string
 
-	ZZZNew     func(exprStr string) *assertData
+	ZZZNew func(exprStr string) *assertData
 }
 
 var SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED__ = shit{
@@ -266,6 +266,9 @@ func getModuleDir() (string, error) {
 
 func run() error {
 	moduleDir, err := getModuleDir()
+	if err != nil {
+		return fmt.Errorf("get module dir: %w", err)
+	}
 	debugf("module dir %s", moduleDir)
 
 	tmpDir, err := os.MkdirTemp("", "assert.*")

@@ -11,26 +11,32 @@ import (
 )
 
 func TestFlatMap(t *testing.T) {
-	seq := FromMany(1, 2, 3)
+	t.Parallel()
 
+	seq := FromMany(1, 2, 3)
 	ass.Equal(t, []int{1, 1, 2, 4, 3, 9}, slices.Collect(FlatMap(seq, func(n int) iter.Seq[int] {
 		return FromMany(n, n*n)
 	})))
 }
 
 func TestFromMany(t *testing.T) {
+	t.Parallel()
+
 	ass.Equal(t, []int{1, 2, 3}, slices.Collect(FromMany(1, 2, 3)))
 }
 
 func TestMap(t *testing.T) {
-	seq := FromMany(1, 2, 3)
+	t.Parallel()
 
+	seq := FromMany(1, 2, 3)
 	ass.Equal(t, []int{1, 4, 9}, slices.Collect(Map(seq, func(n int) int {
 		return n * n
 	})))
 }
 
 func TestFromDictKeys(t *testing.T) {
+	t.Parallel()
+
 	dict := map[string]int{"one": 1, "two": 2}
 	actual := slices.Collect(maps.Keys(dict))
 	sort.Strings(actual)
@@ -38,6 +44,8 @@ func TestFromDictKeys(t *testing.T) {
 }
 
 func TestFromRange(t *testing.T) {
+	t.Parallel()
+
 	ass.Equal(t, []int{1, 2, 3}, slices.Collect(FromRange(1, 4)))
 }
 
