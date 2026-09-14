@@ -14,47 +14,58 @@ import (
 	"text/tabwriter"
 	"time"
 
-	"golang.org/x/text/language"
 	"golang.org/x/text/message"
 
 	"github.com/rprtr258/assert/internal/scuf"
 )
 
-const indentWidth = 2
-
-func (pp *PrettyPrinter) format(object any) string {
-	return newPrinter(
-		object, &pp.currentScheme, pp.maxDepth, pp.ColoringEnabled,
-		pp.DecimalUint, pp.ExportedOnly, pp.ThousandsSeparator,
-	).String()
+type ColorScheme struct {
+	Bool            string
+	Integer         string
+	Float           string
+	String          string
+	StringQuotation string
+	EscapedChar     string
+	FieldName       string
+	PointerAdress   string
+	Nil             string
+	Time            string
+	StructName      string
+	ObjectLength    string
 }
 
-func newPrinter(
-	object any,
-	currentScheme *ColorScheme,
-	maxDepth int,
-	coloringEnabled, decimalUint, exportedOnly, thousandsSeparator bool,
-) *printer {
+var scheme = ColorScheme{
+	Bool:            scuf.FgCyan + ";" + scuf.ModBold,
+	Integer:         scuf.FgBlue + ";" + scuf.ModBold,
+	Float:           scuf.FgMagenta + ";" + scuf.ModBold,
+	String:          scuf.FgRed,
+	StringQuotation: scuf.FgRed + ";" + scuf.ModBold,
+	EscapedChar:     scuf.FgMagenta + ";" + scuf.ModBold,
+	FieldName:       scuf.FgYellow,
+	PointerAdress:   scuf.FgBlue + ";" + scuf.ModBold,
+	Nil:             scuf.FgCyan + ";" + scuf.ModBold,
+	Time:            scuf.FgBlue + ";" + scuf.ModBold,
+	StructName:      scuf.FgGreen,
+	ObjectLength:    scuf.FgBlue,
+}
+
+func (pp *PrettyPrinter) format(object any) string {
+	return newPrinter(object).String()
+}
+
+const indentWidth = 2
+
+func newPrinter(object any) *printer {
 	buffer := &bytes.Buffer{}
 	tw := &tabwriter.Writer{}
 	tw.Init(buffer, indentWidth, 0, 1, ' ', 0)
 
 	printer := &printer{
-		Buffer:             buffer,
-		tw:                 tw,
-		depth:              0,
-		maxDepth:           maxDepth,
-		value:              reflect.ValueOf(object),
-		visited:            map[uintptr]bool{},
-		currentScheme:      currentScheme,
-		coloringEnabled:    coloringEnabled,
-		decimalUint:        decimalUint,
-		exportedOnly:       exportedOnly,
-		thousandsSeparator: thousandsSeparator,
-	}
-
-	if thousandsSeparator {
-		printer.localizedPrinter = message.NewPrinter(language.English)
+		Buffer:  buffer,
+		tw:      tw,
+		depth:   0,
+		value:   reflect.ValueOf(object),
+		visited: map[uintptr]bool{},
 	}
 
 	return printer
@@ -63,29 +74,23 @@ func newPrinter(
 type printer struct {
 	*bytes.Buffer
 
-	tw                 *tabwriter.Writer
-	depth              int
-	maxDepth           int
-	value              reflect.Value
-	visited            map[uintptr]bool
-	currentScheme      *ColorScheme
-	coloringEnabled    bool
-	decimalUint        bool
-	exportedOnly       bool
-	thousandsSeparator bool
-	localizedPrinter   *message.Printer
+	tw               *tabwriter.Writer
+	depth            int
+	value            reflect.Value
+	visited          map[uintptr]bool
+	localizedPrinter *message.Printer
 }
 
 func (p *printer) String() string {
 	switch p.value.Kind() {
 	case reflect.Bool:
-		p.colorPrint(p.raw(), p.currentScheme.Bool)
+		p.colorPrint(p.raw(), scheme.Bool)
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64,
 		reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64,
 		reflect.Uintptr, reflect.Complex64, reflect.Complex128:
-		p.colorPrint(p.raw(), p.currentScheme.Integer)
+		p.colorPrint(p.raw(), scheme.Integer)
 	case reflect.Float32, reflect.Float64:
-		p.colorPrint(p.raw(), p.currentScheme.Float)
+		p.colorPrint(p.raw(), scheme.Float)
 	case reflect.String:
 		p.printString()
 	case reflect.Map:
@@ -145,18 +150,18 @@ func (p *printer) printString() {
 	quoted := strconv.Quote(p.value.String())
 	quoted = quoted[1 : len(quoted)-1]
 
-	p.colorPrint(`"`, p.currentScheme.StringQuotation)
+	p.colorPrint(`"`, scheme.StringQuotation)
 
 	for quoted != "" {
 		pos := strings.IndexByte(quoted, '\\')
 		if pos == -1 {
-			p.colorPrint(quoted, p.currentScheme.String)
+			p.colorPrint(quoted, scheme.String)
 
 			break
 		}
 
 		if pos != 0 {
-			p.colorPrint(quoted[0:pos], p.currentScheme.String)
+			p.colorPrint(quoted[0:pos], scheme.String)
 		}
 
 		n := 1
@@ -172,11 +177,11 @@ func (p *printer) printString() {
 			n = 3
 		}
 
-		p.colorPrint(quoted[pos:pos+n+1], p.currentScheme.EscapedChar)
+		p.colorPrint(quoted[pos:pos+n+1], scheme.EscapedChar)
 		quoted = quoted[pos+n+1:]
 	}
 
-	p.colorPrint(`"`, p.currentScheme.StringQuotation)
+	p.colorPrint(`"`, scheme.StringQuotation)
 }
 
 func (p *printer) printMap() {
@@ -192,11 +197,7 @@ func (p *printer) printMap() {
 
 	p.visited[p.value.Pointer()] = true
 
-	if PrintMapTypes {
-		p.print(p.colorizeType(p.value.Type()) + "{\n")
-	} else {
-		p.println("{")
-	}
+	p.print(p.colorizeType(p.value.Type()) + "{\n")
 
 	p.indented(func() {
 		value := sortMap(p.value)
@@ -220,24 +221,24 @@ func (p *printer) printStruct() {
 			tm, _ := reflect.TypeAssert[time.Time](p.value)
 			p.printf(
 				"%s-%s-%s %s:%s:%s %s",
-				p.colorize(strconv.Itoa(tm.Year()), p.currentScheme.Time),
-				p.colorize(fmt.Sprintf("%02d", tm.Month()), p.currentScheme.Time),
-				p.colorize(fmt.Sprintf("%02d", tm.Day()), p.currentScheme.Time),
-				p.colorize(fmt.Sprintf("%02d", tm.Hour()), p.currentScheme.Time),
-				p.colorize(fmt.Sprintf("%02d", tm.Minute()), p.currentScheme.Time),
-				p.colorize(fmt.Sprintf("%02d", tm.Second()), p.currentScheme.Time),
-				p.colorize(tm.Location().String(), p.currentScheme.Time),
+				p.colorize(strconv.Itoa(tm.Year()), scheme.Time),
+				p.colorize(fmt.Sprintf("%02d", tm.Month()), scheme.Time),
+				p.colorize(fmt.Sprintf("%02d", tm.Day()), scheme.Time),
+				p.colorize(fmt.Sprintf("%02d", tm.Hour()), scheme.Time),
+				p.colorize(fmt.Sprintf("%02d", tm.Minute()), scheme.Time),
+				p.colorize(fmt.Sprintf("%02d", tm.Second()), scheme.Time),
+				p.colorize(tm.Location().String(), scheme.Time),
 			)
 
 			return
 		case typ.String() == "big.Int":
 			bigInt, _ := reflect.TypeAssert[big.Int](p.value)
-			p.print(p.colorize(bigInt.String(), p.currentScheme.Integer))
+			p.print(p.colorize(bigInt.String(), scheme.Integer))
 
 			return
 		case typ.String() == "big.Float":
 			bigFloat, _ := reflect.TypeAssert[big.Float](p.value)
-			p.print(p.colorize(bigFloat.String(), p.currentScheme.Float))
+			p.print(p.colorize(bigFloat.String(), scheme.Float))
 
 			return
 		}
@@ -246,11 +247,6 @@ func (p *printer) printStruct() {
 	fields := make([]int, 0, p.value.NumField())
 	for i := range p.value.NumField() {
 		field := typ.Field(i)
-		// ignore unexported if needed
-		if p.exportedOnly && field.PkgPath != "" {
-			continue
-		}
-
 		// ignore fields if zero value, or explicitly set
 		if tag := field.Tag.Get("pp"); tag != "" {
 			parts := strings.Split(tag, ",")
@@ -286,7 +282,7 @@ func (p *printer) printStruct() {
 
 			p.indentPrintf(
 				"%s:\t%s,\n",
-				p.colorize(fieldName, p.currentScheme.FieldName),
+				p.colorize(fieldName, scheme.FieldName),
 				p.format(p.value.Field(i)),
 			)
 		}
@@ -393,7 +389,7 @@ func (p *printer) printPtr() {
 }
 
 func (p *printer) pointerAddr() string {
-	return p.colorize(fmt.Sprintf("%#v", p.value.Pointer()), p.currentScheme.PointerAdress)
+	return p.colorize(fmt.Sprintf("%#v", p.value.Pointer()), scheme.PointerAdress)
 }
 
 var (
@@ -413,15 +409,15 @@ func (p *printer) colorizeType(typ reflect.Type) string {
 
 	if _reTypeArray.MatchString(typeStr) {
 		num := regexp.MustCompile(`\d+`).FindString(typeStr)
-		prefix = fmt.Sprintf("[%s]", p.colorize(num, p.currentScheme.ObjectLength))
+		prefix = fmt.Sprintf("[%s]", p.colorize(num, scheme.ObjectLength))
 		typeStr = typeStr[2+len(num):]
 	}
 
 	if _reTypeStruct.MatchString(typeStr) {
 		ts := strings.Split(typeStr, ".")
-		typeStr = ts[0] + "." + p.colorize(ts[1], p.currentScheme.StructName)
+		typeStr = ts[0] + "." + p.colorize(ts[1], scheme.StructName)
 	} else {
-		typeStr = p.colorize(typeStr, p.currentScheme.StructName)
+		typeStr = p.colorize(typeStr, scheme.StructName)
 	}
 
 	return prefix + typeStr
@@ -429,9 +425,8 @@ func (p *printer) colorizeType(typ reflect.Type) string {
 
 func (p *printer) indented(proc func()) {
 	p.depth++
-	if p.maxDepth == -1 || p.depth <= p.maxDepth {
-		proc()
-	}
+
+	proc()
 
 	p.depth--
 }
@@ -452,35 +447,15 @@ func (p *printer) raw() string {
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		return p.fmtOrLocalizedSprintf("%v", p.value.Int())
 	case reflect.Uint, reflect.Uintptr:
-		if p.decimalUint {
-			return p.fmtOrLocalizedSprintf("%d", p.value.Uint())
-		} else {
-			return fmt.Sprintf("%#v", p.value.Uint())
-		}
+		return p.fmtOrLocalizedSprintf("%d", p.value.Uint())
 	case reflect.Uint8:
-		if p.decimalUint {
-			return strconv.FormatUint(p.value.Uint(), 10)
-		} else {
-			return fmt.Sprintf("0x%02x", p.value.Uint())
-		}
+		return strconv.FormatUint(p.value.Uint(), 10)
 	case reflect.Uint16:
-		if p.decimalUint {
-			return p.fmtOrLocalizedSprintf("%d", p.value.Uint())
-		} else {
-			return fmt.Sprintf("0x%04x", p.value.Uint())
-		}
+		return p.fmtOrLocalizedSprintf("%d", p.value.Uint())
 	case reflect.Uint32:
-		if p.decimalUint {
-			return p.fmtOrLocalizedSprintf("%d", p.value.Uint())
-		} else {
-			return fmt.Sprintf("0x%08x", p.value.Uint())
-		}
+		return p.fmtOrLocalizedSprintf("%d", p.value.Uint())
 	case reflect.Uint64:
-		if p.decimalUint {
-			return p.fmtOrLocalizedSprintf("%d", p.value.Uint())
-		} else {
-			return fmt.Sprintf("0x%016x", p.value.Uint())
-		}
+		return p.fmtOrLocalizedSprintf("%d", p.value.Uint())
 	case reflect.Float32, reflect.Float64:
 		return p.fmtOrLocalizedSprintf("%f", p.value.Float())
 	case reflect.Complex64, reflect.Complex128:
@@ -491,27 +466,15 @@ func (p *printer) raw() string {
 }
 
 func (p *printer) nil() string {
-	return p.colorize("nil", p.currentScheme.Nil)
+	return p.colorize("nil", scheme.Nil)
 }
 
 func (p *printer) colorize(text string, mod scuf.Mod) string {
-	if !p.coloringEnabled {
-		return text
-	}
-
 	return scuf.String(text, mod)
 }
 
 func (p *printer) format(object any) string {
-	pp := newPrinter(
-		object,
-		p.currentScheme,
-		p.maxDepth,
-		p.coloringEnabled,
-		p.decimalUint,
-		p.exportedOnly,
-		p.thousandsSeparator,
-	)
+	pp := newPrinter(object)
 	pp.depth = p.depth
 
 	pp.visited = p.visited

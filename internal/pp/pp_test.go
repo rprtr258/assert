@@ -9,57 +9,23 @@ import (
 )
 
 func TestDefaultOutput(t *testing.T) {
+	t.Parallel()
+
 	testOutput := &bytes.Buffer{}
-	init := Default.GetOutput()
-	Default.SetOutput(testOutput)
-	ass.Equal[io.Writer](t, testOutput, Default.GetOutput())
+	pp := newPrettyPrinter(3)
+	init := pp.out
+	pp.out = testOutput
+	ass.Equal[io.Writer](t, testOutput, pp.out)
 	ass.Equal(t, "", testOutput.String())
-	Default.Print("abcde")
+	pp.Print("abcde")
 	ass.NotEqual(t, "", testOutput.String())
-	ass.NotEqual(t, init, Default.GetOutput())
-	Default.ResetOutput()
-	ass.Equal(t, init, Default.GetOutput())
+	ass.NotEqual(t, init, pp.out)
 }
 
 func TestColorScheme(t *testing.T) {
-	Default.currentScheme = defaultScheme
-	ass.NotEqual(t, 0, len(Default.currentScheme.FieldName))
-}
+	t.Parallel()
 
-func TestWithLineInfo(t *testing.T) {
-	outputWithoutLineInfo := &bytes.Buffer{}
-	Default.SetOutput(outputWithoutLineInfo)
-	Default.Print("abcde")
-
-	outputWithLineInfo := &bytes.Buffer{}
-	Default.SetOutput(outputWithLineInfo)
-
-	WithLineInfo = true
-
-	Default.Print("abcde")
-
-	Default.ResetOutput()
-
-	ass.NotEqual(t, outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes())
-}
-
-func TestWithLineInfoBackwardsCompatible(t *testing.T) {
-	// Test that the global accessible field `WithLineInfo` does not mutate other instances
-	outputWithLineInfo := &bytes.Buffer{}
-	Default.SetOutput(outputWithLineInfo)
-
-	WithLineInfo = true
-
-	Default.Print("abcde")
-
-	outputWithoutLineInfo := &bytes.Buffer{}
-	pp := New()
-	pp.SetOutput(outputWithoutLineInfo)
-	pp.Print("abcde")
-
-	ass.NotEqual(t, outputWithLineInfo.Bytes(), outputWithoutLineInfo.Bytes())
-
-	Default.ResetOutput()
+	ass.NotEqual(t, 0, len(scheme.FieldName))
 }
 
 func TestStructPrintingWithTags(t *testing.T) {
@@ -118,7 +84,7 @@ func TestStructPrintingWithTags(t *testing.T) {
 
 			output := &bytes.Buffer{}
 			pp := New()
-			pp.SetOutput(output)
+			pp.out = output
 
 			pp.Print(test.foo)
 

@@ -25,8 +25,8 @@ import (
 const _shortLimit = 100
 
 var (
-	_fgExpected = scuf.FgRGB(0x96, 0xf7, 0x59) //nolint:mnd
-	_fgActual   = scuf.FgRGB(0xff, 0x40, 0x53) //nolint:mnd
+	_fgExpected = scuf.FgRGB(0x96, 0xf7, 0x59)
+	_fgActual   = scuf.FgRGB(0xff, 0x40, 0x53)
 )
 
 func mapJoin[T any](seq iter.Seq[T], toString func(T) string, sep string) string {

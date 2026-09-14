@@ -72,6 +72,7 @@ linters:
     - noctx
     - nolintlint
     - nosprintfhostport
+    - paralleltest
     - perfsprint
     - prealloc
     - predeclared
@@ -120,7 +121,6 @@ linters:
     - varnamelen # makes bad suggestions
     - wsl # replaced by wsl_v5
     # TODO: remove
-    - paralleltest
     - revive
     - tparallel
     - unused
