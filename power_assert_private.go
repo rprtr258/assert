@@ -273,7 +273,7 @@ func getModuleDir() (_dir, _pkgDir string, _err error) {
 	}
 	// os.Getwd does not cut it, since tests are being run from a temp dir using temporary executable
 	// so we have to do caller getting trickery and extract module path the hard way
-	_, file, _, ok := runtime.Caller(4) // Assert/Require -> fuse -> run -> getModuleDir
+	_, file, _, ok := runtime.Caller(3) // TestMain -> Fuse -> run -> getModuleDir
 	if !ok {
 		return "", "", errGetCaller
 	}
@@ -301,18 +301,31 @@ func getModuleDir() (_dir, _pkgDir string, _err error) {
 	return dir, pkgRelDir, nil
 }
 
+// Skip VCS and vendor dirs that contribute nothing to the build.
+var (
+	u        = struct{}{}
+	skipDirs = map[string]struct{}{
+		".git":         u,
+		".jj":          u,
+		".hg":          u,
+		".svn":         u,
+		"vendor":       u,
+		"node_modules": u,
+	}
+)
+
 //nolint:maintidx
-func run() error {
+func run() (int, error) {
 	moduleDir, pkgRelDir, err := getModuleDir()
 	if err != nil {
-		return fmt.Errorf("get module dir: %w", err)
+		return 0, fmt.Errorf("get module dir: %w", err)
 	}
 
 	debugf("module dir %s, package dir %s", moduleDir, pkgRelDir)
 
 	tmpDir, err := os.MkdirTemp("", "assert.*")
 	if err != nil {
-		return fmt.Errorf("create temp dir: %w", err)
+		return 0, fmt.Errorf("create temp dir: %w", err)
 	}
 
 	if !debug {
@@ -321,9 +334,38 @@ func run() error {
 
 	debugf("temp dir %s created", tmpDir)
 
-	// TODO: copy _test.go files, link everything besides
-	if err := os.CopyFS(tmpDir, os.DirFS(moduleDir)); err != nil {
-		return fmt.Errorf("copy project to temp dir: %w", err)
+	// Link non-test files (falling back to a copy across devices); copy
+	// _test.go files so rewrites never mutate the originals.
+	if err := filepath.WalkDir(moduleDir, func(path string, d fs.DirEntry, err error) error {
+		if err != nil {
+			return err
+		}
+
+		rel, err := filepath.Rel(moduleDir, path)
+		if err != nil {
+			return fmt.Errorf("rel: %w", err)
+		}
+
+		if d.IsDir() {
+			if _, ok := skipDirs[d.Name()]; ok && rel != "." {
+				return filepath.SkipDir
+			}
+
+			return nil
+		}
+
+		dst := filepath.Join(tmpDir, rel)
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			return fmt.Errorf("mkdirall: %w", err)
+		}
+
+		if strings.HasSuffix(rel, "_test.go") {
+			return copyFile(path, dst)
+		}
+
+		return linkFile(path, dst)
+	}); err != nil {
+		return 0, fmt.Errorf("copy project to temp dir: %w", err)
 	}
 
 	testfiles := []string{}
@@ -337,30 +379,35 @@ func run() error {
 
 		return nil
 	}); err != nil {
-		return fmt.Errorf("collect test files: %w", err)
+		return 0, fmt.Errorf("collect test files: %w", err)
 	}
 
 	for _, fileRelPath := range testfiles {
 		ff, err := os.Open(fileRelPath)
 		if err != nil {
-			return fmt.Errorf("open test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("open test file %s: %w", fileRelPath, err)
 		}
 
 		stat, err := ff.Stat()
 		if err != nil {
-			return fmt.Errorf("stat test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("stat test file %s: %w", fileRelPath, err)
 		}
 
 		f, err := io.ReadAll(ff)
 		if err != nil {
-			return fmt.Errorf("read test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("read test file %s: %w", fileRelPath, err)
 		}
 
 		ff.Close()
 
+		// Pre-scan: skip files with no power-assert targets before parsing.
+		if !bytes.Contains(f, []byte("assert.Assert")) && !bytes.Contains(f, []byte("assert.Require")) {
+			continue
+		}
+
 		root, err := parser.ParseFile(token.NewFileSet(), fileRelPath, f, 0)
 		if err != nil {
-			return fmt.Errorf("parse test file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("parse test file %s: %w", fileRelPath, err)
 		}
 
 		found := false
@@ -487,7 +534,7 @@ func run() error {
 		debugf("rewriting %s", fileRelPath)
 
 		if err := os.WriteFile(fileRelPath, []byte(sprintCode(root)), stat.Mode()); err != nil {
-			return fmt.Errorf("write rewritten file %s: %w", fileRelPath, err)
+			return 0, fmt.Errorf("write rewritten file %s: %w", fileRelPath, err)
 		}
 	}
 
@@ -505,7 +552,50 @@ func run() error {
 
 	cmd.Stderr = os.Stderr
 	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("run tests: %w", err)
+		if exitErr, ok := errors.AsType[*exec.ExitError](err); ok {
+			return exitErr.ExitCode(), nil
+		}
+
+		return 1, fmt.Errorf("run tests: %w", err)
+	}
+
+	return 0, nil
+}
+
+// linkFile hard-links src into dst; when a hard link is impossible (cross-
+// device, unsupported fs) it falls back to a full copy.
+func linkFile(src, dst string) error {
+	if err := os.Link(src, dst); err == nil {
+		return nil
+	}
+
+	return copyFile(src, dst)
+}
+
+func copyFile(src, dst string) error {
+	in, err := os.Open(src)
+	if err != nil {
+		return fmt.Errorf("open src: %w", err)
+	}
+	defer in.Close()
+
+	out, err := os.Create(dst)
+	if err != nil {
+		return fmt.Errorf("open dst: %w", err)
+	}
+	defer out.Close()
+
+	if _, err := io.Copy(out, in); err != nil {
+		return fmt.Errorf("copy: %w", err)
+	}
+
+	info, err := os.Stat(src)
+	if err != nil {
+		return fmt.Errorf("stat src: %w", err)
+	}
+
+	if err := os.Chmod(dst, info.Mode()); err != nil {
+		return fmt.Errorf("chmod dst: %w", err)
 	}
 
 	return nil
