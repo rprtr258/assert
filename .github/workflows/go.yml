@@ -22,8 +22,8 @@ jobs:
           args: --config=.golangci.yml
           version: v2.13.2
 
-  build:
-    name: Build
+  test:
+    name: Test
     runs-on: ubuntu-latest
     steps:
       - name: Set up Go
@@ -41,17 +41,5 @@ jobs:
       - name: Test
         run: go test -v .
 
-  tests:
-    name: Test with race detector enabled
-    runs-on: ubuntu-latest
-    steps:
-      - name: Set up Go
-        uses: actions/setup-go@v2
-
-      - name: Checkout repository
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 1
-
-      - name: Run unit tests
-        run: go test -v -race ./...
+      - name: Test with race detector
+        run: go test -v -race ./... -count=20

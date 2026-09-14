@@ -9,3 +9,4 @@ lint:
 .PHONY: fmt
 fmt:
 	golangci-lint fmt
+	golangci-lint run --fix || true

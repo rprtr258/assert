@@ -35,3 +35,12 @@ func FlatMap[T, R any](seq iter.Seq[T], f func(T) iter.Seq[R]) iter.Seq[R] {
 		}
 	}
 }
+
+func SliceMap[T, R any](xs []T, f func(T) R) []R {
+	res := make([]R, len(xs))
+	for i, x := range xs {
+		res[i] = f(x)
+	}
+
+	return res
+}
