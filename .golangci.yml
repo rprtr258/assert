@@ -139,6 +139,9 @@ linters:
       default-signifies-exhaustive: true
     goconst:
       ignore-tests: true
+    wsl_v5:
+      disable:
+        - decl
   exclusions:
     generated: lax
     presets:
